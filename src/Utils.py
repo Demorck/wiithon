@@ -1,8 +1,9 @@
 import struct
-from typing import BinaryIO, Optional
+from typing import BinaryIO
 from Crypto.Cipher import AES
 
 from Constants import COMMON_KEYS
+from Enums import SignatureType, KeyType
 
 
 ###########################
@@ -14,6 +15,14 @@ from Constants import COMMON_KEYS
 ###########################
 #### READ/WRITE UTILS #####
 ###########################
+def read_u64(stream: BinaryIO) -> int:
+    """
+    Read a 64-bit unsigned integer from a stream
+    :param stream: Binary IO stream
+    :return: 64-bit unsigned integer
+    """
+    return struct.unpack('>Q', stream.read(8))[0]
+
 
 def read_u32(stream: BinaryIO) -> int:
     """
@@ -77,3 +86,16 @@ def encrypt_title_key(encrypted_key: bytes, common_key_index: int, title_id: byt
     iv: bytes = title_id + b'\x00' * 8 # 16 bytes and the first 8 are the title id
     cipher = AES.new(COMMON_KEYS[common_key_index], AES.MODE_CBC, iv)
     return cipher.encrypt(encrypted_key)
+
+def get_length_from_key_type(key_type: KeyType) -> (int, int, int):
+    match key_type:
+        case KeyType.NONE:
+            raise ValueError("Invalid key type")
+        case KeyType.RSA_4096:
+            return 0x200, 0x04, 0x34
+        case KeyType.RSA_2048:
+            return 0x100, 0x04, 0x34
+        case KeyType.ECC_B233:
+            return 0x3C, 0x00, 0x3C
+
+    raise ValueError("Invalid key type")

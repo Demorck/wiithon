@@ -12,7 +12,7 @@ class SignatureType(IntEnum):
     Signature type.
     Used in tickets, TMD and certificates
     """
-    NONE     = 0x00000000
+    NONE     = 0xFFFFFFFF
     RSA_4096 = 0x00010000
     RSA_2048 = 0x00010001
     ELLIPSIS = 0x00010002
@@ -21,5 +21,7 @@ class KeyType(IntEnum):
     """
     Key type in certificate
     """
+    NONE     = 0xFFFFFFFF
     RSA_4096 = 0x00000000
     RSA_2048 = 0x00000001
+    ECC_B233 = 0x00000002
