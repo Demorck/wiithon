@@ -56,7 +56,14 @@ def read_u64_shifted(stream: BinaryIO) -> int:
     """
     return read_u32(stream) << 2
 
-
+def read_string(stream: BinaryIO, number_of_bytes: int) -> str:
+    """
+    Read a string from a stream
+    :param stream: The Binary IO stream
+    :param number_of_bytes: The number of bytes to read
+    :return: The returned string
+    """
+    return stream.read(number_of_bytes).split(b'\x00')[0].decode('ascii')
 
 
 ###########################
