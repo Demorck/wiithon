@@ -65,6 +65,23 @@ def read_string(stream: BinaryIO, number_of_bytes: int) -> str:
     """
     return stream.read(number_of_bytes).split(b'\x00')[0].decode('ascii')
 
+def read_shiftjis(stream: BinaryIO, offset: int) -> str:
+    """
+    Read a shift JS from a stream at a current offset
+    :param stream: The Binary IO stream
+    :param offset: The current offset
+    :return: shift JS string
+    """
+    stream.seek(offset)
+    chars = b''
+    while True:
+        byte = stream.read(1)
+        if byte == b'\x00' or not byte:
+            break
+
+        chars += byte
+
+    return chars.decode('shift_jis')
 
 ###########################
 ### CRYPTOGRAPHIC UTILS ###
