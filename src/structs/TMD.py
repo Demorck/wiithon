@@ -3,39 +3,61 @@ from typing import List
 from structs.TMDContent import TMDContent
 from helpers.Utils import *
 
+"""
+See this: https://wiibrew.org/wiki/Title_metadata
+----------------------------------------- Signed Blob Header
+Offset  Taille          Field
+0x000   0x04            Signature Type
+0x004   0x100           Signature
+0x104   0x3C            60 bytes of padding
+------------------------------------------- Main Header
+0x140   0x40            Certificate issuer
+0x180   0x01            Version
+0x181   0x01            Ca_crl_version
+0x182   0x01            signer_crl_version
+0x183   0x01            Is Virtual wii (1 for vWii titles, 0 for normal titles)
+0x184   0x08            System version
+0x18C   0x08            Title ID
+0x194   0x08            Title type
+0x198   0x04            Group ID
+0x19A   0x02            Zero
+0x19C   0x02            Region (0: Japan, 1: USA, 2: Europe, 3: Region Free, 4: Korea)
+0x19E   0x02            Ratings
+0x1AE   0x10            Reserved
+0x1BA   0x0C            IPC Mask
+0x1C6   0x0C            Reserved
+0x1D8   0x04            Access rights
+0x1DC   0x02            Title version
+0x1DE   0x02            Number of contents
+0x1E0   0x02            boot index
+0x1E2   0x02            Minor version (unused)
+"""
+
 class TMD:
     """
-    See this: https://wiibrew.org/wiki/Title_metadata
-    TODO: Change this comment to use actual structure
-    ----------------------------------------- Signed Blob Header
-    Offset  Taille          Field
-    0x000   0x04            Signature Type
-    0x004   0x100           Signature
-    0x104   0x3C            60 bytes of padding
-    ------------------------------------------- Main Header
-    0x140   0x40            Signature issuer
-    0x180   0x3C            ECDH data (Elliptic Curve Diffie-Hellman)
-    0x1BD   0x01            Ticket format version
-	0x1BD	0x02			Reserved
-	0x1BF	0x10			Title Key, encrypted by Common Key
-	0x1CF	0x01			Unknown
-	0x1D0	0x08			ticket_id (used as IV for title key decryption of console specific titles)
-	0x1D8	0x04			Console ID (NG ID in console specific titles)
-	0x1DC	0x08			Title ID / Initialization Vector (IV) used for AES-CBC encryption
-	0x1E4	0x02			Unknown, mostly 0xFFFF
-	0x1E6	0x02			Ticket title version
-	0x1E8	0x04			Permitted Titles Mask
-	0x1EC	0x04			Permit mask. The current disc title is ANDed with the inverse of this mask to see if the result matches the Permitted Titles Mask.
-	0x1F0	0x01			Title Export allowed using PRNG key (1 = allowed, 0 = not allowed)
-	0x1F1	0x01			Common Key index (2 = Wii U Wii mode, 1 = Korean Common key, 0 = "normal" Common key)
-	0x1F2	0x3			    Unknown. Is all 0 for non-VC, for VC, all 0 except last byte is 1.
-	0x1F5	0x2D			Unknown.
-	0x222	0x40			Content access permissions (one bit for each content)
-	0x262	0x02			Padding (Always 0)
-	0x264	0x04			Limit type (0 = disable, 1 = time limit (minutes), 3 = disable, 4 = launch count limit)
-	0x268	0x04			Maximum usage, depending on limit type
-	0x26C	0x38			7 more ccLimit structs as above ({int type, max})
-    """
+        Title Metadata for a Wii partition
+
+        References:
+            https://wiibrew.org/wiki/Title_metadata
+
+        Attributes:
+            signature_type   : RSA signature type
+            signature        : RSA signature
+            signature_issuer : Issuer (Like "Root-CA00000001-CP00000004")
+            version            : TMD format version
+            ca_crl_version     : CA Certificate Revocation List version
+            signer_crl_version : Signer CRL version
+            is_virtual_wii     : vWii flag
+            system_version     : Required system version (IOS)
+            title_id           : Title identifier (8 bytes, u64)
+            title_type         : Title type
+            group_id           : Group identifier
+            access_flags       : Access flags
+            title_version      : Title version
+            num_contents       : Number of CMD entries
+            boot_index         : Startup content index
+            contents           : List of TMDContent
+        """
     def __init__(self):
         self.signature_type: SignatureType = SignatureType.NONE
         self.signature: bytes = b'\x00' * 0x100
@@ -59,6 +81,7 @@ class TMD:
     def read(cls, stream: BinaryIO) -> "TMD":
         """
         Read and parse a Title metadata from a binary stream
+
         :param stream: Binary IO stream
         :return: TMD
         """
@@ -90,6 +113,7 @@ class TMD:
     def write(self, stream: BinaryIO) -> None:
         """
         Write content to a binary stream
+
         :param stream: Binary IO stream
         :return: None
         """

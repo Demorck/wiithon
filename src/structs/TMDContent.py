@@ -1,16 +1,30 @@
 from helpers.Utils import *
 
+"""
+Content Metadata (CMD) from TMD (Title Metadata)
+https://wiibrew.org/wiki/Title_metadata
+-----------------------------------------
+Offset  Taille         Field
+0x00   0x04            Content ID
+0x04   0x02            Index
+0x06   0x02            Type (0x0001: Normal, 0x4001: DLC, 0x8001: Shared)
+0x08   0x08            Size
+0x10   0x14            SHA1 Hash
+"""
+
 class TMDContent:
     """
-    Content Metadata (CMD) from TMD (Title Metadata)
-    https://wiibrew.org/wiki/Title_metadata
-    -----------------------------------------
-    Offset  Taille         Field
-    0x00   0x04            Content ID
-    0x04   0x02            Index
-    0x06   0x02            Type (0x0001: Normal, 0x4001: DLC, 0x8001: Shared)
-    0x08   0x08            Size
-    0x10   0x14            SHA1 Hash
+    Content metadata (0x24 bytes)
+
+    References:
+        https://wiibrew.org/wiki/Title_metadata
+
+    Attributes:
+        id              : Unique content identifier
+        index           : Position in the content list
+        content_type    : Content type (0x0001: Normal, 0x4001: DLC, 0x8001: Shared)
+        size            : Content size in bytes
+        hash            : SHA-1 integrity hash (20 bytes)
     """
     def __init__(self) -> None:
         self.id: int = 0
@@ -24,6 +38,7 @@ class TMDContent:
     def read(cls, stream: BinaryIO) -> 'TMDContent':
         """
         Read and parse a CMD from a binary stream
+
         :param stream: Binary IO stream
         :return: TMDContent
         """
@@ -40,6 +55,7 @@ class TMDContent:
     def write(self, stream: BinaryIO) -> None:
         """
         Write content to a binary stream
+
         :param stream: Binary IO stream
         :return: None
         """
