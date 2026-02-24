@@ -1,9 +1,22 @@
-from Enums import SignatureType, KeyType
-from Utils import *
+from helpers.Utils import *
 
 class Certificate:
     """
-    https://wiibrew.org/wiki/Certificate_chain
+    A Nintendo trust chain certificate
+    Signature and key sizes depend on the signature type (RSA-4096, RSA-2048, ECC)
+
+    References:
+        https://wiibrew.org/wiki/Certificate_chain
+
+    Attributes:
+        signature_type  : Signature algorithm type
+        signature       : Signature data (variable size)
+        issuer          : Certificate issuer (64 bytes, null-padded)
+        key_type        : Public key type
+        child_identity  : Child identity in the chain (64 bytes)
+        key_id          : Key identifier
+        key             : Public key (variable size by key_type)
+        public_exponent : RSA public exponent (RSA types only )
     """
     def __init__(self) -> None:
         self.signature_type: SignatureType = SignatureType.NONE
@@ -18,6 +31,17 @@ class Certificate:
 
     @classmethod
     def read(cls, stream: BinaryIO) -> "Certificate":
+        """
+        Read a certificate from a binary stream
+
+        Data size varies by signature type and key type:
+        - RSA-4096: signature=0x200, key=0x200 + 0x04 (exponent) + 0x34 (padding)
+        - RSA-2048: signature=0x100, key=0x100 + 0x04 (exponent) + 0x34 (padding)
+        - ECC:      signature=0x40,  key=0x3C  + 0x60 (padding)
+
+        :param stream: Binary IO stream
+        :returns: Parsed Certificate
+        """
         obj = cls()
 
         obj.signature_type = SignatureType(read_u32(stream))
@@ -50,6 +74,11 @@ class Certificate:
         return obj
 
     def write(self, stream: BinaryIO) -> None:
+        """
+        Write this certificate to a binary stream
+
+        :param stream: Binary IO stream
+        """
         stream.write(struct.pack('>I', self.signature_type))
         stream.write(self.signature)
         stream.write(b'\x00' * 0x3C)

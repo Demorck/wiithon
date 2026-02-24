@@ -1,9 +1,19 @@
-from Utils import *
+from helpers.Utils import *
+
 
 class TicketTimeLimit:
     """
-    Time limit entri in a Wii Ticket.
-    Found in the v0 ticket here: https://wiibrew.org/wiki/Ticket
+    Time limit entry in a Wii Ticket (v0)
+
+    The Ticket contains 8 consectuvive TicketTimeLimit entries that can
+    restrict content usage
+
+    References:
+        https://wiibrew.org/wiki/Ticket
+
+    Attributes:
+        enable_time_limit   : `int` - Limit type (0=disabled, 1=time in minutes, 3=disabled, 4=launch count limit)
+        time_limit          : `int` - Maximum value depending on type
     """
     def __init__(self) -> None:
         self.enable_time_limit: int = 0
@@ -26,6 +36,7 @@ class TicketTimeLimit:
     def write(self, stream: BinaryIO) -> None:
         """
         Write the time limit entry to a binary stream.
+
         :param stream: Binary IO stream
         :return: None
         """

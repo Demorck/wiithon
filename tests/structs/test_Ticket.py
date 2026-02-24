@@ -2,7 +2,7 @@ import struct
 import unittest
 from io import BytesIO
 
-from Enums import SignatureType
+from helpers.Enums import SignatureType
 from structs.Ticket import Ticket
 
 

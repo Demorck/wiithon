@@ -3,7 +3,7 @@ import unittest
 from io import BytesIO
 
 from structs.Certificate import Certificate
-from Enums import SignatureType, KeyType
+from helpers.Enums import SignatureType, KeyType
 
 
 class TestCertificate(unittest.TestCase):

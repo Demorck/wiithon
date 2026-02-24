@@ -1,7 +1,7 @@
 from typing import BinaryIO
 import struct
-from Enums import SignatureType
-from Utils import read_u32, read_u16, read_u8, decrypt_title_key, encrypt_title_key
+from helpers.Enums import SignatureType
+from helpers.Utils import read_u32, read_u16, read_u8, decrypt_title_key, encrypt_title_key
 from structs.TicketTimeLimit import TicketTimeLimit
 
 

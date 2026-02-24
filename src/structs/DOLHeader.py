@@ -1,7 +1,7 @@
 from typing import BinaryIO
 import struct
 
-from Utils import read_u32
+from helpers.Utils import read_u32
 
 
 class DOLHeader:

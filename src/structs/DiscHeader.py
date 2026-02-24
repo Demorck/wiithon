@@ -1,5 +1,5 @@
 from typing import BinaryIO
-from Utils import read_u8, read_u32, read_string, read_u64_shifted
+from helpers.Utils import read_u8, read_u32, read_string, read_u64_shifted
 import struct
 
 class DiscHeader:

@@ -1,5 +1,5 @@
 from typing import BinaryIO
-from Utils import read_u64_shifted, read_u32
+from helpers.Utils import read_u64_shifted, read_u32
 
 
 class WiiPartitionEntry:

@@ -1,8 +1,7 @@
 from typing import List
 
-from Enums import SignatureType
 from structs.TMDContent import TMDContent
-from Utils import *
+from helpers.Utils import *
 
 class TMD:
     """

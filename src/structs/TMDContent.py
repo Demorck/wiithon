@@ -1,4 +1,4 @@
-from Utils import *
+from helpers.Utils import *
 
 class TMDContent:
     """

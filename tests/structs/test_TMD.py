@@ -3,7 +3,7 @@ import unittest
 from io import BytesIO
 
 from structs.TMD import TMD
-from Enums import SignatureType
+from helpers.Enums import SignatureType
 
 class TestTMD(unittest.TestCase):
     """Unit tests for TMD."""

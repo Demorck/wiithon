@@ -1,6 +1,6 @@
 from typing import BinaryIO
 
-from Utils import read_u32, read_u64_shifted
+from helpers.Utils import read_u32, read_u64_shifted
 from structs.Ticket import Ticket
 import struct
 

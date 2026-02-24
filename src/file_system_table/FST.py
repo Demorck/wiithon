@@ -1,6 +1,6 @@
 from typing import List, BinaryIO
 
-from Utils import read_shiftjis
+from helpers.Utils import read_shiftjis
 from file_system_table.FSTNode import FSTNode, FSTDirectory, FSTFile
 from file_system_table.RawNode import RawFSTNode
 
