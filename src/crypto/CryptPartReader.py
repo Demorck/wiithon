@@ -5,6 +5,9 @@ from helpers.Utils import decrypt_group
 
 
 class CryptPartReader:
+    """
+    TODO: Maybe changing the name, not very explicit ?
+    """
     def __init__(self, file: BinaryIO, data_offset: int, title_key: bytes) -> None:
         """
         :param file: Open file (like ISO)
