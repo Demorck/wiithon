@@ -21,8 +21,8 @@ class WiiPartitionEntry:
         return obj
 
     def write(self, stream: BinaryIO) -> None:
-        stream.write(struct.pack('<I', self.offset >> 2))
-        stream.write(struct.pack('<I', self.part_type))
+        stream.write(struct.pack('>I', self.offset >> 2))
+        stream.write(struct.pack('>I', self.part_type))
 
 
 def read_parts(stream: BinaryIO) -> list[WiiPartitionEntry]:
