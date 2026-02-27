@@ -1,3 +1,4 @@
+import struct
 from typing import BinaryIO
 from helpers.Utils import read_u64_shifted, read_u32
 
@@ -18,6 +19,10 @@ class WiiPartitionEntry:
         obj.offset = read_u64_shifted(stream)
         obj.part_type = read_u32(stream)
         return obj
+
+    def write(self, stream: BinaryIO) -> None:
+        stream.write(struct.pack('<I', self.offset >> 2))
+        stream.write(struct.pack('<I', self.part_type))
 
 
 def read_parts(stream: BinaryIO) -> list[WiiPartitionEntry]:

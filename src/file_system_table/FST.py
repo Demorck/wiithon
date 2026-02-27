@@ -49,6 +49,8 @@ class FST:
 
         stream.write(strings)
 
+    def count_files(self) -> int:
+        return sum(e.count_files() for e in self.entries)
 
 
 

@@ -9,9 +9,9 @@ class WiiPartType(IntEnum):
     Each disc partition is associated with one of these types
     Smash bros brawl seems to have 14 (??) partitions. The builtin virtual console has a partition for each game
     """
-    DATA = 0x01 # Main partition, containing the game
-    UPDATE = 0x02 # For Wii System update
-    CHANNEL = 0x03 # Used for channel like Wii Fit, Mario Kart Wii
+    DATA = 0x00 # Main partition, containing the game
+    UPDATE = 0x01 # For Wii System update
+    CHANNEL = 0x02 # Used for channel like Wii Fit, Mario Kart Wii
 
 
 class SignatureType(IntEnum):

@@ -5,7 +5,7 @@ from WiiIsoReader import WiiIsoReader
 from structs.DiscHeader import DiscHeader
 from file_system_table.FSTNode import FSTDirectory
 
-TEST_ISO_PATH = os.path.join(os.path.dirname(__file__), ".", "assets", "smg.iso")
+TEST_ISO_PATH = os.path.join(os.path.dirname(__file__), "..", "assets", "smg.iso")
 
 
 @unittest.skipUnless(os.path.exists(TEST_ISO_PATH), "Test ISO not found")

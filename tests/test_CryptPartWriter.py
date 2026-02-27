@@ -8,7 +8,7 @@ from helpers.Constants import GROUP_SIZE
 from structs.WiiPartitionEntry import read_parts
 from structs.WiiPartitionHeader import WiiPartitionHeader
 
-TEST_ISO_PATH = os.path.join(os.path.dirname(__file__), ".", "assets", "smg.iso")
+TEST_ISO_PATH = os.path.join(os.path.dirname(__file__), "..", "assets", "smg.iso")
 
 class TestCryptoRoundtrip(unittest.TestCase):
     """
