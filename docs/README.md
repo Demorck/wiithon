@@ -209,7 +209,7 @@ Since the signature depends on the signature type (see below), the offset depend
 
 ---
 
-## Data encryption
+## Data decryption/encryption
 Partition data is encrypted with AES-128-CBC using the title key. The layout is:
 
 ![Tree of data encryption](assets/data_encryption.png)
@@ -231,7 +231,23 @@ Partition data is encrypted with AES-128-CBC using the title key. The layout is:
 > 
 > Code: [CryptPartReader.py](../src/crypto/CryptPartReader.py)
 
+### Encryption and hashing processes
+This part is quite difficult.
+Data within block, group are hashed then encrypted. So, if we need to change files, we also need to hash then encrypt all datas.
+Before, in the header we said that it contains H0, H1, etc. It's from a [Merkle Tree](https://en.wikipedia.org/wiki/Merkle_tree), a tree with every node that is not a leaf is a hash of its child.
+For Wii ISO, it's like this:
 
+![Merkle Tree for Wii ISO](assets/merkle_tree.png)
+
+Since the algorithm is pretty hard to understand, here a good sequence diagram:
+
+![Sequence diagram for encryption](assets/sequence_encryption.png)
+
+> Reference: [WiiBrew - Wii Disc - Encrytped](https://wiibrew.org/wiki/Wii_disc#Encrypted)
+> 
+> Code: 
+> - [CryptPartWriter.py](../src/crypto/CryptPartWriter.py)
+> - [Utils - encrypt_group function ](../src/helpers/Utils.py)
 ---
 ## References
 

@@ -8,13 +8,13 @@ class CryptPartReader:
     """
     TODO: Maybe changing the name, not very explicit ?
     """
-    def __init__(self, file: BinaryIO, data_offset: int, title_key: bytes) -> None:
+    def __init__(self, stream: BinaryIO, data_offset: int, title_key: bytes) -> None:
         """
-        :param file: Open file (like ISO)
+        :param stream: Open stream (like ISO)
         :param data_offset: Absolute offset of partition data in the ISO
         :param title_key: 16-byte decrypted title key
         """
-        self.file = file
+        self.stream = stream
         self.data_offset = data_offset
         self.title_key = title_key
         self._cached_group_index: int = -1
@@ -29,8 +29,8 @@ class CryptPartReader:
         if group_index == self._cached_group_index:
             return
 
-        self.file.seek(self.data_offset + group_index * GROUP_SIZE)
-        raw_group = self.file.read(GROUP_SIZE)
+        self.stream.seek(self.data_offset + group_index * GROUP_SIZE)
+        raw_group = self.stream.read(GROUP_SIZE)
 
         self._cached_data = decrypt_group(raw_group, self.title_key)
         self._cached_group_index = group_index

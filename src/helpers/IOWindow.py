@@ -3,33 +3,33 @@ from typing import BinaryIO, Optional
 
 class IOWindow:
     """I/O sub-window over a seekable binary stream"""
-    def __init__(self, source: BinaryIO, start: int, length: Optional[int] = None) -> None:
-        self.source = source
+    def __init__(self, stream: BinaryIO, start: int, length: Optional[int] = None) -> None:
+        self.stream = stream
         self.start = start
         self.length = length
         self.pos = 0
 
     def read(self, n: int) -> bytes:
         """
-        Read n bytes from source at the current position.
+        Read n bytes from stream at the current position.
 
         :param n: `int` - Number of bytes to read
-        :return: `bytes` - Bytes read from the source
+        :return: `bytes` - Bytes read from the stream
         """
         if self.length is not None:
             n = min(n, self.length - self.pos)
         if n <= 0:
             return b''
 
-        self.source.seek(self.start + self.pos)
-        data: bytes = self.source.read(n)
+        self.stream.seek(self.start + self.pos)
+        data: bytes = self.stream.read(n)
         self.pos += len(data)
 
         return data
 
     def write(self, data: bytes) -> int:
         """
-        Write bytes to source at the current position.
+        Write bytes to stream at the current position.
 
         :param data: `bytes` - Bytes to write
         :return: `None`
@@ -37,8 +37,8 @@ class IOWindow:
         if self.length is not None:
             data = data[:self.length - self.pos]
 
-        self.source.seek(self.start + self.pos)
-        written = self.source.write(data)
+        self.stream.seek(self.start + self.pos)
+        written = self.stream.write(data)
         self.pos += written
 
         return written

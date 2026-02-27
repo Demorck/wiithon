@@ -36,3 +36,15 @@ BLOCK_DATA_SIZE  : int = BLOCK_SIZE - BLOCK_HEADER_SIZE
 GROUP_SIZE       : int = BLOCK_SIZE * BLOCk_PER_GROUP
 # Usable data per group (0x7C00 * 64 = 0x1F0000 - 1,9375MB)
 GROUP_DATA_SIZE  : int = BLOCK_DATA_SIZE * BLOCk_PER_GROUP
+
+# Each user data of each block has 0x400. So, 0x7C00 / 0x400 = 0d31
+SUBBLOCK_BY_BLOCK: int = 31
+BLOCK_BY_SUBGROUP: int = 8
+SUBGROUP_BY_GROUP: int = 8
+
+SUBBLOCK_SIZE : int = BLOCK_DATA_SIZE // SUBBLOCK_BY_BLOCK
+
+SHA1_SIZE: int = 20
+
+# Subgroup size for encryption (0x8000 * 8 = 0x40 000)
+SUBGROUP_SIZE: int = BLOCK_SIZE * BLOCK_BY_SUBGROUP

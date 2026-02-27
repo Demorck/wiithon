@@ -1,6 +1,7 @@
 import struct
 from typing import BinaryIO
 from Crypto.Cipher import AES
+import hashlib
 
 from helpers.Constants import *
 from helpers.Enums import SignatureType, KeyType
@@ -180,3 +181,80 @@ def decrypt_group(group_data: bytes, title_key: bytes) -> bytes:
         result.extend(decrypt_block(current_block, title_key))
 
     return result
+
+
+def encrypt_group(group_data: bytes | bytearray, title_key: bytes, h3_ref: bytearray | None = None) -> bytes:
+    """
+    Hash and encrypt a full 2MB group
+    Reference: https://wiibrew.org/wiki/Wii_disc#Encrypted
+    TODO: Better to returns tuple of (bytes, bytearray) with encrypted group / h3 or keeping h3 ref ?
+    TODO: Maybe some magic numbers into constants but i'm afraid that's a lot of constants then. Maybe consider adding variable for slicing ?
+    :param group_data: 2MB bytes/bytearray to be hashed and encrypted
+    :param title_key: 16-byte decrypted title key
+    :param h3_ref: Optional bytearray of length 20 where the H3 hash will be stored
+    :return: The encrypted 2MB data as bytes
+    """
+    buffer = bytearray(group_data)
+
+    hasher = hashlib.sha1
+    h2 = bytearray(SHA1_SIZE * SUBGROUP_BY_GROUP)
+
+    # H2 loop
+    for subgroup_index in range(SUBGROUP_BY_GROUP):
+        h1 = bytearray(SHA1_SIZE * BLOCK_BY_SUBGROUP)
+
+        # H1 loop
+        for block_index in range(BLOCK_BY_SUBGROUP):
+            block_start = subgroup_index * SUBGROUP_SIZE + block_index * BLOCK_SIZE
+            h0 = bytearray(SHA1_SIZE * SUBBLOCK_BY_BLOCK)
+
+            # H0 loop: all "subblock" hashes
+            for j in range(SUBBLOCK_BY_BLOCK):
+                data_subblock = buffer[
+                                    block_start + (j + 1) * SUBBLOCK_SIZE:
+                                    block_start + (j + 2) * SUBBLOCK_SIZE
+                                ]
+
+                # Putting the hash of the subblock in the right place in the h0 table
+                h0[j * SHA1_SIZE:(j + 1) * SHA1_SIZE] = hasher(data_subblock).digest()
+
+            # Hashing h0 and placing it in the right place in the h1 table
+            h1[block_index * SHA1_SIZE:(block_index + 1) * SHA1_SIZE] = hasher(h0).digest()
+
+            # Placing H0 in the block header then the padding
+            buffer[block_start: block_start + len(h0)] = h0
+            buffer[block_start + len(h0): block_start + 0x280] = b'\x00' * 0x14
+
+        # Hashing h1 and placing it in the right place
+        h2[subgroup_index * SHA1_SIZE:(subgroup_index + 1) * SHA1_SIZE] = hasher(h1).digest()
+
+        # Placing H1 in the block header
+        for block_index in range(BLOCK_BY_SUBGROUP):
+            block_start = subgroup_index * SUBGROUP_SIZE + block_index * BLOCK_SIZE
+            buffer[block_start + 0x280: block_start + 0x280 + len(h1)] = h1
+            buffer[block_start + 0x320: block_start + 0x340] = b'\x00' * 0x20
+
+    # Calculate H3
+    if h3_ref is not None:
+        h3_ref[:] = hasher(h2).digest()
+
+    # Placing H2 and encrypt
+    for subgroup_index in range(SUBGROUP_BY_GROUP):
+        for block_index in range(BLOCK_BY_SUBGROUP):
+            block_start = subgroup_index * SUBGROUP_SIZE + block_index * BLOCK_SIZE
+
+            # Placing H2 in the block header
+            buffer[block_start + 0x340: block_start + 0x340 + len(h2)] = h2
+            buffer[block_start + 0x3E0: block_start + 0x400] = b'\x00' * 0x20
+
+            cipher = AES.new(title_key, AES.MODE_CBC, b'\x00' * 16)
+            buffer[block_start: block_start + 0x400] = cipher.encrypt(bytes(buffer[block_start: block_start + 0x400]))
+
+            # Encrypt data with the last 16 bytes (before padding) of encrypted header
+            iv = buffer[block_start + 0x3D0: block_start + 0x3E0]
+            cipher2 = AES.new(title_key, AES.MODE_CBC, bytes(iv))
+            buffer[block_start + 0x400: block_start + BLOCK_SIZE] = cipher2.encrypt(
+                bytes(buffer[block_start + 0x400: block_start + BLOCK_SIZE])
+            )
+
+    return bytes(buffer)

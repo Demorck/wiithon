@@ -1,0 +1,63 @@
+@startuml
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+
+participant "Buffer (2MB in RAM)" as Buffer
+participant "Hasher (SHA-1)" as Hasher
+participant "AES-128-CBC" as AES
+participant "Table H3 (Global)" as H3
+
+
+== Step 1: Calculate H0 and H1 ==
+
+loop For each 64 blocks
+    loop For each 31 sub-blocks
+        Buffer -> Hasher : Sent 1KB of data
+        Hasher -->> Buffer : Return SHA-1 hash (H0)
+    end
+    note over Buffer : Block now has 31 H0 hashes
+
+    Buffer -> Hasher : Send all these hashes
+    Hasher -->> Buffer : Return SHA-1 hash (H1)
+    note over Buffer : Save H1 for this block
+end
+
+== Step 2 : Calculate H2 ==
+
+loop For each 8 subgroups
+    Buffer -> Hasher : Send 8 H1
+    Hasher -->> Buffer : Return SHA-1 hash (H2)
+    note over Buffer : Save H2 for this subgroup
+
+    loop For each block in this subgroup
+        Buffer -> Buffer : Write H1s to the header (0x280)
+    end
+end
+
+== Step 3 : ??? ==
+
+== Step 4 : Profit ! (And calculate H3) ==
+
+Buffer -> Hasher : Send 8 H2
+Hasher -->> H3 : Return SHA-1 hash (H3)
+note over H3 : H3 is in the partition data, not in block
+
+loop For each 64 blocks
+    Buffer -> Buffer : Write H2s to the header (0x340)
+end
+
+== Step 5 : Encrypt block (header then data) ==
+
+loop For each 64 blocks
+    Buffer -> AES : Send header
+    note over AES : Key = Title Key, IV = Zeros
+    AES -->> Buffer : Return encrypted header
+
+    Buffer -> Buffer : Extract IV from header (0x3D0)
+
+    Buffer -> AES : Send data
+    note over AES : Key = Title Key, IV = Extracted IV
+    AES -->> Buffer : Return encrypted data
+end
+
+@enduml
