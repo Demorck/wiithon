@@ -9,7 +9,7 @@ def copy_iso(src_path: str, dst_path: str) -> None:
     print(f"Dest   : {dst_path}")
 
     with WiiIsoReader(src_path) as reader:
-        print(f"Jeu    : {reader.disc_header.game_title.strip()}")
+        print(f"Game   : {reader.disc_header.game_title.strip()}")
         print(f"ID     : {reader.disc_header.game_id.decode()}")
 
         builder = WiiDiscBuilder(reader.disc_header, reader.region)
@@ -27,7 +27,7 @@ def copy_iso(src_path: str, dst_path: str) -> None:
                     print(f"\r  {label} [{bar}] {pct:3d}%", end='', flush=True)
 
                 file_count = builder.add_partition(dest, copy_builder, progress_cb=progress)
-                print(f"\n  {file_count} fichiers copiés")
+                print(f"\n  {file_count} files copied")
 
             builder.finish(dest)
 

@@ -33,15 +33,13 @@ class WiiDiscBuilder:
             last_entry, last_data_size = self._partitions[-1]
             offset = _align_up(last_entry.offset + 0x20000 + last_data_size, GROUP_SIZE)
 
-        import copy
-        header = copy.copy(partition_def.get_header())
-        internal_header = copy.copy(partition_def.get_internal_header())
+        header = partition_def.get_header()
+        internal_header = partition_def.get_internal_header()
         fst_to_bytes    = partition_def.get_fst_to_bytes()
 
         # FST
         fst_offset      = internal_header.FST_offset
-        fst_size_padded = (fst_to_bytes.byte_size() + 3) & ~3
-        file_data_start = fst_offset + fst_size_padded
+        file_data_start = fst_offset + fst_to_bytes.byte_size()
         partition_def.assign_file_offsets(file_data_start)
         internal_header.FST_size     = fst_to_bytes.byte_size()
         internal_header.FST_max_size = fst_to_bytes.byte_size()

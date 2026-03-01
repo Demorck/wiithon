@@ -102,7 +102,7 @@ def _add_string(strings: bytearray, name: str) -> int:
     return offset
 
 def _flatten_tree(entries: list[FSTNode], raw_nodes: list[RawFSTNode],
-                  strings: bytearray) -> None:
+                  strings: bytearray, parent_index: int = 0) -> None:
     """
     Recursively flatten the tree into raw nodes and string table
 
@@ -115,9 +115,10 @@ def _flatten_tree(entries: list[FSTNode], raw_nodes: list[RawFSTNode],
         raw.name_offset = _add_string(strings, entry.name)
         if isinstance(entry, FSTDirectory):
             raw.is_directory = True
-            raw.data_offset = 0
+            raw.data_offset = parent_index
             raw_nodes.append(raw)
-            _flatten_tree(entry.children, raw_nodes, strings)
+            current_index = len(raw_nodes) - 1
+            _flatten_tree(entry.children, raw_nodes, strings, current_index)
             raw.length = len(raw_nodes)
 
         elif isinstance(entry, FSTFile):

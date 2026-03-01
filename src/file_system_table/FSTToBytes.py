@@ -72,7 +72,7 @@ class FSTToBytes:
         root.data_offset = 0
         raw_nodes.append(root)
 
-        _build_raw_nodes(self.entries, self.string_offsets, raw_nodes, [1])
+        _build_raw_nodes(self.entries, self.string_offsets, raw_nodes, [1], 0)
 
         # Fix up root length = total node count
         raw_nodes[0].length = len(raw_nodes)
@@ -119,6 +119,7 @@ def _build_raw_nodes(
     str_offsets: List[int],
     raw_nodes: List[RawFSTNode],
     idx_counter: List[int],
+    parent_index: int = 0
 ) -> None:
     """Recursively convert the FST tree into flat RawFSTNode.
 
@@ -136,11 +137,11 @@ def _build_raw_nodes(
 
         if isinstance(entry, FSTDirectory):
             raw.is_directory = True
-            raw.data_offset = 0     # unused for directories
-            raw.length = 0          # placeholder; fixed after recursion
+            raw.data_offset = parent_index
+            raw.length = 0
             raw_nodes.append(raw)
-            _build_raw_nodes(entry.children, str_offsets, raw_nodes, idx_counter)
-            raw.length = idx_counter[0]  # first index past this directory's subtree
+            _build_raw_nodes(entry.children, str_offsets, raw_nodes, idx_counter, this_idx)
+            raw.length = idx_counter[0]
 
         elif isinstance(entry, FSTFile):
             raw.is_directory = False
