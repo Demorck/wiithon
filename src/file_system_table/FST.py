@@ -65,7 +65,7 @@ def _build_tree(stream: BinaryIO, string_offset: int,
     :param start: First index to process.
     :param end: Stop before this index.
 
-   :return: list of FSTNodes, next index to process.
+    :return: list of FSTNodes, next index to process.
     """
     result: List[FSTNode] = []
     i = start
@@ -82,7 +82,7 @@ def _build_tree(stream: BinaryIO, string_offset: int,
             result.append(directory)
             i = raw.length
         else:
-            result.append(FSTFile(name, offset=raw.data_offset << 2, length=raw.length))
+            result.append(FSTFile(name, offset=raw.data_offset, length=raw.length))
             i += 1
 
     return result, i

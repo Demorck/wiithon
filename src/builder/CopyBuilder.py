@@ -23,7 +23,6 @@ class CopyBuilder:
 
         self._fst_to_bytes = FSTToBytes(partition_info.fst.entries)
 
-        # Sauvegarde des offsets SOURCE avant que assign_file_offsets les écrase
         self._source_files: list[tuple[int, int]] = []
         self._fst_to_bytes.callback_all_files(
             lambda path, node: self._source_files.append((node.offset, node.length))
@@ -44,8 +43,7 @@ class CopyBuilder:
         def on_file(path, node):
             nonlocal current
             node.offset  = current
-            current     += node.length   # length inchangé depuis source
-            current = (current + 3) & ~3
+            current     += node.length
         self._fst_to_bytes.callback_all_files(on_file)
 
     def write_file_data(self, writer: CryptPartWriter, progress_cb=None) -> int:
