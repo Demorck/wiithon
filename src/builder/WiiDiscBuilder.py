@@ -31,7 +31,8 @@ class WiiDiscBuilder:
             offset = 0xF800000
         else:
             last_entry, last_data_size = self._partitions[-1]
-            offset = _align_up(last_entry.offset + 0x20000 + last_data_size, GROUP_SIZE)
+            data_offset = (partition_def.offset + 0x20000)
+            offset = ((data_offset + last_data_size + (GROUP_SIZE - 1)) / GROUP_SIZE) * GROUP_SIZE
 
         header = partition_def.get_header()
         internal_header = partition_def.get_internal_header()
@@ -72,15 +73,15 @@ class WiiDiscBuilder:
         writer.write(partition_def.get_apploader())
 
         # DOL
-        _pad_to(writer, internal_header.DOL_offset)
+        #_pad_to(writer, internal_header.DOL_offset)
         writer.write(partition_def.get_dol())
 
         # FST
-        _pad_to(writer, fst_offset)
+        #_pad_to(writer, fst_offset)
         fst_buf = BytesIO()
         fst_to_bytes.write_to(fst_buf)
         writer.write(fst_buf.getvalue())
-        _pad_to(writer, file_data_start)
+        #_pad_to(writer, file_data_start)
 
         file_count = partition_def.write_file_data(writer, progress_cb)
 
