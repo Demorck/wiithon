@@ -16,12 +16,18 @@ class WiiIsoReader:
         self.file: BinaryIO = open(path, "rb")
         self.disc_header: DiscHeader = DiscHeader.read(self.file)
         self.partitions: List[WiiPartitionEntry] = read_parts(self.file)
+        self.region: bytes = self.read_region()
 
     def get_data_partition(self) -> Optional[WiiPartitionEntry]:
         return next((p for p in self.partitions if p.part_type == 0), None)
 
     def update_data_partition(self) -> Optional[WiiPartitionEntry]:
         return next((p for p in self.partitions if p.part_type == 1), None)
+
+
+    def read_region(self) -> bytes:
+        self.file.seek(0x4E000)
+        return self.file.read(0x20)
 
     def open_partition(self, entry: WiiPartitionEntry) -> WiiPartitionInfo:
         offset = entry.offset

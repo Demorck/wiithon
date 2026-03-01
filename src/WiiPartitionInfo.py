@@ -73,6 +73,11 @@ class WiiPartitionInfo:
 
         return self.crypto.read_at(dol_offset, dol_size)
 
+    def read_bi2(self) -> bytes:
+        bi2_offset = 0x440  # maybe constant though
+        bi2_size = 0x2000
+
+        return self.crypto.read_at(bi2_offset, bi2_size)
 
     def list_files(self, node: Optional[FSTNode] = None, prefix: str = "") -> List[str]:
         paths: list[str] = []
