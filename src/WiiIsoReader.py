@@ -4,6 +4,7 @@ from typing import BinaryIO, List, Optional
 from WiiPartitionInfo import WiiPartitionInfo
 from crypto.CryptPartReader import CryptPartReader
 from file_system_table.FST import FST
+from helpers.Utils import read_u32
 from structs.Certificate import Certificate
 from structs.DiscHeader import DiscHeader
 from structs.TMD import TMD
@@ -17,6 +18,9 @@ class WiiIsoReader:
         self.disc_header: DiscHeader = DiscHeader.read(self.file)
         self.partitions: List[WiiPartitionEntry] = read_parts(self.file)
         self.region: bytes = self.read_region()
+        self.magic_word: int = self.read_magic_word()
+        if self.magic_word != 0xC3F81A8E:
+            raise ValueError(f"magic word is not 0xC3F81A8E: {self.magic_word}")
 
     def get_data_partition(self) -> Optional[WiiPartitionEntry]:
         return next((p for p in self.partitions if p.part_type == 0), None)
@@ -28,6 +32,11 @@ class WiiIsoReader:
     def read_region(self) -> bytes:
         self.file.seek(0x4E000)
         return self.file.read(0x20)
+
+    def read_magic_word(self) -> int:
+        self.file.seek(0x4FFFC)
+        return read_u32(self.file)
+
 
     def open_partition(self, entry: WiiPartitionEntry) -> WiiPartitionInfo:
         offset = entry.offset
