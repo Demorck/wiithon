@@ -1,4 +1,5 @@
 from typing import BinaryIO
+from io import BytesIO
 from helpers.Utils import read_u8, read_u32, read_string, read_u64_shifted
 import struct
 
@@ -98,6 +99,9 @@ class DiscHeader:
         stream.write(struct.pack('>I', self.user_size))
         stream.write(b'\x00' * 0x04)
 
-
+    def get_bytes(self) -> bytes:
+        buf = BytesIO()
+        self.write(buf)
+        return buf.getvalue().ljust(0x440, b'\x00')
 
 

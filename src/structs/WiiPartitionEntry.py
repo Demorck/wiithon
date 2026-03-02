@@ -9,13 +9,13 @@ class WiiPartitionEntry:
     https://wiibrew.org/wiki/Wii_disc#Partitions_information
     """
 
-    def __init__(self) -> None:
-        self.offset: int = 0       # Partition offset (shifted)
-        self.part_type: int = 0    # WiiPartType (DATA=0, UPDATE=1, CHANNEL=2)
+    def __init__(self, offset, part_type) -> None:
+        self.offset: int = offset       # Partition offset (shifted)
+        self.part_type: int = part_type    # WiiPartType (DATA=0, UPDATE=1, CHANNEL=2)
 
     @classmethod
     def read(cls, stream: BinaryIO) -> "WiiPartitionEntry":
-        obj = cls()
+        obj = cls(0, 0)
         obj.offset = read_u64_shifted(stream)
         obj.part_type = read_u32(stream)
         return obj
@@ -24,6 +24,8 @@ class WiiPartitionEntry:
         stream.write(struct.pack('>I', self.offset >> 2))
         stream.write(struct.pack('>I', self.part_type))
 
+    def __repr__(self):
+        return f"WiiPartitionEntry(Offset: {self.offset:X}, Partition_type: {self.part_type})"
 
 def read_parts(stream: BinaryIO) -> list[WiiPartitionEntry]:
     """

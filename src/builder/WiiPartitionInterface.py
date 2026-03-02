@@ -31,4 +31,4 @@ class WiiPartitionInterface(ABC):
     @abstractmethod
     def get_fst_to_bytes(self) -> FSTToBytes: pass
     @abstractmethod
-    def write_file_data(self, writer: CryptPartWriter, progress_cb: Callable) -> FSTToBytes: pass
+    def write_file_data(self, writer: CryptPartWriter, progress_cb: Callable) -> int: pass

@@ -32,18 +32,30 @@ class CryptPartWriter:
         """
         data_len = len(data)
         offset = 0
-        
+
         while offset < data_len:
             space_left = GROUP_DATA_SIZE - self.buffer_size
             chunk_size = min(space_left, data_len - offset)
-            
+
             self.buffer[self.buffer_size : self.buffer_size + chunk_size] = data[offset : offset + chunk_size]
             self.buffer_size += chunk_size
             self.current_position += chunk_size
             offset += chunk_size
-            
+
             if self.buffer_size == GROUP_DATA_SIZE:
                 self._flush_group()
+
+    def seek(self, offset: int, whence: int = 0) -> None:
+        if whence == 0:
+            new_position = offset
+        elif whence == 1:
+            new_position = self.current_position + offset
+        else:
+            raise ValueError("Invalid whence")
+
+        self.current_position = max(0, new_position)
+
+
 
     def _flush_group(self) -> None:
         """
@@ -51,7 +63,7 @@ class CryptPartWriter:
         """
         if self.buffer_size == 0:
             return
-            
+
         if self.buffer_size < GROUP_DATA_SIZE:
             self.buffer[self.buffer_size:] = b'\x00' * (GROUP_DATA_SIZE - self.buffer_size)
 
@@ -87,3 +99,6 @@ class CryptPartWriter:
         Flush any remaining data and finish
         """
         self._flush_group()
+
+    def __repr__(self):
+        return f"CryptPartWriter(offset: {self.current_position:X})"

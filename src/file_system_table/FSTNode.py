@@ -23,6 +23,9 @@ class FSTNode(ABC):
     def count_files(self) -> int:
         ...
 
+    def __repr__(self):
+        return f"FSTNode({self.name}, is_directory={self.is_directory}, is_file={self.is_file})"
+
 
 class FSTFile(FSTNode):
     """

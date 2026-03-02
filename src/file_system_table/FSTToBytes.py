@@ -33,7 +33,7 @@ class FSTToBytes:
         _build_str_table(fst_entries, self.string_offsets, self.string_bytes)
 
     def get_total_file_count(self) -> int:
-        """Return the total number of ``:class FSTFile:`` nodes in the tree"""
+        """Return the total number of ``FSTFile`` nodes in the tree"""
         return _count_files(self.entries)
 
     def callback_all_files(
