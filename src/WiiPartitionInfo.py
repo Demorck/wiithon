@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from io import BytesIO
 from typing import List, Optional
 
@@ -93,3 +94,14 @@ class WiiPartitionInfo:
                 paths.append(full_path)
 
         return paths
+
+    def callback_all_files(self, callback: Callable[[FSTNode], None], node: Optional[FSTNode] = None) -> None:
+        entries = self.fst.entries if node is None else (
+            node.children if isinstance(node, FSTDirectory) else []
+        )
+
+        for entry in entries:
+            if isinstance(entry, FSTDirectory):
+                self.callback_all_files(callback, entry)
+            else:
+                callback(entry)

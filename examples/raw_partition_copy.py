@@ -16,7 +16,7 @@ def raw_partition_copy(src_path: str, dst_path: str) -> None:
 
         builder = WiiDiscBuilder(reader.disc_header, reader.region)
 
-        with open(dst_path, 'wb') as dest:
+        with open(dst_path, 'w+b') as dest:
             for entry in reader.partitions:
                 if entry.part_type != WiiPartType.DATA:
                     continue

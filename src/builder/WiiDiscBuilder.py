@@ -54,6 +54,7 @@ class WiiDiscBuilder:
         crypt_writer.seek(dol_offset)
         crypt_writer.write(new_partition.get_dol())
 
+        ### TESTED ABOVE - Extracted from Dolphin. Exactly equals the original game ###
 
         #
         # fst_offset = new_partition.get_encrypted_header().FST_offset

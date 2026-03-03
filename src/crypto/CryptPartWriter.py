@@ -1,49 +1,117 @@
 from typing import BinaryIO
+from Crypto.Cipher import AES
 
-from helpers.Constants import GROUP_SIZE, GROUP_DATA_SIZE, BLOCK_SIZE, BLOCK_HEADER_SIZE, BLOCK_DATA_SIZE, \
-    BLOCk_PER_GROUP, SHA1_SIZE
+from helpers.Constants import (
+    GROUP_SIZE, GROUP_DATA_SIZE, BLOCK_SIZE,
+    BLOCK_HEADER_SIZE, BLOCK_DATA_SIZE, BLOCk_PER_GROUP
+)
 from helpers.Utils import encrypt_group
 
 
 class CryptPartWriter:
-    """
-    Writes data into a Wii partition and encrypting
-    """
     def __init__(self, stream: BinaryIO, data_offset: int, title_key: bytes) -> None:
         """
-        :param stream: Open stream in write mode
-        :param data_offset: Absolute offset of partition data in the ISO
-        :param title_key: 16-byte decrypted title key
+        :param stream: Binarty IO
+        :param data_offset: Absolute offset of data of the partition
+        :param title_key: The encrypted title key
         """
         self.stream = stream
         self.data_offset = data_offset
         self.title_key = title_key
-        
+
+        self.is_dirty = False
+        self.group_cache = bytearray(GROUP_SIZE)
+        self.current_group = None  # cached group
         self.current_position: int = 0
-        self.buffer = bytearray(GROUP_DATA_SIZE)
-        self.buffer_size: int = 0
-        self.h3_table = bytearray()
-        self.filled_groups: int = 0
 
-    def write(self, data: bytes) -> None:
-        """
-        Write decrypted data to the partition
-        :param data: Data to write
-        """
-        data_len = len(data)
-        offset = 0
+        self.h3_table = bytearray(0x18000)
 
-        while offset < data_len:
-            space_left = GROUP_DATA_SIZE - self.buffer_size
-            chunk_size = min(space_left, data_len - offset)
+    def write(self, data: bytes, directly = False) -> int:
+        bytes_to_write = len(data)
+        offset_in_data = 0
 
-            self.buffer[self.buffer_size : self.buffer_size + chunk_size] = data[offset : offset + chunk_size]
-            self.buffer_size += chunk_size
+        if directly:
+            self.stream.write(data)
+            return len(data)
+
+        while offset_in_data < bytes_to_write:
+            group = self.current_position // GROUP_DATA_SIZE
+            pos_in_group_data = self.current_position % GROUP_DATA_SIZE
+
+            block = pos_in_group_data // BLOCK_DATA_SIZE
+            offset_in_block = BLOCK_HEADER_SIZE + (pos_in_group_data % BLOCK_DATA_SIZE)
+
+            # Loading the right group if necessary
+            if self.current_group is None or self.current_group != group:
+                if self.is_dirty:
+                    self._flush_group()
+                self._load_group(group)
+
+            space_in_block = BLOCK_SIZE - offset_in_block
+            chunk_size = min(space_in_block, bytes_to_write - offset_in_data)
+
+            # Cache update
+            dest_start = (block * BLOCK_SIZE) + offset_in_block
+            dest_end = dest_start + chunk_size
+            self.group_cache[dest_start:dest_end] = data[offset_in_data: offset_in_data + chunk_size]
+
+            # Progression of the group
+            self.is_dirty = True
+            offset_in_data += chunk_size
             self.current_position += chunk_size
-            offset += chunk_size
 
-            if self.buffer_size == GROUP_DATA_SIZE:
-                self._flush_group()
+        return offset_in_data
+
+    def _load_group(self, group: int):
+        self.is_dirty = False
+        physical_offset = self.data_offset + (group * GROUP_SIZE)
+        self.stream.seek(physical_offset)
+
+        raw_group = self.stream.read(GROUP_SIZE)
+
+        # If group doesn't exists
+        if not raw_group or len(raw_group) < GROUP_SIZE:
+            self.group_cache = bytearray(GROUP_SIZE)
+            self.current_group = group
+            return
+
+        self.group_cache = bytearray(raw_group)
+        self.current_group = group
+
+        # Decrypt - because of all the issues that i had, i recreated the function but may TODO: using the decrypt_group from Utils
+        for i in range(BLOCk_PER_GROUP):
+            start = i * BLOCK_SIZE
+            # Header (blank IV)
+            header_cipher = AES.new(self.title_key, AES.MODE_CBC, b'\x00' * 16)
+            self.group_cache[start: start + 0x400] = header_cipher.decrypt(
+                bytes(self.group_cache[start: start + 0x400]))
+
+            # Data (0x3D0 IV)
+            iv = self.group_cache[start + 0x3D0: start + 0x3E0]
+            data_cipher = AES.new(self.title_key, AES.MODE_CBC, bytes(iv))
+            self.group_cache[start + 0x400: start + BLOCK_SIZE] = data_cipher.decrypt(
+                bytes(self.group_cache[start + 0x400: start + BLOCK_SIZE])
+            )
+
+    def _flush_group(self):
+        if not self.is_dirty or self.current_group is None:
+            return
+
+        # H3 update
+        h3_ptr = None
+        h3_offset = self.current_group * 20
+        if h3_offset + 20 <= len(self.h3_table):
+            h3_ptr = self.h3_table[h3_offset: h3_offset + 20]
+
+        # Encrypt H0, H1, H2
+        encrypted_data = encrypt_group(self.group_cache, self.title_key, h3_ptr)
+
+        physical_offset = self.data_offset + (self.current_group * GROUP_SIZE)
+        self.stream.seek(physical_offset)
+        self.stream.write(encrypted_data)
+        # print(encrypted_data)
+
+        self.is_dirty = False
 
     def seek(self, offset: int, whence: int = 0) -> None:
         if whence == 0:
@@ -52,53 +120,16 @@ class CryptPartWriter:
             new_position = self.current_position + offset
         else:
             raise ValueError("Invalid whence")
-
         self.current_position = max(0, new_position)
 
-
-
-    def _flush_group(self) -> None:
-        """
-        Encrypt the current buffer and write it to the stream
-        """
-        if self.buffer_size == 0:
-            return
-
-        if self.buffer_size < GROUP_DATA_SIZE:
-            self.buffer[self.buffer_size:] = b'\x00' * (GROUP_DATA_SIZE - self.buffer_size)
-
-        raw_group = bytearray(GROUP_SIZE)
-
-        for i in range(BLOCk_PER_GROUP):
-            raw_block_start = i * BLOCK_SIZE
-            data_block_start = i * BLOCK_DATA_SIZE
-            raw_group[raw_block_start + BLOCK_HEADER_SIZE : raw_block_start + BLOCK_SIZE] = self.buffer[data_block_start : data_block_start + BLOCK_DATA_SIZE]
-
-        h3_hash = bytearray(SHA1_SIZE)
-        encrypted_group = encrypt_group(raw_group, self.title_key, h3_hash)
-
-        self.h3_table.extend(h3_hash)
-
-        self.stream.seek(self.data_offset + self.filled_groups * GROUP_SIZE)
-        self.stream.write(encrypted_group)
-
-        self.filled_groups += 1
-        self.buffer_size = 0
-
     def get_h3_table(self) -> bytes:
-        """
-        Get the concatenated H3 hashes for all groups
-        """
-        padding_needed = 0x18000 - len(self.h3_table)
-        if padding_needed > 0:
-            return bytes(self.h3_table) + (b'\x00' * padding_needed)
         return bytes(self.h3_table)
 
     def close(self) -> None:
-        """
-        Flush any remaining data and finish
-        """
         self._flush_group()
 
+    def tell(self) -> int:
+        return self.current_position
+
     def __repr__(self):
-        return f"CryptPartWriter(offset: {self.current_position:X})"
+        return f"CryptPartWriter(pos: {self.current_position:X}, group: {self.current_group})"
