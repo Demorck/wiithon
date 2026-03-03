@@ -1,5 +1,6 @@
 from typing import BinaryIO, Callable, List
 
+from crypto.CryptPartWriter import CryptPartWriter
 from file_system_table.FSTNode import FSTNode, FSTFile, FSTDirectory
 from file_system_table.RawNode import RawFSTNode
 
@@ -27,7 +28,7 @@ class FSTToBytes:
         # String table.
         # Index 0 is always the root node's empty name (one null byte).
         # _str_offsets[i] = byte offset of the i-th node's name, including root.
-        self.string_bytes: bytearray = bytearray(b'\x00')
+        self.string_bytes: bytearray = bytearray()
         self.string_offsets: List[int] = [0]
 
         _build_str_table(fst_entries, self.string_offsets, self.string_bytes)
@@ -52,7 +53,7 @@ class FSTToBytes:
         """
         _walk_files(self.entries, [], callback)
 
-    def write_to(self, stream: BinaryIO) -> None:
+    def write_to(self, stream: BinaryIO | CryptPartWriter) -> None:
         """
         Serialise the FST (raw nodes + string table) to *stream* at the current
         position.
@@ -70,9 +71,11 @@ class FSTToBytes:
         root.is_directory = True
         root.name_offset = 0
         root.data_offset = 0
+        root.length = 0
         raw_nodes.append(root)
 
-        _build_raw_nodes(self.entries, self.string_offsets, raw_nodes, [1], 0)
+        idx_counter = [1]
+        _build_raw_nodes(self.entries, self.string_offsets, raw_nodes, idx_counter, 0)
 
         # Fix up root length = total node count
         raw_nodes[0].length = len(raw_nodes)

@@ -7,6 +7,7 @@ from typing import List, BinaryIO, Callable, Optional
 from builder.WiiPartitionInterface import WiiPartitionInterface
 from crypto.CryptPartWriter import CryptPartWriter
 from helpers.Constants import GROUP_SIZE, GROUP_DATA_SIZE
+from helpers.Enums import WiiPartType
 from structs.DiscHeader import DiscHeader
 from structs.WiiPartitionEntry import WiiPartitionEntry
 
@@ -20,6 +21,9 @@ class WiiDiscBuilder:
 
     def add_partition(self, stream: BinaryIO, new_partition: WiiPartitionInterface, progress_cb: Optional[Callable]) -> None:
         offset = 0xF800000 # 0x50000 First place after header so we can save some spaces ?
+        if new_partition.get_partition_type() == WiiPartType.UPDATE:
+            offset = 0x50000
+
         if self.partitions:
             last_partition_entry, data_size, _ = self.partitions[-1]
             data_offset = last_partition_entry.offset + 0x20000
@@ -57,35 +61,43 @@ class WiiDiscBuilder:
         ### TESTED ABOVE - Extracted from Dolphin. Exactly equals the original game ###
 
         #
-        # fst_offset = new_partition.get_encrypted_header().FST_offset
-        # fst_size = new_partition.get_encrypted_header().FST_max_size
-        # file_data_start = (fst_offset + fst_size + 31) & ~31 # Aligné
-        #
-        #
-        #
-        # crypt_writer.seek(file_data_start)
-        # file_count = new_partition.write_file_data(crypt_writer, progress_cb)
-        #
-        #
-        # #
-        # fst_buf = BytesIO()
-        # new_partition.get_fst_to_bytes().write_to(fst_buf)
-        # actual_fst_size = len(fst_buf.getvalue())
-        # new_partition.get_encrypted_header().FST_size = actual_fst_size
-        # crypt_writer.write(fst_buf.getvalue())
-        #
-        # crypt_writer.close()
-        # h3 = crypt_writer.get_h3_table()
-        # end_pos = crypt_writer.current_position
-        # data_size = int(((end_pos / GROUP_DATA_SIZE) + 1) * GROUP_SIZE)
-        # stream.seek(offset + wii_partition_header.global_hash_table_offset)
-        # stream.write(h3)
-        # stream.seek(offset)
-        # new_wii_partition_header = copy.copy(wii_partition_header)
-        # new_wii_partition_header.data_size = data_size
-        # new_wii_partition_header.write(stream)
+        fst_to_bytes = new_partition.get_fst_to_bytes()
+        fst_offset = new_partition.get_encrypted_header().FST_offset
+        actual_fst_size = fst_to_bytes.byte_size()
+
+        file_data_start = (fst_offset + actual_fst_size + 31) & ~31
+        current_file_offset = file_data_start
+
+        def update_offsets_callback(path_parts, file_node):
+            nonlocal current_file_offset
+            file_node.offset = current_file_offset
+            # On avance l'offset pour le prochain fichier (aligné 32)
+            current_file_offset = (current_file_offset + file_node.length + 31) & ~31
+
+        fst_to_bytes.callback_all_files(update_offsets_callback)
+        crypt_writer.seek(fst_offset)
+
+        fst_to_bytes.write_to(crypt_writer)
+        new_partition.get_encrypted_header().FST_size = actual_fst_size
+        file_count = new_partition.write_file_data(crypt_writer, progress_cb)
+
+        crypt_writer.close()
+        h3 = crypt_writer.get_h3_table()
+        h3_offset_in_part = wii_partition_header.global_hash_table_offset
+        stream.seek(offset + h3_offset_in_part)
+        stream.write(h3)
+
+        end_pos = crypt_writer.current_position
+        num_groups = (end_pos + GROUP_DATA_SIZE - 1) // GROUP_DATA_SIZE
+        data_size = num_groups * GROUP_SIZE
+
+        stream.seek(offset)
+        new_wii_partition_header = copy.copy(wii_partition_header)
+        new_wii_partition_header.data_size = data_size
+        new_wii_partition_header.write(stream)
+
         wii_part = WiiPartitionEntry(offset, new_partition.get_partition_type())
-        self.partitions.append((wii_part, 0, 0))
+        self.partitions.append((wii_part, data_offset, file_count))
 
 
 

@@ -69,15 +69,9 @@ class CopyBuilder(WiiPartitionInterface):
 
         for node in files:
             if node.length > 0:
-                current_pos = writer.current_position
-
-                aligned_pos = (current_pos + 31) & ~31
-                original_offset = node.offset
-                node.offset = aligned_pos
-
                 writer.seek(node.offset)
 
-                data = self.partition_info.crypto.read_at(original_offset, node.length)
+                data = self.partition_info.crypto.read_at(node.offset, node.length)
                 writer.write(data)
 
             file_count += 1

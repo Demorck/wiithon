@@ -40,15 +40,8 @@ class RawFSTNode:
         :param stream:
         """
 
-        # Byte 0: is_directory flag
-        stream.write(struct.pack('>B', 1 if self.is_directory else 0))
-
-        # Bytes 1-3: name_offset as u24 big-endian
-        stream.write(bytes([
-            (self.name_offset >> 16) & 0xFF,
-            (self.name_offset >> 8) & 0xFF,
-            self.name_offset & 0xFF,
-        ]))
+        type_and_name = (0x01 << 24 if self.is_directory else 0x00) | (self.name_offset & 0xFFFFFF)
 
         # Bytes 4-11: data_offset + length
-        stream.write(struct.pack('>II', self.data_offset, self.length))
+        data = struct.pack('>III', type_and_name, self.data_offset, self.length)
+        stream.write(data)

@@ -101,7 +101,7 @@ class CryptPartWriter:
         h3_ptr = None
         h3_offset = self.current_group * 20
         if h3_offset + 20 <= len(self.h3_table):
-            h3_ptr = self.h3_table[h3_offset: h3_offset + 20]
+            h3_ptr = memoryview(self.h3_table)[h3_offset : h3_offset + 20]
 
         # Encrypt H0, H1, H2
         encrypted_data = encrypt_group(self.group_cache, self.title_key, h3_ptr)
