@@ -47,7 +47,7 @@ class WiiPartitionInfo:
         if not isinstance(node, FSTFile):
             raise IsADirectoryError(f"Path is a directory: {path}")
 
-        return self.crypto.read_at(node.offset, node.length)
+        return self.crypto.read_at(node.offset << 2, node.length)
 
 
     def read_apploader(self) -> bytes:

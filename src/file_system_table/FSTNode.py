@@ -34,6 +34,7 @@ class FSTFile(FSTNode):
     def __init__(self, name: str = "", offset: int = 0, length: int = 0):
         super().__init__(name)
         self.offset: int = offset
+        self.original_offset: int = offset
         self.length: int = length
 
     def count_files(self) -> int:

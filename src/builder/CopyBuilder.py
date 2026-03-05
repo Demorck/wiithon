@@ -5,7 +5,7 @@ from WiiIsoReader import WiiIsoReader
 from builder.WiiPartitionInterface import WiiPartitionInterface
 from crypto.CryptPartWriter import CryptPartWriter
 from file_system_table.FST import FST
-from file_system_table.FSTNode import FSTNode, FSTFile
+from file_system_table.FSTNode import FSTNode, FSTFile, FSTDirectory
 from file_system_table.FSTToBytes import FSTToBytes
 from helpers.Enums import WiiPartType
 from structs.Certificate import Certificate
@@ -70,8 +70,7 @@ class CopyBuilder(WiiPartitionInterface):
         for node in files:
             if node.length > 0:
                 writer.seek(node.offset)
-
-                data = self.partition_info.crypto.read_at(node.offset, node.length)
+                data = self.partition_info.crypto.read_at(node.original_offset, node.length)
                 writer.write(data)
 
             file_count += 1

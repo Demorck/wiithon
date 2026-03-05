@@ -1,12 +1,10 @@
-import random
 import sys
 
 from builder.CopyBuilder import CopyBuilder
-from helpers.Enums import WiiPartType
 from src.WiiIsoReader import WiiIsoReader
 from src.builder.WiiDiscBuilder import WiiDiscBuilder
 
-def raw_partition_copy(src_path: str, dst_path: str) -> None:
+def partition_copy(src_path: str, dst_path: str) -> None:
     print(f"Source : {src_path}")
     print(f"Dest   : {dst_path}")
 
@@ -18,19 +16,15 @@ def raw_partition_copy(src_path: str, dst_path: str) -> None:
 
         with open(dst_path, 'w+b') as dest:
             for entry in reader.partitions:
-                if entry.part_type != WiiPartType.DATA:
-                    continue
-
                 copy_builder = CopyBuilder(reader, entry, None)
                 builder.add_partition(dest, copy_builder, None)
 
             builder.finish(dest)
 
 if __name__ == "__main__":
-    r = random.randint(1, 1)
     if len(sys.argv) != 3:
         src_path = "../assets/smg.iso"
-        dest_path = f"../assets/smg{r}.iso"
+        dest_path = f"../assets/copied.iso"
     else:
         src_path = sys.argv[1]
         dest_path = sys.argv[2]

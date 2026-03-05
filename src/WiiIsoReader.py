@@ -28,6 +28,8 @@ class WiiIsoReader:
     def update_data_partition(self) -> Optional[WiiPartitionEntry]:
         return next((p for p in self.partitions if p.part_type == 1), None)
 
+    def get_partitions(self) -> List[WiiPartitionEntry]:
+        return self.partitions
 
     def read_region(self) -> bytes:
         self.file.seek(0x4E000)

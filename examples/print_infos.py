@@ -1,13 +1,14 @@
 from io import BytesIO
 
 from crypto.CryptPartReader import CryptPartReader
+from helpers.Enums import WiiPartType
 from structs.DiscHeader import DiscHeader
 from structs.WiiPartitionEntry import read_parts
 from structs.WiiPartitionHeader import WiiPartitionHeader
 
 def main():
     # Opening ISO
-    f = open("../assets/smg.iso", "rb")
+    f = open("../assets/smg1.iso", "rb")
 
     # Read header
     header = DiscHeader.read(f)
@@ -20,7 +21,7 @@ def main():
         print(f"Partition type={p.part_type} offset=0x{p.offset:X}")
 
     # Open DATA partition
-    data_part = next(p for p in parts if p.part_type == 0)
+    data_part = next(p for p in parts if p.part_type == WiiPartType.DATA)
     f.seek(data_part.offset)
     part_header = WiiPartitionHeader.read(f)
 
@@ -30,7 +31,6 @@ def main():
 
     boot_data = crypto.read_at(0, 0x440)
     internal_header = DiscHeader.read(BytesIO(boot_data))
-    print(f"Internal title: {internal_header.game_title}")
     print(f"FST offset: 0x{internal_header.FST_offset:X}")
 
 

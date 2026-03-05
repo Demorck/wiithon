@@ -1,7 +1,6 @@
 import copy
 import struct
-from _pyrepl import reader
-from io import BytesIO
+
 from typing import List, BinaryIO, Callable, Optional
 
 from builder.WiiPartitionInterface import WiiPartitionInterface
@@ -21,13 +20,18 @@ class WiiDiscBuilder:
 
     def add_partition(self, stream: BinaryIO, new_partition: WiiPartitionInterface, progress_cb: Optional[Callable]) -> None:
         offset = 0xF800000 # 0x50000 First place after header so we can save some spaces ?
+
+        # Nintendo seems to use these partitions for UPDATE & DATA for Super Mario Galaxy.
         if new_partition.get_partition_type() == WiiPartType.UPDATE:
             offset = 0x50000
 
-        if self.partitions:
-            last_partition_entry, data_size, _ = self.partitions[-1]
-            data_offset = last_partition_entry.offset + 0x20000
-            offset = ((data_offset + data_size + (GROUP_SIZE - 1)) // GROUP_SIZE) * GROUP_SIZE
+        if new_partition.get_partition_type() == WiiPartType.DATA:
+            offset = 0xF800000
+
+        # if self.partitions:
+        #     last_partition_entry, data_size, _ = self.partitions[-1]
+        #     data_offset = last_partition_entry.offset + 0x20000
+        #     offset = ((data_offset + data_size + (GROUP_SIZE - 1)) // GROUP_SIZE) * GROUP_SIZE
 
         wii_partition_header = new_partition.get_header()
         stream.seek(offset)
@@ -42,10 +46,6 @@ class WiiDiscBuilder:
         for i in range(len(new_partition.get_certificates())):
             new_partition.get_certificates()[i].write(stream)
 
-
-
-        ### TESTED ABOVE - All the same says HxD ###
-
         data_offset = offset + wii_partition_header.data_offset
         crypt_writer = CryptPartWriter(stream, data_offset, wii_partition_header.ticket.title_key)
         crypt_writer.seek(0)
@@ -58,23 +58,9 @@ class WiiDiscBuilder:
         crypt_writer.seek(dol_offset)
         crypt_writer.write(new_partition.get_dol())
 
-        ### TESTED ABOVE - Extracted from Dolphin. Exactly equals the original game ###
-
-        #
         fst_to_bytes = new_partition.get_fst_to_bytes()
         fst_offset = new_partition.get_encrypted_header().FST_offset
         actual_fst_size = fst_to_bytes.byte_size()
-
-        file_data_start = (fst_offset + actual_fst_size + 31) & ~31
-        current_file_offset = file_data_start
-
-        def update_offsets_callback(path_parts, file_node):
-            nonlocal current_file_offset
-            file_node.offset = current_file_offset
-            # On avance l'offset pour le prochain fichier (aligné 32)
-            current_file_offset = (current_file_offset + file_node.length + 31) & ~31
-
-        fst_to_bytes.callback_all_files(update_offsets_callback)
         crypt_writer.seek(fst_offset)
 
         fst_to_bytes.write_to(crypt_writer)
