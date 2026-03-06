@@ -1,3 +1,4 @@
+from io import BytesIO
 from typing import List
 
 from structs.TMDContent import TMDContent
@@ -76,6 +77,14 @@ class TMD:
         self.num_contents: int = 0
         self.boot_index: int = 0
         self.contents: List[TMDContent] = []
+
+    def __eq__(self, other: "TMD") -> bool:
+        buffer_self = BytesIO()
+        buffer_other = BytesIO()
+        self.write(buffer_self)
+        other.write(buffer_other)
+
+        return buffer_self.getvalue() == buffer_other.getvalue()
 
     @classmethod
     def read(cls, stream: BinaryIO) -> "TMD":

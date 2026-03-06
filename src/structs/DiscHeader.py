@@ -32,6 +32,29 @@ class DiscHeader:
         self.user_position: int = 0
         self.user_size: int = 0
 
+    def __repr__(self):
+        return f"""
+Disc Header:
+    game_id: {self.game_id}
+    disc_num: {self.disc_num}
+    disc_version: {self.disc_version}
+    audio_streaming: {self.audio_streaming}
+    audio_stream_buf_size: {self.audio_stream_buf_size}
+    wii_magic_word: {self.wii_magic_word:X}
+    gamecube_magic_word: {self.gamecube_magic_word:X}
+    game_title: {self.game_title}
+    disable_hash_verification: {self.disable_hash_verification}
+    disable_disc_encryption: {self.disable_disc_encryption}
+    debug_mon_offset: {self.debug_mon_offset}
+    debug_load_address: {self.debug_load_address}
+    DOL_offset: {self.DOL_offset:X}
+    FST_offset: {self.FST_offset:X}
+    FST_size: {self.FST_size:X}
+    FST_max_size: {self.FST_max_size:X}
+    FST_memory_address: {self.FST_memory_address:X}
+    user_position: {self.user_position:X}
+    user_size: {self.user_size:X}
+            """
 
     @classmethod
     def read(cls, stream: BinaryIO) -> 'DiscHeader':
