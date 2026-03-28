@@ -52,6 +52,30 @@ class FST:
     def count_files(self) -> int:
         return sum(e.count_files() for e in self.entries)
 
+    def find_node(self, path) -> FSTNode | None:
+        """Finds a node by its path (string or list of strings)"""
+        if isinstance(path, str):
+            path = [p for p in path.strip('/').replace('\\', '/').split('/') if p]
+            
+        if not path:
+            return None
+            
+        current_entries = self.entries
+        target = None
+        
+        for part in path:
+            found = False
+            for entry in current_entries:
+                if entry.name == part:
+                    target = entry
+                    if hasattr(entry, 'children'):
+                        current_entries = entry.children
+                    found = True
+                    break
+            if not found:
+                return None
+                
+        return target
 
 
 def _build_tree(stream: BinaryIO, string_offset: int,

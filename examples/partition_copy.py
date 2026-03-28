@@ -2,7 +2,7 @@ import sys
 
 from builder.CopyBuilder import CopyBuilder
 from src.WiiIsoReader import WiiIsoReader
-from src.builder.WiiDiscBuilder import WiiDiscBuilder
+from builder.WiiDiscBuilder import WiiDiscBuilder
 
 def partition_copy(src_path: str, dst_path: str) -> None:
     print(f"Source : {src_path}")
@@ -29,4 +29,4 @@ if __name__ == "__main__":
         src_path = sys.argv[1]
         dest_path = sys.argv[2]
 
-    raw_partition_copy(src_path, dest_path)
+    partition_copy(src_path, dest_path)

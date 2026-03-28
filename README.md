@@ -77,15 +77,20 @@ with WiiIsoReader(SOURCE_PATH) as reader:
 ```
 
 ## TODO
-
-- [ ] Fixing the H3 table (Dolphin says that is not correct :( ) 
-- [ ] Fixing a thing that dolphin says: some block are incorrect but unused
-
+### Done
+- [x] Fixing the H3 table (Dolphin says that is not correct :( ) 
+- [x] Fixing a thing that dolphin says: some block are incorrect but unused
+- [x] Adding more WiiPartitionInterface from dir
 ---
-
-- [ ] Add more unit tests (and change some)
+### Next to do
 - [ ] Refactor/adding constants to avoid magic numbers
+- [ ] Comment all functions (and inside of it)
+- [ ] Some docs about building and so on
+---
+### Next after next (ordered)
+
+- [ ] Patcher !!
+- [ ] Adding some tools like Yaz0 extractor and so on
+- [ ] Add more unit tests (and change some)
 - [ ] Improve exception handling for invalid or corrupted ISO headers
 - [ ] Add a CLI for standard extraction and building
-- [ ] Adding more WiiPartitionInterface (a patcher and creating from dir)
-- [ ] Adding some tools like Yaz0 extractor and so on

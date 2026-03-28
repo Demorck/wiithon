@@ -1,18 +1,18 @@
 import copy
+import os
+
 from typing import Callable, List, Optional
 
-from WiiIsoReader import WiiIsoReader
-from builder.WiiPartitionInterface import WiiPartitionInterface
-from crypto.CryptPartWriter import CryptPartWriter
-from file_system_table.FST import FST
-from file_system_table.FSTNode import FSTNode, FSTFile, FSTDirectory
-from file_system_table.FSTToBytes import FSTToBytes
-from helpers.Enums import WiiPartType
 from structs.Certificate import Certificate
 from structs.DiscHeader import DiscHeader
 from structs.TMD import TMD
+from structs.Ticket import Ticket
 from structs.WiiPartitionEntry import WiiPartitionEntry
-from structs.WiiPartitionHeader import WiiPartitionHeader
+from helpers.Enums import WiiPartType
+
+from WiiIsoReader import WiiIsoReader
+from builder.WiiPartitionInterface import WiiPartitionInterface
+from file_system_table.FST import FST
 
 
 class CopyBuilder(WiiPartitionInterface):
@@ -20,7 +20,6 @@ class CopyBuilder(WiiPartitionInterface):
         copy_partition = copy.copy(partition)
         self.partition_info = reader.open_partition(copy_partition)
         self.partition_type = partition.part_type
-        self.header = self.partition_info.header
         self.bi2 = self.partition_info.read_bi2()
         self.apploader = self.partition_info.read_apploader()
         self.dol = self.partition_info.read_dol()
@@ -28,17 +27,16 @@ class CopyBuilder(WiiPartitionInterface):
         self.certificates = self.partition_info.certificates
         self.fst = copy.copy(self.partition_info.fst)
         self.encrypted_header = self.partition_info.internal_header
+        self.ticket = self.partition_info.header.ticket
 
-        if not fst_modifier is None:
+        if fst_modifier is not None:
             fst_modifier(self.fst)
-
-        self.fst_to_bytes = FSTToBytes(self.fst.entries)
 
     def get_partition_type(self) -> WiiPartType:
         return WiiPartType(self.partition_type)
 
-    def get_header(self) -> WiiPartitionHeader:
-        return self.header
+    def get_ticket(self) -> Ticket:
+        return self.ticket
 
     def get_tmd(self) -> TMD:
         return self.tmd
@@ -58,23 +56,30 @@ class CopyBuilder(WiiPartitionInterface):
     def get_dol(self) -> bytes:
         return self.dol
 
-    def get_fst_to_bytes(self) -> FSTToBytes:
-        return self.fst_to_bytes
+    def get_fst(self) -> FST:
+        return self.fst
 
-    def write_file_data(self, writer: CryptPartWriter, progress_cb: Callable) -> int:
-        total_file_count = self.fst_to_bytes.get_total_file_count()
-        file_count = 0
-        files: List[FSTFile] = []
-        self.fst_to_bytes.callback_all_files(lambda _, curr: files.append(curr))
+    def get_file_data(self, path: List[str]) -> bytes:
+        node = self.fst.find_node(os.path.join(*path) if path else "")
+        if not node:
+             current = self.fst.entries
+             found = False
+             target = None
+             for part in path:
+                 found = False
+                 for entry in current:
+                     if entry.name == part:
+                         target = entry
+                         if hasattr(entry, 'children'):
+                             current = entry.children
+                         found = True
+                         break
+                 if not found:
+                     break
+             node = target if found else None
+            
+        if node and not hasattr(node, "children"): # ie: is a file
+            data = self.partition_info.crypto.read_at(node.original_offset, node.length)
+            return data
 
-        for node in files:
-            if node.length > 0:
-                writer.seek(node.offset)
-                data = self.partition_info.crypto.read_at(node.original_offset, node.length)
-                writer.write(data)
-
-            file_count += 1
-            if total_file_count > 0 and progress_cb is not None:
-                progress_cb(file_count * 100 / total_file_count)
-
-        return file_count
+        raise FileNotFoundError(f"File not found in FST: {path}")

@@ -1,3 +1,5 @@
 *.iso
 .idea
 *.arc
+
+/src_dir/

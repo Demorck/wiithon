@@ -81,14 +81,17 @@ class CryptPartWriter:
         # Decrypt - because of all the issues that i had, i recreated the function but may TODO: using the decrypt_group from Utils
         for i in range(BLOCk_PER_GROUP):
             start = i * BLOCK_SIZE
+
+            # Save the encrypted IV for the data section
+            iv = bytes(self.group_cache[start + 0x3D0: start + 0x3E0])
+            
             # Header (blank IV)
             header_cipher = AES.new(self.title_key, AES.MODE_CBC, b'\x00' * 16)
             self.group_cache[start: start + 0x400] = header_cipher.decrypt(
                 bytes(self.group_cache[start: start + 0x400]))
 
-            # Data (0x3D0 IV)
-            iv = self.group_cache[start + 0x3D0: start + 0x3E0]
-            data_cipher = AES.new(self.title_key, AES.MODE_CBC, bytes(iv))
+            # Data
+            data_cipher = AES.new(self.title_key, AES.MODE_CBC, iv)
             self.group_cache[start + 0x400: start + BLOCK_SIZE] = data_cipher.decrypt(
                 bytes(self.group_cache[start + 0x400: start + BLOCK_SIZE])
             )
