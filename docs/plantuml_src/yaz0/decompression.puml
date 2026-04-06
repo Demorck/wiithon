@@ -1,0 +1,40 @@
+@startuml
+
+start
+:Read 16-byte Header;
+:Get Uncompressed Size;
+
+while (Bytes Outputted >= Uncompressed Size?) is (No)
+  :Read 1 Code Byte;
+  :Set Bit Counter = 8;
+
+  while (Bit Counter > 0 AND Output < Size) is (Yes)
+    :Check Next Bit in Code Byte;
+
+    if (Bit is 1?) then (Yes: Raw Byte)
+      :Read 1 byte from input;
+      :Write to output;
+
+    else (No: Compressed Tuple)
+      :Read 2 bytes (B1, B2);
+      :N = Upper 4 bits of B1;
+      :Offset = Lower 4 bits of B1 + B2;
+      :Distance = Offset + 1;
+
+      if (N == 0?) then (Yes: 3-byte code)
+        :Read 1 byte (B3);
+        :Length = B3 + 18;
+      else (No: 2-byte code)
+        :Length = N + 2;
+      endif
+
+      :Go back 'Distance' in output buffer;
+      :Copy 'Length' bytes to current output end;
+    endif
+
+    :Bit Counter = Bit Counter - 1;
+  endwhile (No)
+endwhile (Yes)
+
+stop
+@enduml

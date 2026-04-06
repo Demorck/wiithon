@@ -1,0 +1,46 @@
+@startuml
+start
+:Initialize Sliding Window (max 4096 bytes);
+:Write Yaz0 Header;
+
+while (End of Input Data?) is (No)
+  :Search sliding window for longest match
+  of current sequence;
+
+  if (Match Length >= 3?) then (Yes)
+    :Distance = Current Pos - Match Pos;
+    :Offset = Distance - 1;
+
+    if (Match Length < 18) then (Yes: 2-byte)
+      :N = Length - 2;
+      :Create Tuple: (N << 4) | (Offset >> 8), (Offset & 0xFF);
+    else (No: 3-byte)
+      :N = 0;
+      :B3 = Length - 18;
+      :Create Tuple: (0 << 4) | (Offset >> 8), (Offset & 0xFF), B3;
+    endif
+
+    :Add '0' bit to Code Byte;
+    :Add Tuple to data chunk buffer;
+    :Advance Input by Length;
+
+  else (No)
+    :Add '1' bit to Code Byte;
+    :Add Raw Byte to data chunk buffer;
+    :Advance Input by 1;
+  endif
+
+  if (Code Byte has 8 bits?) then (Yes)
+    :Write Code Byte to File;
+    :Write data chunk buffer to File;
+    :Clear buffers;
+  endif
+endwhile (Yes)
+
+if (Code Byte partially full?) then (Yes)
+  :Pad remaining bits with 0;
+  :Write Code Byte and remaining chunks;
+endif
+
+stop
+@enduml

@@ -1,0 +1,17 @@
+@startuml
+skinparam classBackgroundColor #f9f9f9
+
+class Yaz0_Header {
+  + Magic_Number : 4 bytes = "Yaz0"
+  + Uncompressed_Size : 4 bytes (UInt32)
+  + Padding1 : 4 bytes = 0x00000000
+  + Padding2 : 4 bytes = 0x00000000
+}
+
+class Yaz0_Data_Block {
+  + Code_Byte : 1 byte (8 flags)
+  + Data_Chunks : Variable Length
+}
+
+Yaz0_Header -down-> Yaz0_Data_Block : "Followed by"
+@enduml
