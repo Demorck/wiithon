@@ -1,0 +1,32 @@
+@startuml
+start
+:Read Header ("RARC");
+:Read Info Block (Counts & Offsets);
+
+:Seek to Node Array;
+:Parse all Nodes into memory;
+
+:Seek to Entry Array;
+:Parse all Entries into memory;
+
+:Seek to String Table;
+:Read entire String Table into memory;
+
+:Start at Node 0 (ROOT);
+while (End of Input Data?) is (No)
+  :Resolve Entry Name from String Table;
+
+      if (Is Entry a Subdirectory? \n(File ID == 0xFFFF)) then (Yes)
+        :Get Child Node Index;
+        :Create Subdirectory;
+        :Recursive Call -> Extract Node(Child Node);
+      else (No: It's a File)
+        :Calculate Absolute Data Offset:\n(0x20 + Header Data Offset + Entry Data Offset);
+        :Seek to Absolute Offset;
+        :Read 'Data Size' bytes;
+        :Write to output file;
+      endif
+endwhile (Yes)
+
+stop
+@enduml

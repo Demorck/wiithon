@@ -81,16 +81,17 @@ with WiiIsoReader(SOURCE_PATH) as reader:
 - [x] Fixing the H3 table (Dolphin says that is not correct :( ) 
 - [x] Fixing a thing that dolphin says: some block are incorrect but unused
 - [x] Adding more WiiPartitionInterface from dir
+- [x] Some docs about building and so on
+- [x] Adding some tools like Yaz0, RARC
 ---
 ### Next to do
 - [ ] Refactor/adding constants to avoid magic numbers
 - [ ] Comment all functions (and inside of it)
-- [ ] Some docs about building and so on
+- [ ] BCSV editor
 ---
 ### Next after next (ordered)
-
-- [ ] Patcher !!
-- [ ] Adding some tools like Yaz0 extractor and so on
+- [ ] Patcher !! (will be available with tools maybe ?)
+- [ ] Some refactorization (like big break big function into smaller ones)
 - [ ] Add more unit tests (and change some)
 - [ ] Improve exception handling for invalid or corrupted ISO headers
 - [ ] Add a CLI for standard extraction and building

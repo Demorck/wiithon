@@ -1,0 +1,40 @@
+@startuml
+start
+:Collect all Folders and Files;
+
+partition "String Table" {
+  :Iterate all Node and Entry names;
+  :Hash names & Add to String Table;
+  :Pad String Table length to multiple of 0x20;
+}
+
+partition "Data buffer" {
+  :Initialize empty buffer;
+  while (For each File Entry) is (Yes)
+    :Pad current buffer size to multiple of 0x20;
+    :Set Entry's 'Data Offset' to current buffer size;
+    :Append file bytes to buffer;
+  endwhile (No)
+  :Pad final buffer to multiple of 0x20;
+}
+
+partition "Layout Calculation" {
+  :Calculate Nodes Size;
+  :Calculate Entries Size;
+  :Offset_Nodes = 0x20;
+  :Offset_Entries = Offset_Nodes + Nodes Size;
+  :Offset_Strings = Offset_Entries + Entries Size;
+  :Data_Offset = Offset_Strings + String Table Size;
+  :Total File Size = 0x40 + Data_Offset + Payload Size;
+}
+
+partition "File Writing" {
+  :Write 0x20 Header;
+  :Write 0x20 Info Block;
+  :Write Nodes Array;
+  :Write Entries Array;
+  :Write String Table;
+  :Write Data Payload;
+}
+stop
+@enduml

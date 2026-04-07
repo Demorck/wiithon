@@ -1,0 +1,43 @@
+@startuml
+
+class "Header (0x20 bytes)" as Header {
+  + Magic "RARC"
+  + Total File Size
+  + Data Block Offset
+}
+
+class "nfo Block (0x20 bytes)" as InfoBlock {
+  + Node Count & Offset
+  + Entry Count & Offset
+  + String Table Size & Offset
+}
+
+class "Nodes Array (Directories)" as Nodes {
+  + [Node 0] Usually ROOT
+  + [Node 1]
+  + ...
+}
+
+class "Entries Array (Files/dirs)" as Entries {
+  + [Entry 0]
+  + [Entry 1]
+  + ...
+}
+
+class "String Table" as StringTable {
+  + Null-terminated strings
+  + Padded to 0x20
+}
+
+class "Data Payload" as Data {
+  + File 1 Bytes
+  + File 2 Bytes
+  + Padded to 0x20
+}
+
+Header -down-> InfoBlock
+InfoBlock -down-> Nodes
+Nodes -down-> Entries
+Entries -down-> StringTable
+StringTable -down-> Data
+@enduml
