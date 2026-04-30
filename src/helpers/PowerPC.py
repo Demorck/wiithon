@@ -112,26 +112,25 @@ def bla(target: int) -> bytes:
 # BI selects which CR bit to test (0–31)
 # ---------------------------------------------------------------------------
 
-def bc(bo: int, bi: int, target: int, from_addr: int) -> bytes:
-    """bc bo, bi, target  - conditional relative branch, no link"""
+def _fmt_b(bo: int, bi: int, bd: int, aa: int = 0, lk: int = 0) -> bytes:
     if not (0 <= bo <= 31):
         raise ValueError(f"BO must be in [0, 31], got {bo}")
     if not (0 <= bi <= 31):
         raise ValueError(f"BI must be in [0, 31], got {bi}")
+    return _pack(( 16 << 26) | (bo << 21) | (bi << 16) | (bd << 2) | aa | lk )
+
+def bc(bo: int, bi: int, target: int, from_addr: int) -> bytes:
+    """bc bo, bi, target  - conditional relative branch, no link"""
     offset = _bc_offset(target, from_addr)
     bd = (offset >> 2) & 0x3FFF
-    return _pack((16 << 26) | (bo << 21) | (bi << 16) | (bd << 2) | 0)
+    return _fmt_b(bo, bi, bd)
 
 
 def bcl(bo: int, bi: int, target: int, from_addr: int) -> bytes:
     """bcl bo, bi, target  - conditional relative branch with link"""
-    if not (0 <= bo <= 31):
-        raise ValueError(f"BO must be in [0, 31], got {bo}")
-    if not (0 <= bi <= 31):
-        raise ValueError(f"BI must be in [0, 31], got {bi}")
     offset = _bc_offset(target, from_addr)
     bd = (offset >> 2) & 0x3FFF
-    return _pack((16 << 26) | (bo << 21) | (bi << 16) | (bd << 2) | 1)
+    return _fmt_b(bo, bi, bd, lk=1)
 
 
 # ---------------------------------------------------------------------------
@@ -244,10 +243,18 @@ def ori(rA: int, rS: int, imm: int) -> bytes:
     """ori rA, rS, imm  - bitwise OR with unsigned 16-bit immediate"""
     return _fmt_d_unsigned(24, rS, rA, imm)
 
+def oris(rA: int, rS: int, imm: int):
+    """oris rA, rS, imm  - bitwise OR with unsigned 16-bit immediate shifted"""
+    return _fmt_d_unsigned(0x19, rS, rA, imm)
 
 def nop() -> bytes:
     """nop  - no operation (pseudo: ori r0, r0, 0)"""
     return ori(0, 0, 0)
+
+def andi(rA: int, rS: int, imm: int) -> bytes:
+    """andi. rA, rS, imm  - rA = rS & imm (unsigned 16-bit); always updates CR0"""
+    return _fmt_d_unsigned(28, rS, rA, imm)
+
 
 
 # ---------------------------------------------------------------------------
@@ -314,11 +321,6 @@ def and_(rA: int, rS: int, rB: int) -> bytes:
     return _fmt_x(31, rS, rA, rB, 28)
 
 
-def andi_(rA: int, rS: int, imm: int) -> bytes:
-    """andi. rA, rS, imm  - rA = rS & imm (unsigned 16-bit); always updates CR0"""
-    return _fmt_d_unsigned(28, rS, rA, imm)
-
-
 def or_(rA: int, rS: int, rB: int) -> bytes:
     """or rA, rS, rB  - rA = rS | rB"""
     return _fmt_x(31, rS, rA, rB, 444)
@@ -327,6 +329,9 @@ def or_(rA: int, rS: int, rB: int) -> bytes:
 def mr(rA: int, rS: int) -> bytes:
     """mr rA, rS  - copy register (pseudo: or rA, rS, rS)"""
     return or_(rA, rS, rS)
+
+def cntlzw(rA: int, rS: int) -> bytes:
+    return _fmt_x(0x1F, rS, rA, 0, 26)
 
 
 # ---------------------------------------------------------------------------
@@ -376,6 +381,7 @@ def mtspr(spr: int, rS: int) -> bytes:
 
 
 # SPR numbers
+_SPR_XER = 1
 _SPR_LR  = 8
 _SPR_CTR = 9
 

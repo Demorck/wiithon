@@ -83,11 +83,13 @@ with WiiIsoReader(SOURCE_PATH) as reader:
 - [x] Adding more WiiPartitionInterface from dir
 - [x] Some docs about building and so on
 - [x] Adding some tools like Yaz0, RARC
+- [x] Writing asm easily
 ---
 ### Next to do
 - [ ] Refactor/adding constants to avoid magic numbers
 - [ ] Comment all functions (and inside of it)
 - [ ] BCSV editor
+- [ ] BMD - BDL editor
 ---
 ### Next after next (ordered)
 - [ ] Patcher !! (will be available with tools maybe ?)
