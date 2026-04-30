@@ -132,7 +132,23 @@ def bcl(bo: int, bi: int, target: int, from_addr: int) -> bytes:
     bd = (offset >> 2) & 0x3FFF
     return _fmt_b(bo, bi, bd, lk=1)
 
+# ---------------------------------------------------------------------------
+# Format XL - conditional branch to link register
+# ---------------------------------------------------------------------------
+def _fmt_xl(opcode: int, bt: int, ba_: int, bb: int, subopcode: int, lk: int = 0) -> bytes:
+    return _pack((opcode << 26) | (bt << 21) | (ba_ << 16) | (bb << 11) | (subopcode << 1) | lk)
 
+def bclr(bo: int, bi: int):
+    return _fmt_xl(19, bo, bi,0, 16)
+
+def bclrl(bo: int, bi: int):
+    return _fmt_xl(19, bo, bi, 0, 16, lk=1)
+
+def blr():
+    return bclr(20, 0)
+
+def blrl():
+    return bclrl(20, 0)
 # ---------------------------------------------------------------------------
 # Compare instructions
 # cmp  - Format X, opcode=31, subopcode=0

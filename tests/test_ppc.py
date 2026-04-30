@@ -10,7 +10,7 @@ from helpers.PowerPC import (
     add, subf,
     or_, mr,
     mflr, mtlr, mfctr, mtctr,
-    mfspr, mtspr, lfs, mulli, oris, rlwnm, stfs, andi, and_,
+    mfspr, mtspr, lfs, mulli, oris, rlwnm, stfs, andi, and_, blr,
 )
 
 
@@ -151,6 +151,25 @@ class TestGhidra(unittest.TestCase):
         self.assertEqual(u32(stfs(0, 0x2c, 31)), 0xd01f002c)     # Location: 0x80007994  - Instruction: 0xd01f002c - Code:     stfs       f0,0x2c (r31 )
         self.assertEqual(u32(stfs(29, -0x8000, 3)), 0xd3a38000)        # Location: 0x80009850  - Instruction: 0xd3a38000 - Code:     stfs       f29 ,-0x8000 (r3)=>DAT_cc008000                   = ??
 
+    def test_blr(self):
+        self.assertEqual(u32(blr()), 0x4e800020)
+
+    def test_function_unstack(self):
+        byte_result = b''
+        byte_result += or_(3, 31, 31)
+        byte_result += lwz(31, 0x1C, 1)
+        byte_result += lwz(30, 0x18, 1)
+        byte_result += lwz(29, 0x14, 1)
+        byte_result += lwz(28, 0x10, 1)
+        byte_result += lwz(0, 0x24, 1)
+        byte_result += mtspr(8, 0)
+        byte_result += addi(1, 1, 0x20)
+        byte_result += blr()
+
+        self.assertEqual(byte_result, b'\x7f\xe3\xfb\x78\x83\xe1\x00\x1c\x83\xc1\x00\x18\x83\xa1\x00\x14\x83\x81\x00\x10\x80\x01\x00\x24\x7c\x08\x03\xa6\x38\x21\x00\x20\x4e\x80\x00\x20')
+
+    def test_big_giant_function(self):
+        byte_result = b''
 
 
 if __name__ == '__main__':
