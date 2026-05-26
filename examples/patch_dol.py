@@ -1,13 +1,11 @@
 import sys
+
+from WiiIsoPatcher import WiiIsoPatcher
+
 sys.path.insert(0, "../src")
 
 from file_helper.dol import DOL
 from helpers import PowerPC as ppc
-from helpers.Enums import WiiPartType
-from WiiIsoReader import WiiIsoReader
-from builder.WiiDiscBuilder import WiiDiscBuilder
-from builder.CopyBuilder import CopyBuilder
-
 
 # Patch addresses
 PATCH_ADDR_NOP   = 0x80258a0c
@@ -51,28 +49,17 @@ def patch_standalone_dol(src: str, dst: str) -> None:
 
 # Directly inside a Wii ISO
 def patch_iso_dol(src_iso: str, dst_iso: str) -> None:
-    print(f"\n--- Patching DOL inside ISO ---")
-    print(f"  Source : {src_iso}")
-    print(f"  Output : {dst_iso}")
+    with WiiIsoPatcher(src_iso) as patcher:
+        patcher.patch_dol(apply_patches)
 
-    with WiiIsoReader(src_iso) as reader:
-        print(f"  Game   : {reader.disc_header.game_title.strip()}")
-        print(f"  ID     : {reader.disc_header.game_id.decode()}")
+        patcher.add_file("file.arc", b"bonjour je suis un fichier")
+        patcher.replace_file("LayoutData/AirMeter.arc", b"Bonjour, je suis de l'air meter .arc et voila :)")
+        patcher.remove_file("opening.bnr")
 
-        builder = WiiDiscBuilder(reader.disc_header, reader.region)
+        patcher.build(dst_iso)
 
-        with open(dst_iso, "w+b") as dest:
-            for entry in reader.partitions:
-                copy_builder = CopyBuilder(
-                    reader, entry,
-                    dol_modifier=apply_patches if entry.part_type == WiiPartType.DATA else None,
-                )
-                builder.add_partition(dest, copy_builder, None)
-
-            builder.finish(dest)
-    print("  Done.")
 
 # This file has been used to test if patching a real dol works (and it is !)
 if __name__ == "__main__":
-    patch_standalone_dol("../assets/main.dol", "../assets/main_patched.dol")
+    # patch_standalone_dol("../assets/main.dol", "../assets/main_patched.dol")
     patch_iso_dol("../assets/smg.iso", "../assets/smg_patched.iso")

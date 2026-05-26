@@ -84,6 +84,8 @@ with WiiIsoReader(SOURCE_PATH) as reader:
 - [x] Some docs about building and so on
 - [x] Adding some tools like Yaz0, RARC
 - [x] Writing asm easily
+- [x] Patching DOL
+- [x] Adding, modifying, removing files
 ---
 ### Next to do
 - [ ] Refactor/adding constants to avoid magic numbers

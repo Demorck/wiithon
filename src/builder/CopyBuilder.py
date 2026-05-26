@@ -19,7 +19,8 @@ from file_system_table.FST import FST
 class CopyBuilder(WiiPartitionInterface):
     def __init__(self, reader: WiiIsoReader, partition: WiiPartitionEntry,
                  fst_modifier: Optional[Callable[[FST], None]] = None,
-                 dol_modifier: Optional[Callable[[DOL], None]] = None) -> None:
+                 dol_modifier: Optional[Callable[[DOL], None]] = None,
+                 file_overrides: dict[str, bytes] | None = None) -> None:
         copy_partition = copy.copy(partition)
         self.partition_info = reader.open_partition(copy_partition)
         self.partition_type = partition.part_type
@@ -37,6 +38,8 @@ class CopyBuilder(WiiPartitionInterface):
 
         if dol_modifier is not None:
             dol_modifier(self.dol)
+
+        self._file_overrides: dict[str, bytes] = file_overrides or {}
 
     def get_partition_type(self) -> WiiPartType:
         return WiiPartType(self.partition_type)
@@ -66,6 +69,10 @@ class CopyBuilder(WiiPartitionInterface):
         return self.fst
 
     def get_file_data(self, path: List[str]) -> bytes:
+        key = "/".join(path)
+        if key in self._file_overrides:
+            return self._file_overrides[key]
+
         node = self.fst.find_node(os.path.join(*path) if path else "")
         if not node:
              current = self.fst.entries
