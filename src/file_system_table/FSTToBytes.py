@@ -28,7 +28,7 @@ class FSTToBytes:
         # String table.
         # Index 0 is always the root node's empty name (one null byte).
         # _str_offsets[i] = byte offset of the i-th node's name, including root.
-        self.string_bytes: bytearray = bytearray()
+        self.string_bytes: bytearray = bytearray(b"\x00")
         self.string_offsets: List[int] = [0]
 
         _build_str_table(fst_entries, self.string_offsets, self.string_bytes)

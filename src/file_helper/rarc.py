@@ -266,3 +266,18 @@ class Rarc:
 
         # Data payload
         stream.write(payload)
+
+    def get_file(self, name: str) -> bytes:
+        for entry in self.entries:
+            if entry.name == name and entry.file_id != 0xFFFF and entry.type != 0x02:
+                return entry.data
+
+        raise FileNotFoundError(f"File not found in RARC: {name}")
+
+    def replace_file(self, name: str, data: bytes) -> None:
+        for entry in self.entries:
+            if entry.name == name and entry.file_id != 0xFFFF and entry.type != 0x02:
+                entry.data = data
+                return
+
+        raise FileNotFoundError(f"File not found in RARC: {name}")

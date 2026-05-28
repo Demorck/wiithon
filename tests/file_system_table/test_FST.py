@@ -78,13 +78,13 @@ class TestFST(unittest.TestCase):
         icon = data.children[1]
         self.assertIsInstance(icon, FSTFile)
         self.assertEqual(icon.name, "icon.png")
-        self.assertEqual(icon.offset, 0x6000)
+        self.assertEqual(icon.offset, 0x18000)
 
         # movie has 1 child: intro.thp
         intro = movie.children[0]
         self.assertIsInstance(intro, FSTFile)
         self.assertEqual(intro.name, "intro.thp")
-        self.assertEqual(intro.offset, 0x1000)
+        self.assertEqual(intro.offset, 0x4000)
         self.assertEqual(intro.length, 0x5000)
 
     def test_roundtrip(self) -> None:

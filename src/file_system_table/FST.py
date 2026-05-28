@@ -147,7 +147,7 @@ def _flatten_tree(entries: list[FSTNode], raw_nodes: list[RawFSTNode],
 
         elif isinstance(entry, FSTFile):
             raw.is_directory = False
-            raw.data_offset = entry.offset
+            raw.data_offset = entry.offset >> 2
             raw.length = entry.length
             raw_nodes.append(raw)
 

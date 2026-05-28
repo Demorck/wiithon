@@ -86,6 +86,7 @@ with WiiIsoReader(SOURCE_PATH) as reader:
 - [x] Writing asm easily
 - [x] Patching DOL
 - [x] Adding, modifying, removing files
+- [x] Wrapper for modifying rarc file
 ---
 ### Next to do
 - [ ] Refactor/adding constants to avoid magic numbers
@@ -93,9 +94,10 @@ with WiiIsoReader(SOURCE_PATH) as reader:
 - [ ] BCSV editor
 - [ ] BMD - BDL editor
 ---
-### Next after next (ordered)
+### Next after next (not ordered)
 - [ ] Patcher !! (will be available with tools maybe ?)
 - [ ] Some refactorization (like big break big function into smaller ones)
 - [ ] Add more unit tests (and change some)
 - [ ] Improve exception handling for invalid or corrupted ISO headers
 - [ ] Add a CLI for standard extraction and building
+- [ ] Adding everything we need to proper have a PyPi page
