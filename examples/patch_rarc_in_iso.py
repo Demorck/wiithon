@@ -8,7 +8,7 @@ from wiithon.file_helper.transforms import auto_yaz0_transform, rarc_transform
 from wiithon.file_helper.rarc import Rarc
 
 SRC_ISO = "../assets/smg.iso"
-DST_ISO = "../assets/smg_patched.iso"
+DST_ISO = "../assets/dzdq.iso"
 ARC_PATH = "StageData/AstroDome/AstroDomeScenario.arc"
 
 

@@ -74,22 +74,6 @@ class CopyBuilder(WiiPartitionInterface):
             return self._file_overrides[key]
 
         node = self.fst.find_node(os.path.join(*path) if path else "")
-        if not node:
-             current = self.fst.entries
-             found = False
-             target = None
-             for part in path:
-                 found = False
-                 for entry in current:
-                     if entry.name == part:
-                         target = entry
-                         if hasattr(entry, 'children'):
-                             current = entry.children
-                         found = True
-                         break
-                 if not found:
-                     break
-             node = target if found else None
             
         if node and not hasattr(node, "children"): # ie: is a file
             data = self.partition_info.crypto.read_at(node.original_offset, node.length)

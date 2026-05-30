@@ -48,3 +48,21 @@ SHA1_SIZE: int = 20
 
 # Subgroup size for encryption (0x8000 * 8 = 0x40 000)
 SUBGROUP_SIZE: int = BLOCK_SIZE * BLOCK_BY_SUBGROUP
+
+
+
+#######################################
+########### STRUCT CONST ##############
+#######################################
+
+            ############
+            ### IMET ###
+            ############
+
+IMET_MAGIC_WORD = b"IMET"
+IMET_PADDING_SIZE = 0x40
+IMET_BLOCK_SIZE = 0x5C0
+IMET_TITLE_COUNT = 0x0A
+IMET_TITLE_MAX_BYTES = 0x54
+IMET_LANGUAGES = ["Japanese", "English", "German", "French", "Spanish",
+                  "Italian", "Dutch", "Simplified Chinese", "Traditional Chinese", "Korean"]

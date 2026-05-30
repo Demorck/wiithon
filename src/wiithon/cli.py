@@ -18,10 +18,12 @@ class WiiPartType(str, Enum):
 
 app = typer.Typer(help="Wii ISO patching and inspection tool.")
 iso_app = typer.Typer(help="Operations on Wii ISO files.")
+dol_app = typer.Typer(help="Operations on DOL.")
 rarc_app = typer.Typer(help="Operations on Rarc files.")
 
 app.add_typer(iso_app,  name="iso")
 app.add_typer(rarc_app, name="rarc")
+app.add_typer(dol_app, name="dol")
 
 console = Console()
 err_console = Console(stderr=True, style="bold red")
@@ -169,6 +171,44 @@ def iso_extract(
 
     console.print(f"\n[bold]{len(files)}[/bold] file(s) extracted, yeiii (p≧w≦q)")
 
+#################################
+##########   DOL    #############
+#################################
+@dol_app.command("caves")
+def dol_caves(
+        iso: Annotated[Path, typer.Argument(help="Path to the Wii ISO")],
+        min_size: Annotated[int, typer.Option("--min-size", "-m", help="The minimum size of the cave")] = 0x20,
+        partition_type: Annotated[
+            Optional[WiiPartType], typer.Option("--partition", "-p", help="Choose the partition type to list")
+        ] = None
+) -> None:
+    """Find all code caves in a dol file"""
+    _require_file(iso)
+
+    from wiithon.WiiIsoReader import WiiIsoReader
+
+    with WiiIsoReader(str(iso)) as reader:
+        candidates = [
+            p for p in reader.partitions
+            if partition_type is None or p.get_readable_part_type() == partition_type
+        ]
+
+
+        if partition_type is not None and not candidates:
+            _abort(f"No {partition_type.name} partition found.")
+
+        for partition in candidates:
+            part = reader.open_partition(partition)
+            dol = part.read_dol()
+            table = Table("Section type", "Section number", "Start address", "Length")
+
+            for section, addr, size in dol.find_code_caves(min_size):
+                sections = section.split("[")
+                section_type = sections[0]
+                section_number = sections[1].split("]")[0]
+                table.add_row(section_type, section_number, f"{addr:08X}", f"{size:08X}")
+
+            console.print(Panel(table, title=f"[bold]{partition.get_readable_part_type()}[/bold]", expand=False))
 
 
 #################################

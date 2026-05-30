@@ -1,5 +1,8 @@
 from typing import Callable, Optional
 
+from six import BytesIO
+
+from wiithon.file_helper.bnr import BNR
 from wiithon.file_system_table.FST import FST
 from wiithon.file_system_table.FSTNode import FSTFile
 from wiithon.file_system_table.Operations import add_node, remove_node
@@ -9,7 +12,7 @@ from wiithon.WiiIsoReader import WiiIsoReader
 from wiithon.builder.WiiDiscBuilder import WiiDiscBuilder
 from wiithon.builder.CopyBuilder import CopyBuilder
 
-
+# TODO: Currently patch only data partition
 class WiiIsoPatcher:
     def __init__(self, src_path: str):
         self.src_path = src_path
@@ -72,6 +75,22 @@ class WiiIsoPatcher:
             "disc_number": header.disc_num,
             "version"    : header.disc_version
         }
+
+    def modify_banner_title(self, new_title: str, language: Optional[str]) -> None:
+        bnr_bytes = self.read_file("opening.bnr")
+        bnr = BNR.read(BytesIO(bnr_bytes))
+        bnr.imet.set_title(new_title, language)
+        self.replace_file("opening.bnr", bnr.get_bytes())
+
+    def modify_title(self, new_title: str) -> None:
+        self.reader.disc_header.game_title = new_title
+
+    def modify_title_id(self, new_id: str):
+        b = new_id.encode("ascii")
+        if len(b) != 0x06:
+            raise RuntimeError(f"Title ID needs to be 6 bytes length, got: {len(b)} with {b}")
+
+        self.reader.disc_header.game_id = new_id.encode("ascii")
 
     def build(self, output_path: str, progress_cb=None) -> None:
         builder = WiiDiscBuilder(self.reader.disc_header, self.reader.region)

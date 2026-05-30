@@ -15,6 +15,7 @@ def _make_patcher():
     p = WiiIsoPatcher("dummy.iso")
     p.reader = MagicMock()
     p.data_partition = MagicMock()
+    p.reader.disc_header.game_title = "GAME TITLE"
     return p
 
 

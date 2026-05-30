@@ -72,7 +72,9 @@ def patch_iso_dol(src_iso: str, dst_iso: str) -> None:
 
         patcher.add_file("file.arc", b"bonjour je suis un fichier")
         patcher.replace_file("LayoutData/AirMeter.arc", b"Bonjour, je suis de l'air meter .arc et voila :)")
-        patcher.remove_file("opening.bnr")
+        patcher.remove_file("AudioRes/SMR.szs")
+        patcher.modify_title("Super Mario Galaxy AP Randomizer")
+        patcher.modify_title_id("RMGE69")
 
         patcher.build(dst_iso)
 
@@ -80,4 +82,4 @@ def patch_iso_dol(src_iso: str, dst_iso: str) -> None:
 # This file has been used to test if patching a real dol works (and it is !)
 if __name__ == "__main__":
     # patch_standalone_dol("../assets/main.dol", "../assets/main_patched.dol")
-    patch_iso_dol("../assets/smg.iso", "../assets/smg_patched.iso")
+    patch_iso_dol("../assets/smg.iso", "../assets/yes.iso")
