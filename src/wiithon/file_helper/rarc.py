@@ -5,6 +5,23 @@ from wiithon.helpers.Utils import read_string, read_u32, read_u16
 
 
 class RarcNode:
+    """Represents a directory node within a RARC archive"""
+
+    type: str
+    """A 4-character string identifying the node type (`FILE`, `DIR`)"""
+
+    name_offset: int
+    """Offset of the node name in the string table"""
+
+    name_hash: int
+    """Computed hash of the node's name"""
+
+    entry_count: int
+    """Number of file/subdirectory entries in this node"""
+
+    first_entry_index: int
+    """Index into the entries list where this node starts"""
+
     def __init__(self):
         self.type: str = ""
         self.name_offset: int = 0
@@ -14,6 +31,38 @@ class RarcNode:
 
 
 class RarcFileEntry:
+    """Represents a file or subdirectory entry within a RARC node"""
+
+    file_id: int
+    """Unique identifier for the file (0xFFFF indicates a subdirectory)"""
+
+    name_hash: int
+    """Computed hash of the entry's name"""
+
+    attributes: int
+    """Raw combined attributes (type and name offset)"""
+
+    type: int
+    """Type of the entry (0x02 for directories, 0x11 for files)"""
+
+    name_offset: int
+    """Offset in the string table for the entry's name"""
+
+    data_offset_or_idx: int
+    """Absolute data offset (for files) or node index (for directories)"""
+
+    data_size: int
+    """Size of the file data in bytes"""
+
+    padding: int
+    """Unknown/padding bytes"""
+
+    name: str
+    """Resolved string name of the entry"""
+
+    data: bytes
+    """Raw binary data of the file (empty for directories)"""
+
     def __init__(self):
         self.file_id: int = 0
         self.name_hash: int = 0
@@ -28,6 +77,60 @@ class RarcFileEntry:
 
 
 class Rarc:
+    """
+    Main class for reading, modifying, and writing RARC (Nintendo Archive) files
+
+    See Also:
+        - `YAGCD - RARC <https://hitmen.c02.at/files/yagcd/yagcd/chap15.html#sec15.3>`_
+        - `Pikmin Technical Knowledge Base - RARC file <https://pikmintkb.com/wiki/RARC_file>`_
+        - `Custom Mario Kart Wiiki - RARC (File Format) <https://wiki.tockdom.com/wiki/RARC_(File_Format)>`_
+    """
+
+    base_offset: int
+    """Absolute stream offset where the RARC file begins"""
+
+    magic_word: str
+    """File signature, expected to be `RARC`"""
+
+    file_length: int
+    """Total length of the RARC file"""
+
+    data_offset: int
+    """Offset where the actual file data payload begins"""
+
+    data_length: int
+    """Total length of the data payload"""
+
+    number_nodes: int
+    """Total number of directory nodes in the archive"""
+
+    offset_first_node: int
+    """Offset to the first node definition"""
+
+    total_directory: int
+    """Total number of file and directory entries"""
+
+    offset_first_directory: int
+    """Offset to the first entry definition"""
+
+    string_table_length: int
+    """Size of the string table in bytes"""
+
+    string_table_offset: int
+    """Offset to the start of the string table"""
+
+    number_of_files: int
+    """Total number of actual files (excluding directories)"""
+
+    nodes: List[RarcNode]
+    """Collection of all directory nodes"""
+
+    entries: List[RarcFileEntry]
+    """Collection of all file and directory entries"""
+
+    string_table: bytes
+    """Raw bytes of the string table"""
+
     def __init__(self):
         # Header
         self.base_offset: int = 0
@@ -51,6 +154,21 @@ class Rarc:
 
     @classmethod
     def read(cls, stream: BinaryIO) -> "Rarc":
+        """
+        Reads and parses a RARC archive from a binary stream
+
+        Args:
+            stream: The binary stream containing the RARC data
+
+        Returns:
+            A populated Rarc instance
+
+        Raises:
+            ValueError: If the stream does not start with the correct RARC magic word
+
+        Notes:
+            Advances the stream position to the byte immediately after the RARC data
+        """
         obj = cls()
         obj.base_offset = stream.tell()
 
@@ -59,12 +177,12 @@ class Rarc:
             raise ValueError("Trying to read a non-rarc file with the rarc struct")
 
         obj.file_length = read_u32(stream)
-        read_u32(stream) # Length of header, always 0x20
+        read_u32(stream)  # Length of header, always 0x20
 
         obj.data_offset = read_u32(stream)
         obj.data_length = read_u32(stream)
         stream.read(0xC)
-        
+
         info_block_pos = stream.tell()
 
         obj.number_nodes = read_u32(stream)
@@ -126,9 +244,15 @@ class Rarc:
         return obj
 
     def extract_to(self, output_dir: str):
+        """
+        Extracts the entire RARC archive into a local directory structure
+
+        Args:
+            output_dir: The root directory where files will be extracted
+        """
         if not self.nodes:
             return
-        
+
         self._extract_node(self.nodes[0], output_dir)
 
     def _extract_node(self, node: RarcNode, current_dir: str):
@@ -150,11 +274,17 @@ class Rarc:
                 # File
                 with open(path, "wb") as f:
                     f.write(entry.data)
-                    
+
     def write(self, stream: BinaryIO):
+        """
+        Packs the current RARC object structure back into a binary stream
+
+        Args:
+            stream: The binary stream to write the packed RARC data into
+        """
         string_table_bytes = bytearray()
         string_map = {}
-        
+
         def add_string(name: str) -> int:
             if name in string_map:
                 return string_map[name]
@@ -162,7 +292,7 @@ class Rarc:
             string_map[name] = offset
             string_table_bytes.extend(name.encode('utf-8') + b'\x00')
             return offset
-            
+
         def compute_hash(name: str) -> int:
             h = 0
             for c in name:
@@ -194,11 +324,11 @@ class Rarc:
         # Sizes
         nodes_size = self.number_nodes * 0x10
         entries_size = self.total_directory * 0x14
-        
+
         self.offset_first_node = 0x20
         self.offset_first_directory = self.offset_first_node + nodes_size
         self.string_table_offset = self.offset_first_directory + entries_size
-        
+
         # Calculate data offsets and payloads
         payload = bytearray()
         for entry in self.entries:
@@ -233,12 +363,12 @@ class Rarc:
         stream.write(self.offset_first_directory.to_bytes(4, 'big'))
         stream.write(self.string_table_length.to_bytes(4, 'big'))
         stream.write(self.string_table_offset.to_bytes(4, 'big'))
-        
+
         file_id_counter = 0
         for entry in self.entries:
             if entry.file_id != 0xFFFF:
                 file_id_counter += 1
-        
+
         stream.write(file_id_counter.to_bytes(2, 'big'))
         stream.write(b'\x00\x00')
         stream.write(b'\x00\x00\x00\x00')
@@ -268,6 +398,18 @@ class Rarc:
         stream.write(payload)
 
     def get_file(self, name: str) -> bytes:
+        """
+        Retrieves file data by its exact name, regardless of path
+
+        Args:
+            name: The precise filename to look for
+
+        Returns:
+            The raw data of the file
+
+        Raises:
+            FileNotFoundError: If the file is not found in the entries
+        """
         for entry in self.entries:
             if entry.name == name and entry.file_id != 0xFFFF and entry.type != 0x02:
                 return entry.data
@@ -275,6 +417,15 @@ class Rarc:
         raise FileNotFoundError(f"File not found in RARC: {name}")
 
     def replace_file(self, name: str, data: bytes) -> None:
+        """Replaces the data of a file based on its exact name
+
+        Args:
+            name: The precise filename to modify
+            data: The new binary data for the file
+
+        Raises:
+            FileNotFoundError: If the file is not found in the entries
+        """
         for entry in self.entries:
             if entry.name == name and entry.file_id != 0xFFFF and entry.type != 0x02:
                 entry.data = data

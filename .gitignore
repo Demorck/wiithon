@@ -1,7 +1,13 @@
 *.iso
 .idea
 *.arc
+*.pyc
 
+# For me, testing purposes on real iso
 /src_dir/
 /assets
 /extract
+
+
+# Sphinx
+/docs/sphinx/build
