@@ -214,7 +214,7 @@ class DOL:
     def inject_above_arena(
             self,
             sections: list[bytes],
-            manual_arena: int = None,
+            manual_arena: int | None = None,
             padding_before: int = 0x100,
             reserved_size: int | None = None
     ) -> tuple[int, list[int]]:
