@@ -357,14 +357,14 @@ class BCSV:
         fields_size: int = entry_data_offset - BCSV_HEADER_SIZE # BCSV Field details start after the above 16 bytes
         remainder_bytes: int = fields_size % BCSV_FIELD_SIZE
         read_field_count: int = int(fields_size / BCSV_FIELD_SIZE)
-        if remainder_bytes != 0 or not read_field_count == field_count:
+        if remainder_bytes != 0 or not read_field_count == field_count: # Make sure there is no extra space between fields and entries
             raise BCSVFileError("When trying to read the fields block of the BCSV file, field block has an "
                 f"incorrect size.\nExpected field count: {field_count}\nExpected Byte count: {fields_size}\n"
                 f"Remainder Bytes: {remainder_bytes}\nAmount of fields found: {read_field_count}")
 
         # Load all data entries / rows of this table.
         calc_data_size: int = entry_data_offset + (entry_size_bytes * entry_count)
-        if calc_data_size > data_length:
+        if calc_data_size > data_length: # Simple check, doesn't take into account the string pool
             raise BCSVFileError("When trying to read the data entries block of the BCSV file, the entry size "
                 f"was incorrect.\nExpected data size: {data_length}\nCalculated data size: {calc_data_size}")
 
