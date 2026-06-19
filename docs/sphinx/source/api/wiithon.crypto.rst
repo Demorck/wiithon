@@ -1,11 +1,6 @@
 wiithon.crypto package
 ======================
 
-.. automodule:: wiithon.crypto
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 Submodules
 ----------
 
@@ -14,3 +9,11 @@ Submodules
 
    wiithon.crypto.CryptPartReader
    wiithon.crypto.CryptPartWriter
+
+Module contents
+---------------
+
+.. automodule:: wiithon.crypto
+   :members:
+   :show-inheritance:
+   :undoc-members:

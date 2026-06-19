@@ -4,7 +4,7 @@
 
 A Wii disc is an ISO image of **4.7 GB** (single-layer) or **8.5 GB** (dual-layer) organized in successive layers. There are several levels: **Disc Header**, **Partition Table**, **Partition Headers** (containing the [Ticket](https://wiibrew.org/wiki/Ticket) and [TMD](https://wiibrew.org/wiki/Title_metadata)), then **AES decryption** of the data to finally access the **File System Table** (FST).
 
-![Disc Organization](assets/disc_organization.png)
+![Disc Organization](sphinx/source/internal/images/disc_organization.png)
 
 ---
 
@@ -79,7 +79,7 @@ The partition types are defined in [Enums.py](../src/wiithon/helpers/Enums.py) a
 
 Each partition starts with a header containing:
 
-![Partition header](assets/partition_header.png)
+![Partition header](sphinx/source/internal/images/partition_header.png)
 
 Here is the content of a Partition Header
 
@@ -108,7 +108,7 @@ Here is the content of a Partition Header
 Tickets contains the encrypted AES title key and the title ID of the data. Ticket are signed from a certificate chain.
 
 ### Title key decryption process
-![Sequence diagram - titl ekey decryption](assets/sequence_title_key_decrypt.png)
+![Sequence diagram - titl ekey decryption](sphinx/source/internal/images/sequence_title_key_decrypt.png)
 
 For nintendo common key (16 bytes AES keys):
 - Index 0: "Normal" common key, the most frequent
@@ -212,7 +212,7 @@ Since the signature depends on the signature type (see below), the offset depend
 ## Data decryption/encryption
 Partition data is encrypted with AES-128-CBC using the title key. The layout is:
 
-![Tree of data encryption](assets/data_encryption.png)
+![Tree of data encryption](sphinx/source/internal/images/data_encryption.png)
 
 ### Block structure
 | Offset  | Length   | Description                 |
@@ -237,11 +237,11 @@ Data within block, group are hashed then encrypted. So, if we need to change fil
 Before, in the header we said that it contains H0, H1, etc. It's from a [Merkle Tree](https://en.wikipedia.org/wiki/Merkle_tree), a tree with every node that is not a leaf is a hash of its child.
 For Wii ISO, it's like this:
 
-![Merkle Tree for Wii ISO](assets/merkle_tree.png)
+![Merkle Tree for Wii ISO](sphinx/source/internal/images/merkle_tree.png)
 
 Since the algorithm is pretty hard to understand, here a good sequence diagram:
 
-![Sequence diagram for encryption](assets/sequence_encryption.png)
+![Sequence diagram for encryption](sphinx/source/internal/images/sequence_encryption.png)
 
 > Reference: [WiiBrew - Wii Disc - Encrytped](https://wiibrew.org/wiki/Wii_disc#Encrypted)
 > 

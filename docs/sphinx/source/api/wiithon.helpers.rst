@@ -1,11 +1,6 @@
 wiithon.helpers package
 =======================
 
-.. automodule:: wiithon.helpers
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 Submodules
 ----------
 
@@ -17,3 +12,11 @@ Submodules
    wiithon.helpers.IOWindow
    wiithon.helpers.PowerPC
    wiithon.helpers.Utils
+
+Module contents
+---------------
+
+.. automodule:: wiithon.helpers
+   :members:
+   :show-inheritance:
+   :undoc-members:

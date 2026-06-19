@@ -1,11 +1,6 @@
 wiithon.builder package
 =======================
 
-.. automodule:: wiithon.builder
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 Submodules
 ----------
 
@@ -16,3 +11,11 @@ Submodules
    wiithon.builder.DirectoryPartitionBuilder
    wiithon.builder.WiiDiscBuilder
    wiithon.builder.WiiPartitionInterface
+
+Module contents
+---------------
+
+.. automodule:: wiithon.builder
+   :members:
+   :show-inheritance:
+   :undoc-members:

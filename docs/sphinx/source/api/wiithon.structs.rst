@@ -1,11 +1,6 @@
 wiithon.structs package
 =======================
 
-.. automodule:: wiithon.structs
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 Submodules
 ----------
 
@@ -23,3 +18,11 @@ Submodules
    wiithon.structs.TicketTimeLimit
    wiithon.structs.WiiPartitionEntry
    wiithon.structs.WiiPartitionHeader
+
+Module contents
+---------------
+
+.. automodule:: wiithon.structs
+   :members:
+   :show-inheritance:
+   :undoc-members:

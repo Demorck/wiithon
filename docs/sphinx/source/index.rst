@@ -1,18 +1,29 @@
-.. wiithon documentation master file, created by
-   sphinx-quickstart on Thu Jun 18 17:45:54 2026.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+=======
+Wiithon
+=======
 
-wiithon documentation
-=====================
+..  toctree::
+    :maxdepth: 2
+    :caption: User Guide
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
+    user_guide/introduction
+    user_guide/quickstart
+    user_guide/patching
+    user_guide/reading
+    user_guide/file_formats
+    user_guide/cli
 
+..  toctree::
+    :maxdepth: 2
+    :caption: API Reference
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+    api/modules
 
-   modules
+..  toctree::
+    :maxdepth: 2
+    :caption: Internals
+
+    internal/getting_started
+    internal/iso
+    internal/rarc
+    internal/yaz0

@@ -5,7 +5,7 @@ It is a variant of the LZ77 compression algorithm, which reduces file size by re
 ## File Structure
 A Yaz0 file consists of a 16-byte header followed by the compressed data blocks.
 
-![structure.png](assets/yaz0/structure.png)
+![structure.png](sphinx/source/internal/images/yaz0/structure.png)
 
 ## How Data block works ?
 The compressed data is divided into blocks. Every block starts with a Code Byte.
@@ -26,7 +26,7 @@ Add 1 to this number. This is how many bytes you go backwards in your output buf
   - If `N` == 0 (3-Byte Encoding): Read a 3rd byte (`Byte3`). The length is `Byte3` + 0x12.
 
 ### Flowchart
-![decompression.png](assets/yaz0/decompression.png)
+![decompression.png](sphinx/source/internal/images/yaz0/decompression.png)
 
 ## Compression
 Compressing data into Yaz0 is more complext since it requires a sliding windows to search for the longest matching sequence of bytes.
@@ -37,7 +37,7 @@ Compressing data into Yaz0 is more complext since it requires a sliding windows 
 - Group bits into blocks of 8 to create the Code Byte
 
 ### Flowchart
-![compression.png](assets/yaz0/compression.png)
+![compression.png](sphinx/source/internal/images/yaz0/compression.png)
 
 
 ## References:

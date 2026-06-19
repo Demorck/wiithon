@@ -1,11 +1,6 @@
 wiithon package
 ===============
 
-.. automodule:: wiithon
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 Subpackages
 -----------
 
@@ -29,3 +24,11 @@ Submodules
    wiithon.WiiIsoReader
    wiithon.WiiPartitionInfo
    wiithon.cli
+
+Module contents
+---------------
+
+.. automodule:: wiithon
+   :members:
+   :show-inheritance:
+   :undoc-members:

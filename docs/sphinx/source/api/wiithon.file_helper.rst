@@ -1,11 +1,6 @@
 wiithon.file\_helper package
 ============================
 
-.. automodule:: wiithon.file_helper
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 Submodules
 ----------
 
@@ -18,3 +13,11 @@ Submodules
    wiithon.file_helper.transforms
    wiithon.file_helper.u8
    wiithon.file_helper.yaz0
+
+Module contents
+---------------
+
+.. automodule:: wiithon.file_helper
+   :members:
+   :show-inheritance:
+   :undoc-members:
