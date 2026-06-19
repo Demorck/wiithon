@@ -25,5 +25,6 @@ Wiithon
 
     internal/getting_started
     internal/iso
+    internal/powerpc
     internal/rarc
     internal/yaz0
