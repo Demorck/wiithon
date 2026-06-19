@@ -8,7 +8,7 @@ BCSV_HEADER_SIZE: int = 0x10
 BCSV_FIELD_SIZE: int = 0xC
 BCSV_MAX_STRING_LENGTH: int = 0x20
 
-STRING_FORMAT = "utf-8"
+STRING_FORMAT: str = "utf-8"
 
 type BCSVKey = int | str | BCSVField
 type BCSVValue = int | str | float
