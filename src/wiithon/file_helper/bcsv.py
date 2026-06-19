@@ -14,7 +14,7 @@ type BCSVKey = int | str | BCSVField
 type BCSVValue = int | str | float
 
 
-class BCSVFileError(ValueError):
+class BCSVFileError(Exception):
     """Thrown when an error occurs while parsing/writing BCSV data."""
     pass
 
