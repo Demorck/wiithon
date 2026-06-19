@@ -322,7 +322,7 @@ class BCSV:
 
 
     @classmethod
-    def import_bcsv(cls, raw_data: BytesIO, field_names: dict[int, str] = None):
+    def import_bcsv(cls, raw_data: BytesIO, field_names: dict[int, str] = None, str_fmt: str = "ascii"):
         """
         Takes an input stream of BCSV data and converts it into a BCSV object.
 
@@ -330,6 +330,7 @@ class BCSV:
             raw_data (BytesIO): raw stream of a file
             field_names (dict[int, str]): Contains the field_hash -> name quick lookup reference. 
                 By default, a field's name is the same as the hash, this allows for human-readable names to be used instead.
+            str_fmt (str): Output decoding format.
         """
         data_length: int = raw_data.seek(0, 2)
         if data_length < BCSV_HEADER_SIZE:
@@ -381,7 +382,7 @@ class BCSV:
             for bcsv_field in bcsv.fields:
                 value: BCSVValue = bcsv_field.get_value_from_bytes(entry_bytes)
                 if bcsv_field.field_type == BCSVType.STRING_OFFSET:
-                    value = bh.read_str(string_table_bytes, value) # Read until a null byte is hit
+                    value = fh.read_string_until_null(string_table_bytes, value, str_fmt=str_fmt) # Read until a null byte is hit
                 bcsv_entry[bcsv_field] = value
             bcsv.entries.append(bcsv_entry)
             offset += entry_size_bytes
@@ -392,6 +393,9 @@ class BCSV:
     def export_bcsv(self, str_fmt: str = "ascii") -> BytesIO:
         """
         Converts this object back into a file stream.
+
+        Args:
+            str_fmt (str): Output decoding format.
 
         Returns:
             BytesIO
