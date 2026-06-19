@@ -10,7 +10,7 @@ class WiiPartitionHeader:
     https://wiibrew.org/wiki/Wii_disc#Partition
     """
     def __init__(self):
-        self.ticket: Ticket|None = None
+        self.ticket: Ticket = Ticket()
         self.tmd_size: int = 0
         self.tmd_offset: int = 0
         self.certificate_chain_size: int = 0

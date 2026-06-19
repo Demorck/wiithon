@@ -2,7 +2,7 @@ import struct
 from typing import BinaryIO
 
 from wiithon.helpers.Utils import read_u32_shifted, read_u32
-
+from wiithon.helpers.Enums import WiiPartType
 
 class WiiPartitionEntry:
     """
@@ -30,11 +30,11 @@ class WiiPartitionEntry:
 
     def get_readable_part_type(self) -> str:
         match self.part_type:
-            case 0:
+            case WiiPartType.DATA:
                 return "data"
-            case 1:
+            case WiiPartType.UPDATE:
                 return "update"
-            case 2:
+            case WiiPartType.CHANNEL:
                 return "channel"
             case _:
                 raise ValueError("Invalid partition type")
