@@ -245,16 +245,17 @@ def read_string_until_null(stream: BinaryIO, offset: int, str_fmt: str = STRING_
     if not offset is None:
         stream.seek(offset)
     
+    null_byte = '\0'.encode(str_fmt)
     chars = bytearray()
     while True:
-        byte = stream.read(1)
-        if byte == b'\x00' or not byte:
+        byte = stream.read(len(null_byte))
+        if byte == null_byte or not byte:
             break
         chars += byte
     
     return chars.decode(str_fmt, errors=error_handling)
 
-def read_bytes(stream: BinaryIO, size: int = None, offset: int = None) -> bytes:
+def read_bytes(stream: BinaryIO, size: int = -1, offset: int = None) -> bytes:
     """
     Reads a specific amount of requested bytes
 
@@ -266,8 +267,6 @@ def read_bytes(stream: BinaryIO, size: int = None, offset: int = None) -> bytes:
     Returns:
         bytes: bytes object
     """
-    if size is None:
-        raise ByteHelperError("A size must be specified to read bytes properly.")
     if not offset is None:
         data_length = stream.seek(offset, 2)
         if offset + size > data_length:
