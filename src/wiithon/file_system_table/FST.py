@@ -96,7 +96,7 @@ def _build_tree(stream: BinaryIO, string_offset: int,
 
     while i < end:
         raw = nodes[i]
-        name = read_string_until_null(stream, None, "shift_jis")
+        name = read_string_until_null(stream, string_offset + raw.name_offset, "shift_jis")
 
         if raw.is_directory:
             children, _ = _build_tree(stream, string_offset, nodes,
