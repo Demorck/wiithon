@@ -208,7 +208,7 @@ class BCSVField:
             case BCSVType.FLOAT:
                 fh.write_float(entry_bytes, float(entry_value), self.field_offset)
             case BCSVType.STRING:
-                fh.write_str(entry_bytes, str(entry_value), BCSVTypeSize.STRING, offset=self.field_offset, str_fmt=str_fmt)
+                fh.write_string(entry_bytes, str(entry_value), BCSVTypeSize.STRING, offset=self.field_offset, str_fmt=str_fmt)
             case BCSVType.STRING_OFFSET:
                 value: str = str(entry_value)
                 pool_element: StringPoolElement = next((element for element in string_pool if
@@ -446,7 +446,7 @@ class BCSV:
         # Create an empty string pool to write data to and eventually append to the end.
         string_pool_bytes: BytesIO = BytesIO()
         for pool_element in string_pool:
-            fh.write_str(string_pool_bytes, pool_element.value, len(pool_element.value), offset=pool_element.offset, str_fmt=str_fmt, add_null_byte=True)
+            fh.write_string(string_pool_bytes, pool_element.value, len(pool_element.value), offset=pool_element.offset, str_fmt=str_fmt, add_null_byte=True)
 
         # Add the string pool bytes into BCSV data.
         fh.write_bytes(bcsv_data, string_pool_bytes.getvalue(), offset)
@@ -455,7 +455,7 @@ class BCSV:
         curr_length = bcsv_data.seek(0, 2)
         if curr_length % 32 > 0:
             bcsv_data.seek(curr_length)
-            fh.write_str(bcsv_data, "", 32 - (curr_length % 32), b"@", curr_length, str_fmt=str_fmt)
+            fh.write_string(bcsv_data, "", 32 - (curr_length % 32), b"@", curr_length, str_fmt=str_fmt)
 
         return bcsv_data
 

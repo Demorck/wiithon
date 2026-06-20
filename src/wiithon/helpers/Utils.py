@@ -404,7 +404,7 @@ def write_float(stream: BinaryIO, new_value: float, offset: int = None):
         stream.seek(offset)
     stream.write(new_bytes)
 
-def write_str(stream: BinaryIO, new_value: str, expected_size: int, padding_byte: bytes = b'\0',
+def write_string(stream: BinaryIO, new_value: str, expected_size: int, padding_byte: bytes = b'\0',
         offset: int = None, str_fmt: str = STRING_FORMAT, add_null_byte: bool = False):
     """
     Writes a str to a stream
