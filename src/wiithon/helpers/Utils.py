@@ -260,8 +260,8 @@ def read_bytes(stream: BinaryIO, size: int = -1, offset: int = None) -> bytes:
     Reads a specific amount of requested bytes
 
     Args:
-        stream (BinaryIO): input stream
-        size: The number of bytes to read
+        stream (BinaryIO): input stream.
+        size: The number of bytes to read. By default reads until the end of the file.
         offset (int): Offset within the steam to read.
     
     Returns:
