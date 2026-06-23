@@ -1,5 +1,5 @@
 import struct
-from typing import BinaryIO
+from typing import BinaryIO, Any
 from Crypto.Cipher import AES
 import hashlib
 import json
@@ -23,6 +23,34 @@ from wiithon.helpers.Enums import KeyType
 ###########################
 ####### READ UTILS ########
 ###########################
+
+def read_ndata(stream: BinaryIO, size: int = -1, offset: int = None, unpack_fmt: str = None) -> bytes | Any:
+    """
+    Read n size data and converts it to the expected data type/size.
+
+    Args:
+        stream (BinaryIO): input stream
+        offset (int): Offset within the steam to read.
+        size (int): If specified (and > 0), does a comparison with the remaining bytes of a stream to verify byte length is available.
+        unpack_fmt (str): If specified, unpacks the bytes into a specific output type.
+    
+    Returns:
+        Any: an output type specified by the unpack format. Defaults to bytes if unspecified.
+    """
+    if size is None:
+        size = -1
+
+    if offset is not None:
+        if size > 0:
+            data_length = stream.seek(offset, 2)
+            if offset + size > data_length:
+                raise ByteHelperError(f"Offset {offset} + Length {size} is longer than the data size {data_length}.")
+        stream.seek(offset)
+
+    if unpack_fmt is not None:
+        return struct.unpack(unpack_fmt, stream.read(size))[0]
+    return stream.read(size)
+
 def read_u64(stream: BinaryIO, offset: int = None) -> int:
     """
     Read a 64-bit unsigned big-endian integer from a stream
@@ -34,13 +62,7 @@ def read_u64(stream: BinaryIO, offset: int = None) -> int:
     Returns:
         int: 64-bit unsigned integer
     """
-    length = 8
-    if not offset is None:
-        data_length = stream.seek(0, 2)
-        if offset + length > data_length:
-            raise ByteHelperError(f"Offset {offset} + Length {length} is longer than the data size {data_length}.")
-        stream.seek(offset)
-    return struct.unpack('>Q', stream.read(length))[0]
+    return read_ndata(stream, 8, offset, '>Q')
 
 def read_u32(stream: BinaryIO, offset: int = None) -> int:
     """
@@ -53,13 +75,7 @@ def read_u32(stream: BinaryIO, offset: int = None) -> int:
     Returns:
         int:32-bit unsigned integer
     """
-    length = 4
-    if not offset is None:
-        data_length = stream.seek(0, 2)
-        if offset + length > data_length:
-            raise ByteHelperError(f"Offset {offset} + Length {length} is longer than the data size {data_length}.")
-        stream.seek(offset)
-    return struct.unpack('>I', stream.read(length))[0]
+    return read_ndata(stream, 4, offset, '>I')
 
 def read_u32_shifted(stream: BinaryIO, offset: int = None) -> int:
     """
@@ -85,13 +101,7 @@ def read_u16(stream: BinaryIO, offset: int = None) -> int:
     Returns:
         int: 16-bit unsigned integer
     """
-    length = 2
-    if not offset is None:
-        data_length = stream.seek(0, 2)
-        if offset + length > data_length:
-            raise ByteHelperError(f"Offset {offset} + Length {length} is longer than the data size {data_length}.")
-        stream.seek(offset)
-    return struct.unpack('>H', stream.read(length))[0]
+    return read_ndata(stream, 2, offset, '>H')
 
 def read_u8(stream: BinaryIO, offset: int = None) -> int:
     """
@@ -104,13 +114,8 @@ def read_u8(stream: BinaryIO, offset: int = None) -> int:
     Returns:
         int: 8-bit unsigned integer
     """
-    length = 1
-    if not offset is None:
-        data_length = stream.seek(0, 2)
-        if offset + length > data_length:
-            raise ByteHelperError(f"Offset {offset} + Length {length} is longer than the data size {data_length}.")
-        stream.seek(offset)
-    return struct.unpack('>B', stream.read(length))[0]
+    return read_ndata(stream, 1, offset, '>B')
+
 
 def read_s64(stream: BinaryIO, offset: int = None) -> int:
     """
@@ -123,13 +128,7 @@ def read_s64(stream: BinaryIO, offset: int = None) -> int:
     Returns:
         int: 64-bit signed integer
     """
-    length = 8
-    if not offset is None:
-        data_length = stream.seek(0, 2)
-        if offset + length > data_length:
-            raise ByteHelperError(f"Offset {offset} + Length {length} is longer than the data size {data_length}.")
-        stream.seek(offset)
-    return struct.unpack('>q', stream.read(length))[0]
+    return read_ndata(stream, 8, offset, '>q')
 
 def read_s32(stream: BinaryIO, offset: int) -> int:
     """
@@ -142,13 +141,7 @@ def read_s32(stream: BinaryIO, offset: int) -> int:
     Returns:
         int: 32-bit signed integer
     """
-    length = 4
-    if not offset is None:
-        data_length = stream.seek(0, 2)
-        if offset + length > data_length:
-            raise ByteHelperError(f"Offset {offset} + Length {length} is longer than the data size {data_length}.")
-        stream.seek(offset)
-    return struct.unpack(">i", stream.read(length))[0]
+    return read_ndata(stream, 4, offset, '>i')
 
 def read_s16(stream: BinaryIO, offset: int) -> int:
     """
@@ -161,13 +154,7 @@ def read_s16(stream: BinaryIO, offset: int) -> int:
     Returns:
         int: 16-bit signed integer
     """
-    length = 2
-    if not offset is None:
-        data_length = stream.seek(0, 2)
-        if offset + length > data_length:
-            raise ByteHelperError(f"Offset {offset} + Length {length} is longer than the data size {data_length}.")
-        stream.seek(offset)
-    return struct.unpack(">h", stream.read(length))[0]
+    return read_ndata(stream, 2, offset, '>h')
 
 def read_s8(stream: BinaryIO, offset: int = None) -> int:
     """
@@ -180,13 +167,7 @@ def read_s8(stream: BinaryIO, offset: int = None) -> int:
     Returns:
         int: 8-bit signed integer
     """
-    length = 1
-    if not offset is None:
-        data_length = stream.seek(0, 2)
-        if offset + length > data_length:
-            raise ByteHelperError(f"Offset {offset} + Length {length} is longer than the data size {data_length}.")
-        stream.seek(offset)
-    return struct.unpack(">b", stream.read(length))[0]
+    return read_ndata(stream, 1, offset, '>b')
 
 def read_float(stream: BinaryIO, offset: int = None) -> float:
     """
@@ -199,13 +180,7 @@ def read_float(stream: BinaryIO, offset: int = None) -> float:
     Returns:
         int: Big-endian float
     """
-    length = 4
-    if not offset is None:
-        data_length = stream.seek(0, 2)
-        if offset + length > data_length:
-            raise ByteHelperError(f"Offset {offset} + Length {length} is longer than the data size {data_length}.")
-        stream.seek(offset)
-    return struct.unpack(">f", stream.read(length))[0]
+    return read_ndata(stream, 4, offset, '>f')
 
 def read_string(stream: BinaryIO, number_of_bytes: int, offset: int = None, str_fmt: str = STRING_FORMAT, error_handling: str = "strict") -> str:
     """
@@ -220,14 +195,8 @@ def read_string(stream: BinaryIO, number_of_bytes: int, offset: int = None, str_
     
     Returns:
         str: decoded string
-    """
-    if not offset is None:
-        data_length = stream.seek(0, 2)
-        if offset + number_of_bytes > data_length:
-            raise ByteHelperError(f"Offset {offset} + Length {number_of_bytes} is longer than the data size {data_length}.")
-        stream.seek(offset)
-    
-    return stream.read(number_of_bytes).split(b'\x00')[0].decode(str_fmt, errors=error_handling)
+    """    
+    return read_ndata(stream, number_of_bytes, offset).split(b'\x00')[0].decode(str_fmt, errors=error_handling)
 
 def read_string_until_null(stream: BinaryIO, offset: int, str_fmt: str = STRING_FORMAT, error_handling: str = "strict") -> str:
     """
@@ -267,16 +236,29 @@ def read_bytes(stream: BinaryIO, size: int = -1, offset: int = None) -> bytes:
     Returns:
         bytes: bytes object
     """
-    if not offset is None:
-        data_length = stream.seek(0, 2)
-        if offset + size > data_length:
-            raise ByteHelperError(f"Offset {offset} + Size {size} is longer than the data size {data_length}.")
-        stream.seek(offset)
-    return stream.read(size)
+    return read_ndata(stream, size, offset)
 
 ###########################
 ####### WRITE UTILS #######
 ###########################
+
+def write_ndata(stream: BinaryIO, new_value: Any, offset: int = None, pack_fmt: str = None):
+    """
+    Write n size data and converts it to the expected data type/size.
+
+    Args:
+        stream (BinaryIO): input stream
+        new_value (Any): new value to be written in pack_format (assumes data is already bytes by default)
+        offset (int): Offset within the steam to read.
+        pack_fmt (str): If specified, unpacks the bytes into a specific output type.
+    """
+    if offset is not None:
+        stream.seek(offset)
+
+    new_bytes = new_value
+    if pack_fmt is not None:
+        new_bytes = struct.pack(pack_fmt, new_value)
+    return stream.write(new_bytes)
 
 def write_u64(stream: BinaryIO, new_value: int, offset: int = None):
     """
@@ -287,10 +269,7 @@ def write_u64(stream: BinaryIO, new_value: int, offset: int = None):
         new_value (int): The value to write to stream
         offset (int): Offset within the steam to write.
     """
-    new_bytes = struct.pack(">Q", new_value)
-    if not offset is None:
-        stream.seek(offset)
-    stream.write(new_bytes)
+    write_ndata(stream, new_value, offset, ">Q")
 
 def write_u32(stream: BinaryIO, new_value: int, offset: int = None):
     """
@@ -301,10 +280,7 @@ def write_u32(stream: BinaryIO, new_value: int, offset: int = None):
         new_value (int): The value to write to stream
         offset (int): Offset within the steam to write.
     """
-    new_bytes = struct.pack(">I", new_value)
-    if not offset is None:
-        stream.seek(offset)
-    stream.write(new_bytes)
+    write_ndata(stream, new_value, offset, ">I")
 
 def write_u16(stream: BinaryIO, new_value: int, offset: int = None):
     """
@@ -315,10 +291,7 @@ def write_u16(stream: BinaryIO, new_value: int, offset: int = None):
         new_value (int): The value to write to stream
         offset (int): Offset within the steam to write.
     """
-    new_bytes = struct.pack(">H", new_value)
-    if not offset is None:
-        stream.seek(offset)
-    stream.write(new_bytes)
+    write_ndata(stream, new_value, offset, ">H")
 
 def write_u8(stream: BinaryIO, new_value: int, offset: int = None):
     """
@@ -329,10 +302,7 @@ def write_u8(stream: BinaryIO, new_value: int, offset: int = None):
         new_value (int): The value to write to stream
         offset (int): Offset within the steam to write.
     """
-    new_bytes = struct.pack(">B", new_value)
-    if not offset is None:
-        stream.seek(offset)
-    stream.write(new_bytes)
+    write_ndata(stream, new_value, offset, ">B")
 
 def write_s64(stream: BinaryIO, new_value: int, offset: int = None):
     """
@@ -343,10 +313,7 @@ def write_s64(stream: BinaryIO, new_value: int, offset: int = None):
         new_value (int): The value to write to stream
         offset (int): Offset within the steam to write.
     """
-    new_bytes = struct.pack(">q", new_value)
-    if not offset is None:
-        stream.seek(offset)
-    stream.write(new_bytes)
+    write_ndata(stream, new_value, offset, ">q")
 
 def write_s32(stream: BinaryIO, new_value: int, offset: int = None):
     """
@@ -357,10 +324,7 @@ def write_s32(stream: BinaryIO, new_value: int, offset: int = None):
         new_value (int): The value to write to stream
         offset (int): Offset within the steam to write.
     """
-    new_bytes = struct.pack(">i", new_value)
-    if not offset is None:
-        stream.seek(offset)
-    stream.write(new_bytes)
+    write_ndata(stream, new_value, offset, ">i")
 
 def write_s16(stream: BinaryIO, new_value: int, offset: int = None):
     """
@@ -371,10 +335,7 @@ def write_s16(stream: BinaryIO, new_value: int, offset: int = None):
         new_value (int): The value to write to stream
         offset (int): Offset within the steam to write.
     """
-    new_bytes = struct.pack(">h", new_value)
-    if not offset is None:
-        stream.seek(offset)
-    stream.write(new_bytes)
+    write_ndata(stream, new_value, offset, ">h")
 
 def write_s8(stream: BinaryIO, new_value: int, offset: int = None):
     """
@@ -385,10 +346,7 @@ def write_s8(stream: BinaryIO, new_value: int, offset: int = None):
         new_value (int): The value to write to stream
         offset (int): Offset within the steam to write.
     """
-    new_bytes = struct.pack(">b", new_value)
-    if not offset is None:
-        stream.seek(offset)
-    stream.write(new_bytes)
+    write_ndata(stream, new_value, offset, ">b")
 
 def write_float(stream: BinaryIO, new_value: float, offset: int = None):
     """
@@ -399,10 +357,7 @@ def write_float(stream: BinaryIO, new_value: float, offset: int = None):
         new_value (float): The value to write to stream
         offset (int): Offset within the steam to write.
     """
-    new_bytes = struct.pack(">f", new_value)
-    if not offset is None:
-        stream.seek(offset)
-    stream.write(new_bytes)
+    write_ndata(stream, new_value, offset, ">f")
 
 def write_string(stream: BinaryIO, new_value: str, expected_size: int, padding_byte: bytes = b'\0',
         offset: int = None, str_fmt: str = STRING_FORMAT, add_null_byte: bool = False):
@@ -430,11 +385,7 @@ def write_string(stream: BinaryIO, new_value: str, expected_size: int, padding_b
     if add_null_byte:
         new_value += b'\0'
 
-    if not offset is None:
-        stream.seek(offset)
-
-    stream.write(new_value)
-    
+    write_ndata(stream, new_value, offset)
 
 def write_bytes(stream: BinaryIO, new_bytes: bytes, offset: int = None):
     """
@@ -445,10 +396,7 @@ def write_bytes(stream: BinaryIO, new_bytes: bytes, offset: int = None):
         new_value (bytes): The value to write to stream
         offset (int): Offset within the steam to write.
     """
-
-    if not offset is None:
-        stream.seek(offset)
-    stream.write(new_bytes)
+    write_ndata(stream, new_bytes, offset)
 
 ###########################
 ### CRYPTOGRAPHIC UTILS ###
