@@ -42,9 +42,9 @@ def read_ndata(stream: BinaryIO, size: int = -1, offset: int = None, unpack_fmt:
 
     if offset is not None:
         if size > 0:
-            data_length = stream.seek(offset, 2)
+            data_length = stream.seek(0, 2)
             if offset + size > data_length:
-                raise ByteHelperError(f"Offset {offset} + Length {size} is longer than the data size {data_length}.")
+                raise ByteHelperError(f"Offset {offset} + Length {size} ({offset + size}) is longer than the data size {data_length}.")
         stream.seek(offset)
 
     if unpack_fmt is not None:
