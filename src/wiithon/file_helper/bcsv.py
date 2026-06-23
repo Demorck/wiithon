@@ -315,13 +315,11 @@ class BCSV:
 
         if fields is None:
             fields = []
-        elif not isinstance(fields[0], BCSVField):
-            raise BCSVFileError(f"Fields provided is not of type 'BCSVField'.\nReceived field type: {type(fields[0])}")
 
         if entries is None:
             entries = []
-        elif not isinstance(entries[0], BCSVEntry):
-            raise BCSVFileError(f"Entries provided is not of type 'BCSVEntry'.\nReceived field type: {type(fields[0])}")
+
+        self.verify_fields_and_entries(fields, entries)
 
         self.fields = fields
         self.entries = entries
@@ -406,6 +404,8 @@ class BCSV:
         Returns:
             BytesIO
         """
+        self.verify_fields_and_entries()
+
         field_count: int = len(self.fields)
         entry_count: int = len(self.entries)
         entry_data_offset: int  = BCSV_HEADER_SIZE + (BCSV_FIELD_SIZE * field_count)
@@ -539,3 +539,27 @@ class BCSV:
             raise ValueError(f"Cannot index BCSVEntry with value of type {type(bcsv_entry)}")
 
         self.entries.remove(entry)
+
+    def verify_fields_and_entries(self, fields: list[BCSVField] = None, entries: list[BCSVEntry] = None):
+        """
+        Verifies if all the BCSV Fields are in fact properly defined keys/fields. Similarly validates entries.
+
+        Args:
+            fields (list[BCSVField]): A list of headers/fields for a BCSV file
+            entries (list[BCSVEntry]): A list of rows/entries for a BCSV file
+        """
+
+        if fields is None:
+            fields = self.fields
+        
+        if entries is None:
+            entries = self.entries
+
+        for bcsv_field in fields:
+            if not isinstance(bcsv_field, BCSVField):
+                raise BCSVFileError(f"Fields provided is not of type 'BCSVField'.\nReceived field type: {type(bcsv_field)}")
+            
+        for bcsv_entry in entries:
+            if not isinstance(bcsv_entry, BCSVEntry):
+                raise BCSVFileError(f"Entries provided is not of type 'BCSVEntry'.\nReceived field type: {type(bcsv_entry)}")
+            
