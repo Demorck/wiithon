@@ -1,10 +1,14 @@
 import struct
-from typing import BinaryIO
+from typing import BinaryIO, Any
 from Crypto.Cipher import AES
 import hashlib
 import json
 from typing import Any
 
+STRING_FORMAT: str = "utf-8"
+
+class ByteHelperError(Exception):
+    pass
 
 from wiithon.helpers.Constants import (
     COMMON_KEYS, SHA1_SIZE,
@@ -17,76 +21,382 @@ from wiithon.helpers.Constants import (
 from wiithon.helpers.Enums import KeyType
 
 ###########################
-#### READ/WRITE UTILS #####
+####### READ UTILS ########
 ###########################
-def read_u64(stream: BinaryIO) -> int:
+
+def read_ndata(stream: BinaryIO, size: int = -1, offset: int = None, unpack_fmt: str = None) -> bytes | Any:
+    """
+    Read n size data and converts it to the expected data type/size.
+
+    Args:
+        stream (BinaryIO): input stream
+        offset (int): Offset within the steam to read.
+        size (int): If specified (and > 0), does a comparison with the remaining bytes of a stream to verify byte length is available.
+        unpack_fmt (str): If specified, unpacks the bytes into a specific output type.
+    
+    Returns:
+        Any: an output type specified by the unpack format. Defaults to bytes if unspecified.
+    """
+    if size is None:
+        size = -1
+
+    if offset is not None:
+        if size > 0:
+            data_length = stream.seek(0, 2)
+            if offset + size > data_length:
+                raise ByteHelperError(f"Offset {offset} + Length {size} ({offset + size}) is longer than the data size {data_length}.")
+        stream.seek(offset)
+
+    if unpack_fmt is not None:
+        return struct.unpack(unpack_fmt, stream.read(size))[0]
+    return stream.read(size)
+
+def read_u64(stream: BinaryIO, offset: int = None) -> int:
     """
     Read a 64-bit unsigned big-endian integer from a stream
-    :param stream: Binary IO stream
-    :return: 64-bit unsigned integer
+
+    Args:
+        stream (BinaryIO): input stream
+        offset (int): Offset within the steam to read.
+    
+    Returns:
+        int: 64-bit unsigned integer
     """
-    return struct.unpack('>Q', stream.read(8))[0]
+    return read_ndata(stream, 8, offset, '>Q')
 
-
-def read_u32(stream: BinaryIO) -> int:
+def read_u32(stream: BinaryIO, offset: int = None) -> int:
     """
     Read a 32-bit unsigned big-endian integer from a stream
-    :param stream: Binary IO stream
-    :return: 32-bit unsigned integer
-    """
-    return struct.unpack('>I', stream.read(4))[0]
 
-def read_u16(stream: BinaryIO) -> int:
+    Args:
+        stream (BinaryIO): input stream
+        offset (int): Offset within the steam to read.
+    
+    Returns:
+        int:32-bit unsigned integer
     """
-    Read a 16-bit unsigned big-endian integer from a stream
-    :param stream: Binary IO stream
-    :return: 16-bit unsigned integer
-    """
-    return struct.unpack('>H', stream.read(2))[0]
+    return read_ndata(stream, 4, offset, '>I')
 
-def read_u8(stream: BinaryIO) -> int:
-    """
-    Read an 8-bit unsigned integer from a stream
-    :param stream: Binary IO stream
-    :return: 8-bit unsigned integer
-    """
-    return struct.unpack('>B', stream.read(1))[0]
-
-def read_u32_shifted(stream: BinaryIO) -> int:
+def read_u32_shifted(stream: BinaryIO, offset: int = None) -> int:
     """
     Read an u32 and left-shift it by 2 bits (x4)
-    :param stream: Binary IO stream
-    :return: 64-bit unsigned integer
-    """
-    return read_u32(stream) << 2
 
-def read_string(stream: BinaryIO, number_of_bytes: int) -> str:
+    Args:
+        stream (BinaryIO): input stream
+        offset (int): Offset within the steam to read.
+    
+    Returns:
+        int:64-bit unsigned integer
     """
-    Read a string from a stream
-    :param stream: The Binary IO stream
-    :param number_of_bytes: The number of bytes to read
-    :return: The returned string
-    """
-    return stream.read(number_of_bytes).split(b'\x00')[0].decode('ascii')
+    return read_u32(stream, offset) << 2
 
-def read_shiftjis(stream: BinaryIO, offset: int) -> str:
+def read_u16(stream: BinaryIO, offset: int = None) -> int:
     """
-    Read a shift JS from a stream at a current offset
+    Read a 16-bit unsigned big-endian integer from a stream
+    
+    Args:
+        stream (BinaryIO): input stream
+        offset (int): Offset within the steam to read.
+    
+    Returns:
+        int: 16-bit unsigned integer
+    """
+    return read_ndata(stream, 2, offset, '>H')
 
-    :param stream: The Binary IO stream
-    :param offset: The current offset
-    :return: shift JS string
+def read_u8(stream: BinaryIO, offset: int = None) -> int:
     """
-    stream.seek(offset)
+    Read an 8-bit unsigned integer from a stream
+
+    Args:
+        stream (BinaryIO): input stream
+        offset (int): Offset within the steam to read.
+    
+    Returns:
+        int: 8-bit unsigned integer
+    """
+    return read_ndata(stream, 1, offset, '>B')
+
+
+def read_s64(stream: BinaryIO, offset: int = None) -> int:
+    """
+    Read a 64-bit signed big-endian integer from a stream
+
+    Args:
+        stream (BinaryIO): input stream
+        offset (int): Offset within the steam to read.
+    
+    Returns:
+        int: 64-bit signed integer
+    """
+    return read_ndata(stream, 8, offset, '>q')
+
+def read_s32(stream: BinaryIO, offset: int) -> int:
+    """
+    Read an 32-bit signed integer from a stream
+
+    Args:
+        stream (BinaryIO): input stream
+        offset (int): Offset within the steam to read.
+    
+    Returns:
+        int: 32-bit signed integer
+    """
+    return read_ndata(stream, 4, offset, '>i')
+
+def read_s16(stream: BinaryIO, offset: int) -> int:
+    """
+    Read an 16-bit signed integer from a stream
+    
+    Args:
+        stream (BinaryIO): input stream
+        offset (int): Offset within the steam to read.
+    
+    Returns:
+        int: 16-bit signed integer
+    """
+    return read_ndata(stream, 2, offset, '>h')
+
+def read_s8(stream: BinaryIO, offset: int = None) -> int:
+    """
+    Read an 8-bit signed integer from a stream
+    
+    Args:
+        stream (BinaryIO): input stream
+        offset (int): Offset within the steam to read.
+    
+    Returns:
+        int: 8-bit signed integer
+    """
+    return read_ndata(stream, 1, offset, '>b')
+
+def read_float(stream: BinaryIO, offset: int = None) -> float:
+    """
+    Read a big-endian float from a stream
+    
+    Args:
+        stream (BinaryIO): input stream
+        offset (int): Offset within the steam to read.
+    
+    Returns:
+        int: Big-endian float
+    """
+    return read_ndata(stream, 4, offset, '>f')
+
+def read_string(stream: BinaryIO, number_of_bytes: int, offset: int = None, str_fmt: str = STRING_FORMAT, error_handling: str = "strict") -> str:
+    """
+    Read a string of set size from a stream. Will automatically split on a null byte.
+    
+    Args:
+        stream (BinaryIO): input stream
+        number_of_bytes: The number of bytes to read
+        offset (int): Offset within the steam to read.
+        str_fmt (str): Output decoding format.
+        error_handling (str): See decode's "errors" field
+    
+    Returns:
+        str: decoded string
+    """    
+    return read_ndata(stream, number_of_bytes, offset).split(b'\x00')[0].decode(str_fmt, errors=error_handling)
+
+def read_string_until_null(stream: BinaryIO, offset: int, str_fmt: str = STRING_FORMAT, error_handling: str = "strict") -> str:
+    """
+    Read a string of until size is read or null byte is found from a stream
+    
+    Args:
+        stream (BinaryIO): input stream
+        offset (int): Offset within the steam to read.
+        str_fmt (str): Output decoding format.
+        error_handling (str): See decode's "errors" field
+    
+    Returns:
+        str: decoded string
+    """
+    if not offset is None:
+        stream.seek(offset)
+    
+    null_byte = '\0'.encode(str_fmt)
     chars = bytearray()
     while True:
-        byte = stream.read(1)
-        if byte == b'\x00' or not byte:
+        byte = stream.read(len(null_byte))
+        if byte == null_byte or not byte:
             break
-
         chars += byte
+    
+    return chars.decode(str_fmt, errors=error_handling)
 
-    return chars.decode('shift_jis', errors='replace')
+def read_bytes(stream: BinaryIO, size: int = -1, offset: int = None) -> bytes:
+    """
+    Reads a specific amount of requested bytes
+
+    Args:
+        stream (BinaryIO): input stream.
+        size: The number of bytes to read. By default reads until the end of the file.
+        offset (int): Offset within the steam to read.
+    
+    Returns:
+        bytes: bytes object
+    """
+    return read_ndata(stream, size, offset)
+
+###########################
+####### WRITE UTILS #######
+###########################
+
+def write_ndata(stream: BinaryIO, new_value: Any, offset: int = None, pack_fmt: str = None):
+    """
+    Write n size data and converts it to the expected data type/size.
+
+    Args:
+        stream (BinaryIO): input stream
+        new_value (Any): new value to be written in pack_format (assumes data is already bytes by default)
+        offset (int): Offset within the steam to read.
+        pack_fmt (str): If specified, unpacks the bytes into a specific output type.
+    """
+    if offset is not None:
+        stream.seek(offset)
+
+    new_bytes = new_value
+    if pack_fmt is not None:
+        new_bytes = struct.pack(pack_fmt, new_value)
+    return stream.write(new_bytes)
+
+def write_u64(stream: BinaryIO, new_value: int, offset: int = None):
+    """
+    Writes an 64-bit unsigned integer to a stream
+
+    Args:
+        stream (BinaryIO): input stream
+        new_value (int): The value to write to stream
+        offset (int): Offset within the steam to write.
+    """
+    write_ndata(stream, new_value, offset, ">Q")
+
+def write_u32(stream: BinaryIO, new_value: int, offset: int = None):
+    """
+    Writes an 32-bit unsigned integer to a stream
+
+    Args:
+        stream (BinaryIO): input stream
+        new_value (int): The value to write to stream
+        offset (int): Offset within the steam to write.
+    """
+    write_ndata(stream, new_value, offset, ">I")
+
+def write_u16(stream: BinaryIO, new_value: int, offset: int = None):
+    """
+    Writes an 16-bit unsigned integer to a stream
+
+    Args:
+        stream (BinaryIO): input stream
+        new_value (int): The value to write to stream
+        offset (int): Offset within the steam to write.
+    """
+    write_ndata(stream, new_value, offset, ">H")
+
+def write_u8(stream: BinaryIO, new_value: int, offset: int = None):
+    """
+    Writes an 8-bit unsigned integer to a stream
+
+    Args:
+        stream (BinaryIO): input stream
+        new_value (int): The value to write to stream
+        offset (int): Offset within the steam to write.
+    """
+    write_ndata(stream, new_value, offset, ">B")
+
+def write_s64(stream: BinaryIO, new_value: int, offset: int = None):
+    """
+    Writes an 64-bit signed integer to a stream
+
+    Args:
+        stream (BinaryIO): input stream
+        new_value (int): The value to write to stream
+        offset (int): Offset within the steam to write.
+    """
+    write_ndata(stream, new_value, offset, ">q")
+
+def write_s32(stream: BinaryIO, new_value: int, offset: int = None):
+    """
+    Writes an 32-bit signed integer to a stream
+
+    Args:
+        stream (BinaryIO): input stream
+        new_value (int): The value to write to stream
+        offset (int): Offset within the steam to write.
+    """
+    write_ndata(stream, new_value, offset, ">i")
+
+def write_s16(stream: BinaryIO, new_value: int, offset: int = None):
+    """
+    Writes an 16-bit signed integer to a stream
+
+    Args:
+        stream (BinaryIO): input stream
+        new_value (int): The value to write to stream
+        offset (int): Offset within the steam to write.
+    """
+    write_ndata(stream, new_value, offset, ">h")
+
+def write_s8(stream: BinaryIO, new_value: int, offset: int = None):
+    """
+    Writes an 8-bit signed integer to a stream
+
+    Args:
+        stream (BinaryIO): input stream
+        new_value (int): The value to write to stream
+        offset (int): Offset within the steam to write.
+    """
+    write_ndata(stream, new_value, offset, ">b")
+
+def write_float(stream: BinaryIO, new_value: float, offset: int = None):
+    """
+    Writes a float to a stream
+
+    Args:
+        stream (BinaryIO): input stream
+        new_value (float): The value to write to stream
+        offset (int): Offset within the steam to write.
+    """
+    write_ndata(stream, new_value, offset, ">f")
+
+def write_string(stream: BinaryIO, new_value: str, expected_size: int, padding_byte: bytes = b'\0',
+        offset: int = None, str_fmt: str = STRING_FORMAT, add_null_byte: bool = False):
+    """
+    Writes a str to a stream
+
+    Args:
+        stream (BinaryIO): input stream
+        new_value (str): The value to write to stream
+        expected_size (int): Checks the size of encoded string is the expected byte length, otherwise adds X padding_byte
+        padding_byte (bytes): byte to padd the string to match X expected size.
+        offset (int): Offset within the steam to write.
+        str_fmt (str): Encoding format.
+        add_null_byte (bool): Terminates the string with an extra null byte.
+    """
+
+    encoded_string = new_value.encode(str_fmt)
+    str_len = len(encoded_string)
+    if str_len > expected_size:
+        raise ByteHelperError(f"String \"{new_value}\" is too long (max length: {str(expected_size)})")
+
+    padding_length = expected_size - str_len
+    new_value = encoded_string + (padding_byte * padding_length)
+
+    if add_null_byte:
+        new_value += b'\0'
+
+    write_ndata(stream, new_value, offset)
+
+def write_bytes(stream: BinaryIO, new_bytes: bytes, offset: int = None):
+    """
+    Writes raw bytes into the given stream
+    
+    Args:
+        stream (BinaryIO): input stream
+        new_value (bytes): The value to write to stream
+        offset (int): Offset within the steam to write.
+    """
+    write_ndata(stream, new_bytes, offset)
 
 ###########################
 ### CRYPTOGRAPHIC UTILS ###
