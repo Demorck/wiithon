@@ -1,8 +1,10 @@
-from typing import Callable, Optional
+from contextlib import contextmanager
+from typing import Callable, Optional, ContextManager, T
 
 from io import BytesIO
 
 from wiithon.file_helper.bnr import BNR
+from wiithon.file_helper.resolver_path import resolve_read, resolve_write
 from wiithon.file_system_table.FST import FST
 from wiithon.file_system_table.FSTNode import FSTFile
 from wiithon.file_system_table.Operations import add_node, remove_node
@@ -60,6 +62,15 @@ class WiiIsoPatcher:
 
     def read_file(self, path: str) -> bytes:
         return self.data_partition.read_file(path)
+
+    @contextmanager
+    def edit_as(self, path: str, cls: type[T], **kwargs) -> ContextManager[T]:
+        data = resolve_read(self, path)
+        obj = cls.read(BytesIO(data), **kwargs)
+        yield obj
+        buf = BytesIO()
+        obj.write(buf)
+        resolve_write(self, path, buf.getvalue())
 
     def transform_file(self, path: str, fn: Callable[[bytes], bytes]) -> None:
         original = self.data_partition.read_file(path)

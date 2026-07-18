@@ -72,3 +72,10 @@ IMET_LANGUAGES = ["Japanese", "English", "German", "French", "Spanish",
             ############
 
 U8_MAGIC_WORD: bytes = b'\x55\xAA\x38\x2D'
+
+
+            ############
+            ### RARC ###
+            ############
+
+RARC_MAGIC_WORD: str = "RARC"

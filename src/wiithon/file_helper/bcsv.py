@@ -319,7 +319,7 @@ class BCSVField:
                     if string_pool:
                         highest_pair: StringPoolElement = string_pool[-1]
                         # + 1 because null byte terminated
-                        pool_offset: int = highest_pair.offset + len(highest_pair.value) + 1
+                        pool_offset: int = highest_pair.offset + len(highest_pair.value.encode(str_fmt)) + 1
 
                     pool_element = StringPoolElement(value, pool_offset)
                     string_pool.append(pool_element)
@@ -393,6 +393,7 @@ class BCSV:
     """
     fields: list[BCSVField]
     entries: list[BCSVEntry]
+    str_fmt: str
 
 
     def __init__(self, fields: list[BCSVField] = None, entries: list[BCSVEntry] = None):
@@ -414,6 +415,7 @@ class BCSV:
 
         self.fields = fields
         self.entries = entries
+        self.str_fmt = STRING_FORMAT
 
 
     @classmethod
@@ -437,6 +439,7 @@ class BCSV:
             BCSVEntry.hash_names = field_names
 
         bcsv: BCSV = cls() # initialize the class with some empty entry/field lists.
+        bcsv.str_fmt = str_fmt
         entry_count: int = fh.read_u32(raw_data, 0x0)
         field_count: int = fh.read_u32(raw_data, 0x4)
         entry_data_offset: int = fh.read_u32(raw_data, 0x8)
@@ -528,7 +531,7 @@ class BCSV:
             entry_bytes: BytesIO = BytesIO(bytearray(entry_size))
             # Loop through all fields to write into the bcsv for each entry
             for field in self.fields:
-                field.set_value_in_buffer(entry_bytes, entry[field], string_pool)
+                field.set_value_in_buffer(entry_bytes, entry[field], string_pool, str_fmt=str_fmt)
 
             # Update the entry bytes into the BCSV data object.
             fh.write_bytes(bcsv_data, entry_bytes.getvalue(), offset)
@@ -537,7 +540,7 @@ class BCSV:
         # Create an empty string pool to write data to and eventually append to the end.
         string_pool_bytes: BytesIO = BytesIO()
         for pool_element in string_pool:
-            fh.write_string(string_pool_bytes, pool_element.value, len(pool_element.value), offset=pool_element.offset, str_fmt=str_fmt, add_null_byte=True)
+            fh.write_string(string_pool_bytes, pool_element.value, len(pool_element.value.encode(str_fmt)), offset=pool_element.offset, str_fmt=str_fmt, add_null_byte=True)
 
         # Add the string pool bytes into BCSV data.
         fh.write_bytes(bcsv_data, string_pool_bytes.getvalue(), offset)
@@ -649,4 +652,10 @@ class BCSV:
         for bcsv_entry in entries:
             if not isinstance(bcsv_entry, BCSVEntry):
                 raise BCSVFileError(f"Entries provided is not of type 'BCSVEntry'.\nReceived field type: {type(bcsv_entry)}")
-            
+
+    @classmethod
+    def read(cls, stream: BytesIO, **kwargs) -> "BCSV":
+        return cls.import_bcsv(stream, **kwargs)
+
+    def write(self, stream: BytesIO) -> None:
+        stream.write(self.export_bcsv(self.str_fmt).getvalue())
