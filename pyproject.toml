@@ -19,6 +19,3 @@ wiithon = "wiithon.cli:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/wiithon"]
-
-[tool.hatch.version]
-source = "vcs"
