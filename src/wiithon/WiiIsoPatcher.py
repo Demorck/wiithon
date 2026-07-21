@@ -91,7 +91,7 @@ class WiiIsoPatcher:
             "version"    : header.disc_version
         }
 
-    def modify_banner_title(self, new_title: str, language: Optional[str]) -> None:
+    def modify_banner_title(self, new_title: str, language: str = "English") -> None:
         bnr_bytes = self.read_file("opening.bnr")
         bnr = BNR.read(BytesIO(bnr_bytes))
         bnr.imet.set_title(new_title, language)

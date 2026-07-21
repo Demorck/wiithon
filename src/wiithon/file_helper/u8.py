@@ -31,7 +31,7 @@ class U8:
 
         magic = stream.read(4)
         if magic != U8_MAGIC_WORD:
-            raise ValueError(f"Invalid magic word for U8 {magic:#x} instead of {U8_MAGIC_WORD}")
+            raise ValueError(f"Invalid magic word for U8 {magic:!r} instead of {U8_MAGIC_WORD}")
 
         rootnode_offset = read_u32(stream) # Always 0x20
         header_size = read_u32(stream)
@@ -176,7 +176,7 @@ class U8:
         return buffer.getvalue()
 
     # maybe change this function to a proper api
-    def extract_to(self, output_dir: str) -> bytes:
+    def extract_to(self, output_dir: str) -> None:
         if not self.nodes:
             return
 
@@ -196,3 +196,9 @@ class U8:
                 with open(path, "wb") as f:
                     f.write(node.data)
                 i += 1
+
+    def get_file_by_path(self, path: str) -> bytes:
+        return self.get_file(path)
+
+    def replace_file_by_path(self, path: str, data: bytes) -> None:
+        self.replace_file(path, data)

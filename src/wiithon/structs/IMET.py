@@ -14,7 +14,7 @@ class IMET:
         self.banner_size: int = 0
         self.sound_size: int = 0
         self.titles: list[str] = [""] * IMET_TITLE_COUNT
-        self._content_offset: int = 0
+        self.hash_size: int = 0
         self._raw_block: bytes = b""
 
     @classmethod
@@ -28,7 +28,7 @@ class IMET:
         if len(obj._raw_block) < IMET_BLOCK_SIZE or obj._raw_block[:4] != IMET_MAGIC_WORD:
             raise ValueError(f"Invalid IMET magic: {obj._raw_block[:4]!r}")
 
-        obj._content_offset = struct.unpack_from(">I", obj._raw_block, 0x04)[0]
+        obj.hash_size = struct.unpack_from(">I", obj._raw_block, 0x04)[0]
         obj.icon_size        = struct.unpack_from(">I", obj._raw_block, 0x0C)[0]
         obj.banner_size      = struct.unpack_from(">I", obj._raw_block, 0x10)[0]
         obj.sound_size       = struct.unpack_from(">I", obj._raw_block, 0x14)[0]
@@ -59,6 +59,7 @@ class IMET:
         stream.write(b'\x00' * IMET_PADDING_SIZE)
 
         buf = bytearray(self._raw_block)
+        struct.pack_into(">III", buf, 0x0C, self.icon_size, self.banner_size, self.sound_size)
         for i in range(IMET_TITLE_COUNT):
             off = 0x1C + i * IMET_TITLE_MAX_BYTES
             encoded = self.titles[i].encode("utf-16-be")[:IMET_TITLE_MAX_BYTES]
@@ -66,7 +67,8 @@ class IMET:
             buf[off:off + len(encoded)] = encoded
 
         buf[0x5B0:0x5C0] = b'\x00' * 16
-        digest = hashlib.md5(buf[:0x5B0]).digest()
+        hashed = (b'\x00' * IMET_PADDING_SIZE + bytes(buf))[-self.hash_size:]
+        digest = hashlib.md5(hashed).digest()
         buf[0x5B0:0x5C0] = digest
 
         stream.write(bytes(buf))

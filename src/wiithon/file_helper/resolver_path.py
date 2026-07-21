@@ -1,6 +1,7 @@
 from io import BytesIO
 from typing import Callable
 
+from wiithon.file_helper.lz77 import Lz77
 from wiithon.file_helper.rarc import Rarc
 from wiithon.file_helper.u8 import U8
 from wiithon.file_helper.yaz0 import Yaz0
@@ -24,11 +25,25 @@ def _open_archive(data: bytes) -> tuple[object, Callable]:
             return buf.getvalue()
         return inner, yaz0_serialize
 
+    if data[:4] == b"LZ77":
+        lz = Lz77.read(BytesIO(data))
+        inner, inner_serialize = _open_archive(lz.data)
+
+        def lz77_serialize(arc):
+            lz.data = inner_serialize(arc)
+            buf = BytesIO()
+            lz.write(buf)
+            return buf.getvalue()
+
+        return inner, lz77_serialize
+
     if data[:4] == b"RARC":
         arc = Rarc.read(BytesIO(data))
         def serialize(arc):
             buf = BytesIO(); arc.write(buf); return buf.getvalue()
         return arc, serialize
+
+
 
     if data[:4] == b"\x55\xAA\x38\x2D":
         arc = U8.read(BytesIO(data))
