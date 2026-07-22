@@ -1,6 +1,6 @@
 from typing import List, BinaryIO
 
-from wiithon.helpers.Utils import read_shiftjis
+from wiithon.helpers.Utils import read_string_until_null
 from wiithon.file_system_table.FSTNode import FSTNode, FSTDirectory, FSTFile
 from wiithon.file_system_table.RawNode import RawFSTNode
 
@@ -96,7 +96,7 @@ def _build_tree(stream: BinaryIO, string_offset: int,
 
     while i < end:
         raw = nodes[i]
-        name = read_shiftjis(stream, string_offset + raw.name_offset)
+        name = read_string_until_null(stream, string_offset + raw.name_offset, "shift_jis")
 
         if raw.is_directory:
             children, _ = _build_tree(stream, string_offset, nodes,

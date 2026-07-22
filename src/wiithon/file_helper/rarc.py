@@ -1,6 +1,7 @@
 from typing import BinaryIO, List
 import os
 
+from wiithon.helpers.Constants import RARC_MAGIC_WORD
 from wiithon.helpers.Utils import read_string, read_u32, read_u16
 
 
@@ -55,7 +56,7 @@ class Rarc:
         obj.base_offset = stream.tell()
 
         obj.magic_word = read_string(stream, 0x04)
-        if obj.magic_word != "RARC":
+        if obj.magic_word != RARC_MAGIC_WORD:
             raise ValueError("Trying to read a non-rarc file with the rarc struct")
 
         obj.file_length = read_u32(stream)
@@ -281,3 +282,56 @@ class Rarc:
                 return
 
         raise FileNotFoundError(f"File not found in RARC: {name}")
+
+    def _find_node_for_path(self, parts: list[str]) -> RarcNode:
+        node = self.nodes[0]  # root
+        for part in parts:
+            found = False
+            for i in range(node.entry_count):
+                entry = self.entries[node.first_entry_index + i]
+                if entry.name == part and entry.type == 0x02:  # répertoire
+                    node = self.nodes[entry.data_offset_or_idx]
+                    found = True
+                    break
+            if not found:
+                raise FileNotFoundError(f"Directory not found in RARC: {part}")
+        return node
+
+    def get_file_by_path(self, path: str) -> bytes:
+        parts = [p for p in path.split("/") if p]
+        node = self._find_node_for_path(parts[:-1])
+        filename = parts[-1]
+
+        for i in range(node.entry_count):
+            entry = self.entries[node.first_entry_index + i]
+            if entry.name != filename:
+                continue
+            if entry.type != 0x02:
+                return entry.data
+
+            sub_node = self.nodes[entry.data_offset_or_idx]
+            files = [
+                self.entries[sub_node.first_entry_index + j]
+                for j in range(sub_node.entry_count)
+                if self.entries[sub_node.first_entry_index + j].name not in (".", "..")
+                and self.entries[sub_node.first_entry_index + j].type != 0x02
+            ]
+            if len(files) == 1:
+                return files[0].data
+            names = ", ".join(e.name for e in files)
+            raise ValueError(
+                f"'{filename}' is a directory with {len(files)} files called : {names}"
+            )
+
+        raise FileNotFoundError(f"File not found: {path}")
+
+    def replace_file_by_path(self, path: str, data: bytes) -> None:
+        parts = [p for p in path.split("/") if p]
+        node = self._find_node_for_path(parts[:-1])
+        filename = parts[-1]
+        for i in range(node.entry_count):
+            entry = self.entries[node.first_entry_index + i]
+            if entry.name == filename and entry.type != 0x02:
+                entry.data = data
+                return
+        raise FileNotFoundError(f"File not found: {path}")

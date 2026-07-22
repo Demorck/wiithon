@@ -6,3 +6,6 @@
 /src_dir/
 /assets
 /extract
+
+.venv/
+**/__pycache__
