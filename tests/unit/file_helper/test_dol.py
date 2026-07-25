@@ -74,6 +74,26 @@ class TestDOLReadAt(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.dol.read_at(self.text_start, len(self.text_data) + 4)
 
+class TestDOLReadUntilNullAt(unittest.TestCase):
+
+    def setUp(self):
+        self.text_data = b'Hello\x00World\x00Feur'
+        self.text_start = 0x80003100
+        raw = build_mock_dol(self.text_data, self.text_start)
+        self.dol = DOL.read(BytesIO(raw))
+
+    def test_read_the_first(self):
+        result = self.dol.read_until_null_at(self.text_start)
+        self.assertEqual(result, b'Hello')
+
+    def test_read_middle(self):
+        result = self.dol.read_until_null_at(self.text_start + 6)
+        self.assertEqual(result, b'World')
+
+    def test_read_null_not_found(self):
+        with self.assertRaises(ValueError):
+            self.dol.read_until_null_at(self.text_start + 12)
+
 
 class TestDOLWriteAt(unittest.TestCase):
 

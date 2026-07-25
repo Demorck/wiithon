@@ -50,7 +50,7 @@ class DOL:
                 continue
             start = self.header.text_starts[i]
             if start <= virtual_addr < start + length:
-                return ('text', i, virtual_addr - start)
+                return 'text', i, virtual_addr - start
 
         for i in range(DATA_SECTIONS):
             length = self.header.data_length[i]
@@ -58,7 +58,7 @@ class DOL:
                 continue
             start = self.header.data_starts[i]
             if start <= virtual_addr < start + length:
-                return ('data', i, virtual_addr - start)
+                return 'data', i, virtual_addr - start
 
         raise ValueError(f"Virtual address {virtual_addr:#010x} not found in any DOL section")
 
@@ -87,6 +87,19 @@ class DOL:
             )
 
         return section[offset:offset + size]
+
+    def read_until_null_at(self, virtual_addr: int) -> bytes:
+        stype, i, offset = self._virtual_to_section(virtual_addr)
+        section = self.text_sections[i] if stype == 'text' else self.data_sections[i]
+        end = section.find(b'\x00', offset)
+
+        if end == -1:
+            raise ValueError(
+                 f"No null terminator found after {virtual_addr:#010x} "
+                 f"(section size={len(section):#x}, offset={offset:#x})"
+            )
+
+        return section[offset:end]
 
     def write_at(self, virtual_addr: int, data: bytes) -> None:
         stype, i, offset = self._virtual_to_section(virtual_addr)
