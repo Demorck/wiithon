@@ -7,7 +7,8 @@ from wiithon.binary.align import align
 from wiithon.builder.source import PartitionSource
 from wiithon.crypto.part_writer import CryptPartWriter
 from wiithon.disc.layout import FIRST_PARTITION_OFFSET, BI2_OFFSET, APPLOADER_OFFSET, PARTITION_TABLE_OFFSET, \
-    PARTITION_TABLE_ENTRIES, REGION_OFFSET, MAGIC_WORD_OFFSET, WII_MAGIC_WORD
+    PARTITION_TABLE_ENTRIES, REGION_OFFSET, MAGIC_WORD_OFFSET, WII_MAGIC_WORD, PART_TMD_OFFSET, PART_DATA_OFFSET, \
+    PART_H3_OFFSET, TMD_H3_HASH_OFFSET, TMD_DATA_SIZE_OFFSET, TMD_SIGNATURE_SIZE, TMD_FAKESIGN_PADDING, TMD_SIGNED_START
 from wiithon.fst.serializer import FSTToBytes
 from wiithon.fst.node import FSTFile
 from wiithon.crypto.layout import GROUP_SIZE, GROUP_DATA_SIZE
@@ -39,7 +40,7 @@ class WiiDiscBuilder:
         # Build placeholder headers
         part_header = WiiPartitionHeader()
         part_header.ticket = new_partition.get_ticket()
-        part_header.tmd_offset = 0x2C0
+        part_header.tmd_offset = PART_TMD_OFFSET
         
         tmd_buffer = BytesIO()
         new_partition.get_tmd().write(tmd_buffer)
@@ -56,7 +57,7 @@ class WiiDiscBuilder:
         part_header.certificate_chain_size = stream.tell() - cert_start
 
         # Open encrypted writer at 0x20000 relative to part_data_off
-        crypt_start = part_data_off + 0x20000
+        crypt_start = part_data_off + PART_DATA_OFFSET
         crypt_writer = CryptPartWriter(stream, crypt_start, part_header.ticket.title_key)
         
         source_fst = new_partition.get_fst()
@@ -136,7 +137,7 @@ class WiiDiscBuilder:
         total_size = groups * GROUP_DATA_SIZE
         total_encrypted_size = groups * GROUP_SIZE
         
-        self.current_data_offset += 0x20000 + total_encrypted_size
+        self.current_data_offset += PART_DATA_OFFSET + total_encrypted_size
         
         # Rewrite FST according to offset of datas
         crypt_writer.seek(part_disc_header.FST_offset)
@@ -150,11 +151,11 @@ class WiiDiscBuilder:
         h3 = crypt_writer.get_h3_table()
         
         # Write h3
-        stream.seek(part_data_off + 0x8000)
+        stream.seek(part_data_off + PART_H3_OFFSET)
         stream.write(h3)
         
-        part_header.global_hash_table_offset = 0x8000
-        part_header.data_offset = 0x20000
+        part_header.global_hash_table_offset = PART_H3_OFFSET
+        part_header.data_offset = PART_DATA_OFFSET
         part_header.data_size = total_size
         
         # TMD hash and signature (signature is not correct says Dolphin but who cares)
@@ -162,17 +163,27 @@ class WiiDiscBuilder:
         hasher.update(h3)
         digest = hasher.digest()
         
-        tmd_bytes[0x1F4:0x1F4+20] = digest
-        tmd_bytes[0x1EC:0x1EC+8] = struct.pack(">Q", total_size)
+        tmd_bytes[
+            TMD_H3_HASH_OFFSET:
+            TMD_H3_HASH_OFFSET + 20
+        ] = digest
+
+        tmd_bytes[
+            TMD_DATA_SIZE_OFFSET:
+            TMD_DATA_SIZE_OFFSET + 8
+        ] = struct.pack(">Q", total_size)
         
         # Just 0
-        tmd_bytes[4:0x104] = b'\x00' * 0x100
+        tmd_bytes[4:0x104] = b'\x00' * TMD_SIGNATURE_SIZE
         
         # Brute force starting hash to \x00
         for i in range(0xFFFFFFFFFFFFFFFF):
-            tmd_bytes[0x19A:0x19A+8] = struct.pack("=Q", i) 
+            tmd_bytes[
+                TMD_FAKESIGN_PADDING:
+                TMD_FAKESIGN_PADDING+8
+            ] = struct.pack("=Q", i)
             temp_hasher = hashlib.sha1()
-            temp_hasher.update(tmd_bytes[0x140:])
+            temp_hasher.update(tmd_bytes[TMD_SIGNED_START:])
             hash_res = temp_hasher.digest()
             if hash_res[0] == 0:
                 break
