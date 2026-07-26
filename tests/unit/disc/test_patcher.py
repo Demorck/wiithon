@@ -6,9 +6,9 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from wiithon.disc.WiiIsoPatcher import WiiIsoPatcher
-from wiithon.file_system_table.FSTNode import FSTFile, FSTDirectory
-from wiithon.disc.Enums import WiiPartType
+from wiithon.disc.patcher import WiiIsoPatcher
+from wiithon.fst.node import FSTFile, FSTDirectory
+from wiithon.disc.enums import WiiPartType
 
 
 def _make_patcher():
@@ -247,8 +247,8 @@ class TestBuildIntegration(unittest.TestCase):
         reader.partitions = [entry]
         return reader
 
-    @patch("wiithon.WiiIsoPatcher.WiiDiscBuilder")
-    @patch("wiithon.WiiIsoPatcher.CopyBuilder")
+    @patch("wiithon.disc.patcher.WiiDiscBuilder")
+    @patch("wiithon.disc.patcher.CopyBuilder")
     def test_fst_modifier_not_none_when_add_file_called(self, MockCopyBuilder, _):
         p = WiiIsoPatcher("dummy.iso")
         p.reader = self._make_reader_mock()
@@ -261,8 +261,8 @@ class TestBuildIntegration(unittest.TestCase):
         _, kwargs = MockCopyBuilder.call_args
         self.assertIsNotNone(kwargs.get("fst_modifier"))
 
-    @patch("wiithon.WiiIsoPatcher.WiiDiscBuilder")
-    @patch("wiithon.WiiIsoPatcher.CopyBuilder")
+    @patch("wiithon.disc.patcher.WiiDiscBuilder")
+    @patch("wiithon.disc.patcher.CopyBuilder")
     def test_fst_modifier_is_none_when_nothing_configured(self, MockCopyBuilder, _):
         p = WiiIsoPatcher("dummy.iso")
         p.reader = self._make_reader_mock()

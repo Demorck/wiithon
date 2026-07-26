@@ -1,11 +1,11 @@
 import sys
 
-from wiithon.disc.WiiIsoPatcher import WiiIsoPatcher
+from wiithon.disc.patcher import WiiIsoPatcher
 
 sys.path.insert(0, "../src")
 
 from wiithon.formats.dol import DOL
-from wiithon.ppc import PowerPC as ppc
+from wiithon.ppc import instructions as ppc
 
 # Patch addresses
 PATCH_ADDR_NOP   = 0x80258a0c

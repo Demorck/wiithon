@@ -1,7 +1,7 @@
 from typing import BinaryIO
 import struct
 
-from wiithon.binary.Utils import read_u32
+from wiithon.binary.reader import read_u32
 
 class ApploaderHeader:
     """

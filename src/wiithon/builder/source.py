@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from wiithon.disc.structs.Certificate import Certificate
-from wiithon.disc.structs.DiscHeader import DiscHeader
-from wiithon.disc.structs.TMD import TMD
-from wiithon.disc.structs.Ticket import Ticket
-from wiithon.disc.Enums import WiiPartType
-from wiithon.file_system_table.FST import FST
+from wiithon.disc.structs.certificate import Certificate
+from wiithon.disc.structs.disc_header import DiscHeader
+from wiithon.disc.structs.tmd import TMD
+from wiithon.disc.structs.ticket import Ticket
+from wiithon.disc.enums import WiiPartType
+from wiithon.fst.tree import FST
 
 
 class WiiPartitionInterface(ABC):

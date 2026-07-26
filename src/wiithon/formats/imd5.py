@@ -1,7 +1,7 @@
 from io import BytesIO
 from typing import BinaryIO
 import hashlib
-from wiithon.binary.Utils import read_u32, read_string, read_bytes, read_u8, write_u32, write_bytes
+from wiithon.binary.reader import read_u32, read_string, read_bytes, read_u8, write_u32, write_bytes
 
 
 class IMD5:

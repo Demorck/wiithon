@@ -1,8 +1,8 @@
 import struct
 from typing import BinaryIO
 
-from wiithon.binary.Utils import read_u32_shifted, read_u32
-from wiithon.disc.Enums import WiiPartType
+from wiithon.binary.reader import read_u32_shifted, read_u32
+from wiithon.disc.enums import WiiPartType
 
 class WiiPartitionEntry:
     """

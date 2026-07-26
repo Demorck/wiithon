@@ -2,8 +2,8 @@ from io import BytesIO
 from typing import BinaryIO
 
 from wiithon.formats.lz77 import Lz77
-from wiithon.formats.IMD5 import IMD5
-from wiithon.formats.IMET import IMET
+from wiithon.formats.imd5 import IMD5
+from wiithon.formats.imet import IMET
 from wiithon.formats.u8 import U8
 
 

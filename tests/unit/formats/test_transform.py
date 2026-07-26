@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 from wiithon.formats.rarc import Rarc, RarcNode, RarcFileEntry
 from wiithon.formats.yaz0 import Yaz0
 from wiithon.formats.transforms import yaz0_transform, rarc_transform, auto_yaz0_transform
-from wiithon.disc.WiiIsoPatcher import WiiIsoPatcher
+from wiithon.disc.patcher import WiiIsoPatcher
 
 # May need to break this file into smaller ones
 

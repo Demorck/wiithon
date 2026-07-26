@@ -3,8 +3,8 @@ import unittest
 from io import BytesIO
 
 from wiithon.formats.u8 import U8, NODE_SIZE, ROOTNODE_OFFSET
-from wiithon.crypto.Constants import U8_MAGIC_WORD
-from wiithon.binary.Utils import align
+from wiithon.crypto.layout import U8_MAGIC_WORD
+from wiithon.binary.reader import align
 
 
 def _build_u8(files: dict[str, bytes]) -> bytes:

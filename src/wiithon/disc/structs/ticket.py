@@ -1,9 +1,9 @@
 from typing import BinaryIO
 import struct
 
-from wiithon.disc.Enums import SignatureType
-from wiithon.binary.Utils import read_u32, read_u16, read_u8, decrypt_title_key, encrypt_title_key
-from wiithon.disc.structs.TicketTimeLimit import TicketTimeLimit
+from wiithon.disc.enums import SignatureType
+from wiithon.binary.reader import read_u32, read_u16, read_u8, decrypt_title_key, encrypt_title_key
+from wiithon.disc.structs.ticket_time_limit import TicketTimeLimit
 
 
 class Ticket:

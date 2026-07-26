@@ -2,7 +2,7 @@ from typing import BinaryIO
 from io import BytesIO
 import struct
 
-from wiithon.binary.Utils import read_u8, read_u32, read_string, read_u32_shifted
+from wiithon.binary.reader import read_u8, read_u32, read_string, read_u32_shifted
 
 class DiscHeader:
     """

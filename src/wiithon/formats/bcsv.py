@@ -3,7 +3,7 @@ from io import BytesIO
 from typing import NamedTuple, Union
 from abc import ABC, abstractmethod
 
-import wiithon.binary.Utils as fh
+import wiithon.binary.reader as fh
 
 BCSV_HEADER_SIZE: int = 0x10
 BCSV_FIELD_SIZE: int = 0xC

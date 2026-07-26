@@ -3,8 +3,8 @@ from io import BytesIO
 from typing import BinaryIO
 import struct
 
-from wiithon.formats.DOLHeader import DOLHeader
-from wiithon.ppc import PowerPC as ppc
+from wiithon.formats.dol_header import DOLHeader
+from wiithon.ppc import instructions as ppc
 
 TEXT_SECTIONS = 7
 DATA_SECTIONS = 11

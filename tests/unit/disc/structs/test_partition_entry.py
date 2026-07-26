@@ -2,7 +2,7 @@ import struct
 import unittest
 from io import BytesIO
 
-from wiithon.disc.structs.WiiPartitionEntry import WiiPartitionEntry, read_parts
+from wiithon.disc.structs.partition_entry import WiiPartitionEntry, read_parts
 
 
 class TestReadParts(unittest.TestCase):

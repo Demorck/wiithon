@@ -1,9 +1,9 @@
 from io import BytesIO
 from typing import List
 
-from wiithon.disc.Enums import SignatureType
-from wiithon.disc.structs.TMDContent import TMDContent
-from wiithon.binary.Utils import *
+from wiithon.disc.enums import SignatureType
+from wiithon.disc.structs.tmd_content import TMDContent
+from wiithon.binary.reader import *
 
 """
 See this: https://wiibrew.org/wiki/Title_metadata

@@ -1,7 +1,7 @@
 from typing import List
 import bisect
 
-from wiithon.file_system_table.FSTNode import FSTNode, FSTDirectory
+from wiithon.fst.node import FSTNode, FSTDirectory
 
 def find_node(entries: List[FSTNode], path_parts: List[str]) -> FSTNode | None:
     current: None | FSTDirectory = None

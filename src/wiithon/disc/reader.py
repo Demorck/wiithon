@@ -1,15 +1,15 @@
 from io import BytesIO
 from typing import BinaryIO, List, Optional
 
-from wiithon.disc.WiiPartitionInfo import WiiPartitionInfo
-from wiithon.crypto.CryptPartReader import CryptPartReader
-from wiithon.file_system_table.FST import FST
-from wiithon.binary.Utils import read_u32, json_repr
-from wiithon.disc.structs.Certificate import Certificate
-from wiithon.disc.structs.DiscHeader import DiscHeader
-from wiithon.disc.structs.TMD import TMD
-from wiithon.disc.structs.WiiPartitionEntry import WiiPartitionEntry, read_parts
-from wiithon.disc.structs.WiiPartitionHeader import WiiPartitionHeader
+from wiithon.disc.partition import WiiPartitionInfo
+from wiithon.crypto.part_reader import CryptPartReader
+from wiithon.fst.tree import FST
+from wiithon.binary.reader import read_u32, json_repr
+from wiithon.disc.structs.certificate import Certificate
+from wiithon.disc.structs.disc_header import DiscHeader
+from wiithon.disc.structs.tmd import TMD
+from wiithon.disc.structs.partition_entry import WiiPartitionEntry, read_parts
+from wiithon.disc.structs.partition_header import WiiPartitionHeader
 
 
 @json_repr

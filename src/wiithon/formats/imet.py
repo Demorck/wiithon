@@ -2,7 +2,7 @@ import hashlib
 import struct
 from typing import BinaryIO
 
-from wiithon.crypto.Constants import (
+from wiithon.crypto.layout import (
     IMET_TITLE_COUNT, IMET_PADDING_SIZE, IMET_BLOCK_SIZE, \
     IMET_MAGIC_WORD, IMET_TITLE_MAX_BYTES, IMET_LANGUAGES
 )

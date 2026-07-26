@@ -1,5 +1,5 @@
 from io import BytesIO
-from wiithon.disc.WiiIsoPatcher import WiiIsoPatcher
+from wiithon.disc.patcher import WiiIsoPatcher
 from wiithon.formats.bnr import BNR
 
 ISO_PATH = "../assets/smg.iso"

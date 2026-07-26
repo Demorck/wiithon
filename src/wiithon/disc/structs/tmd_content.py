@@ -1,4 +1,4 @@
-from wiithon.binary.Utils import *
+from wiithon.binary.reader import *
 
 """
 Content Metadata (CMD) from TMD (Title Metadata)

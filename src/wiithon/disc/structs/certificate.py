@@ -1,5 +1,5 @@
-from wiithon.disc.Enums import SignatureType
-from wiithon.binary.Utils import *
+from wiithon.disc.enums import SignatureType
+from wiithon.binary.reader import *
 
 class Certificate:
     """

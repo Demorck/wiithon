@@ -1,8 +1,8 @@
 from typing import BinaryIO, List
 import os
 
-from wiithon.crypto.Constants import RARC_MAGIC_WORD
-from wiithon.binary.Utils import read_string, read_u32, read_u16
+from wiithon.crypto.layout import RARC_MAGIC_WORD
+from wiithon.binary.reader import read_string, read_u32, read_u16
 
 
 class RarcNode:

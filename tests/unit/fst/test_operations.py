@@ -1,6 +1,6 @@
 import unittest
-from wiithon.file_system_table.FSTNode import FSTNode, FSTDirectory, FSTFile
-from wiithon.file_system_table.Operations import find_node, remove_node, add_node
+from wiithon.fst.node import FSTNode, FSTDirectory, FSTFile
+from wiithon.fst.operations import find_node, remove_node, add_node
 
 
 class TestFindNode(unittest.TestCase):

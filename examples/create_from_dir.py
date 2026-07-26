@@ -1,8 +1,8 @@
 import os
-from wiithon.builder.DirectoryPartitionBuilder import DirectoryPartitionBuilder
-from wiithon.builder.WiiDiscBuilder import WiiDiscBuilder
-from wiithon.disc.Enums import WiiPartType
-from wiithon.disc.structs.DiscHeader import DiscHeader
+from wiithon.builder.directory_source import DirectoryPartitionBuilder
+from wiithon.builder.disc_builder import WiiDiscBuilder
+from wiithon.disc.enums import WiiPartType
+from wiithon.disc.structs.disc_header import DiscHeader
 
 # May adding all this logic into one file maybe ?
 def main():

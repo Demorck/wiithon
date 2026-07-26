@@ -2,7 +2,7 @@ import struct
 import unittest
 from io import BytesIO
 
-from wiithon.crypto.Constants import IMET_MAGIC_WORD, IMET_PADDING_SIZE, IMET_TITLE_MAX_BYTES, IMET_BLOCK_SIZE
+from wiithon.crypto.layout import IMET_MAGIC_WORD, IMET_PADDING_SIZE, IMET_TITLE_MAX_BYTES, IMET_BLOCK_SIZE
 
 
 def _make_imet_bytes(

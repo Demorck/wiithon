@@ -4,15 +4,15 @@ from typing import Callable, Optional, TypeVar, Iterator
 from io import BytesIO
 
 from wiithon.formats.bnr import BNR
-from wiithon.formats.resolver_path import resolve_read, resolve_write
-from wiithon.file_system_table.FST import FST
-from wiithon.file_system_table.FSTNode import FSTFile
-from wiithon.file_system_table.Operations import add_node, remove_node
-from wiithon.disc.Enums import WiiPartType
+from wiithon.formats.archive import resolve_read, resolve_write
+from wiithon.fst.tree import FST
+from wiithon.fst.node import FSTFile
+from wiithon.fst.operations import add_node, remove_node
+from wiithon.disc.enums import WiiPartType
 from wiithon.formats.dol import DOL
-from wiithon.disc.WiiIsoReader import WiiIsoReader
-from wiithon.builder.WiiDiscBuilder import WiiDiscBuilder
-from wiithon.builder.CopyBuilder import CopyBuilder
+from wiithon.disc.reader import WiiIsoReader
+from wiithon.builder.disc_builder import WiiDiscBuilder
+from wiithon.builder.copy_source import CopyBuilder
 
 T = TypeVar("T")
 

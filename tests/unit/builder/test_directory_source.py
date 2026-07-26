@@ -2,11 +2,11 @@ import os
 import tempfile
 import unittest
 
-from wiithon.builder.DirectoryPartitionBuilder import (
+from wiithon.builder.directory_source import (
     build_from_directory_tree,
     DirectoryPartitionBuilder,
 )
-from wiithon.file_system_table.FSTNode import FSTFile, FSTDirectory
+from wiithon.fst.node import FSTFile, FSTDirectory
 
 
 #  build_from_directory_tree

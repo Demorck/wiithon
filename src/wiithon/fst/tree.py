@@ -1,8 +1,8 @@
 from typing import List, BinaryIO
 
-from wiithon.binary.Utils import read_string_until_null
-from wiithon.file_system_table.FSTNode import FSTNode, FSTDirectory, FSTFile
-from wiithon.file_system_table.RawNode import RawFSTNode
+from wiithon.binary.reader import read_string_until_null
+from wiithon.fst.node import FSTNode, FSTDirectory, FSTFile
+from wiithon.fst.raw_node import RawFSTNode
 
 
 class FST:

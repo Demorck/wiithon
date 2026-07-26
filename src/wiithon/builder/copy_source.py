@@ -3,17 +3,17 @@ import os
 
 from typing import Callable, List, Optional
 
-from wiithon.disc.structs.Certificate import Certificate
-from wiithon.disc.structs.DiscHeader import DiscHeader
-from wiithon.disc.structs.TMD import TMD
-from wiithon.disc.structs.Ticket import Ticket
-from wiithon.disc.structs.WiiPartitionEntry import WiiPartitionEntry
-from wiithon.disc.Enums import WiiPartType
+from wiithon.disc.structs.certificate import Certificate
+from wiithon.disc.structs.disc_header import DiscHeader
+from wiithon.disc.structs.tmd import TMD
+from wiithon.disc.structs.ticket import Ticket
+from wiithon.disc.structs.partition_entry import WiiPartitionEntry
+from wiithon.disc.enums import WiiPartType
 from wiithon.formats.dol import DOL
 
-from wiithon.disc.WiiIsoReader import WiiIsoReader
-from wiithon.builder.WiiPartitionInterface import WiiPartitionInterface
-from wiithon.file_system_table.FST import FST
+from wiithon.disc.reader import WiiIsoReader
+from wiithon.builder.source import WiiPartitionInterface
+from wiithon.fst.tree import FST
 
 
 class CopyBuilder(WiiPartitionInterface):

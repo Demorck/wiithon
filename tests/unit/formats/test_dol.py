@@ -3,7 +3,7 @@ import unittest
 from io import BytesIO
 
 from wiithon.formats.dol import DOL, HEADER_SIZE, DATA_SECTIONS, TEXT_SECTIONS
-from wiithon.formats.DOLHeader import DOLHeader
+from wiithon.formats.dol_header import DOLHeader
 
 
 def build_mock_dol(text_data: bytes = b'\x60\x00\x00\x00' * 4,

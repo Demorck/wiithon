@@ -2,14 +2,14 @@ from collections.abc import Callable
 from io import BytesIO
 from typing import List, Optional
 
-from wiithon.crypto.CryptPartReader import CryptPartReader
-from wiithon.file_system_table.FST import FST
-from wiithon.file_system_table.FSTNode import FSTNode, FSTDirectory, FSTFile
-from wiithon.disc.structs.ApploaderHeader import ApploaderHeader
-from wiithon.disc.structs.Certificate import Certificate
-from wiithon.disc.structs.DiscHeader import DiscHeader
-from wiithon.disc.structs.TMD import TMD
-from wiithon.disc.structs.WiiPartitionHeader import WiiPartitionHeader
+from wiithon.crypto.part_reader import CryptPartReader
+from wiithon.fst.tree import FST
+from wiithon.fst.node import FSTNode, FSTDirectory, FSTFile
+from wiithon.disc.structs.apploader_header import ApploaderHeader
+from wiithon.disc.structs.certificate import Certificate
+from wiithon.disc.structs.disc_header import DiscHeader
+from wiithon.disc.structs.tmd import TMD
+from wiithon.disc.structs.partition_header import WiiPartitionHeader
 from wiithon.formats.dol import DOL
 
 

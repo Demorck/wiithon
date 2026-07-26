@@ -2,7 +2,7 @@ import struct
 import unittest
 from io import BytesIO
 
-from wiithon.disc.structs.DiscHeader import DiscHeader
+from wiithon.disc.structs.disc_header import DiscHeader
 
 
 class TestDiscHeader(unittest.TestCase):

@@ -1,8 +1,8 @@
 from typing import BinaryIO
 import struct
 
-from wiithon.binary.Utils import read_u32, read_u32_shifted
-from wiithon.disc.structs.Ticket import Ticket
+from wiithon.binary.reader import read_u32, read_u32_shifted
+from wiithon.disc.structs.ticket import Ticket
 
 
 class WiiPartitionHeader:

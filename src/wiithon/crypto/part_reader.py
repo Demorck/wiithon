@@ -1,7 +1,7 @@
 from typing import BinaryIO
 
-from wiithon.crypto.Constants import GROUP_SIZE, GROUP_DATA_SIZE
-from wiithon.binary.Utils import decrypt_group
+from wiithon.crypto.layout import GROUP_SIZE, GROUP_DATA_SIZE
+from wiithon.binary.reader import decrypt_group
 
 
 class CryptPartReader:

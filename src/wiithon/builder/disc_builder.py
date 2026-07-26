@@ -3,14 +3,14 @@ import hashlib
 from io import BytesIO
 from typing import List, BinaryIO, Callable, Optional
 
-from wiithon.builder.WiiPartitionInterface import WiiPartitionInterface
-from wiithon.crypto.CryptPartWriter import CryptPartWriter
-from wiithon.file_system_table.FSTToBytes import FSTToBytes
-from wiithon.file_system_table.FSTNode import FSTFile
-from wiithon.crypto.Constants import GROUP_SIZE, GROUP_DATA_SIZE
-from wiithon.disc.structs.DiscHeader import DiscHeader
-from wiithon.disc.structs.WiiPartitionEntry import WiiPartitionEntry
-from wiithon.disc.structs.WiiPartitionHeader import WiiPartitionHeader
+from wiithon.builder.source import WiiPartitionInterface
+from wiithon.crypto.part_writer import CryptPartWriter
+from wiithon.fst.serializer import FSTToBytes
+from wiithon.fst.node import FSTFile
+from wiithon.crypto.layout import GROUP_SIZE, GROUP_DATA_SIZE
+from wiithon.disc.structs.disc_header import DiscHeader
+from wiithon.disc.structs.partition_entry import WiiPartitionEntry
+from wiithon.disc.structs.partition_header import WiiPartitionHeader
 
 def align_next(num: int, alignment: int) -> int:
     return (num + alignment - 1) & ~(alignment - 1)

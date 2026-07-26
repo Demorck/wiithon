@@ -1,11 +1,11 @@
 from typing import BinaryIO
 from Crypto.Cipher import AES
 
-from wiithon.crypto.Constants import (
+from wiithon.crypto.layout import (
     GROUP_SIZE, GROUP_DATA_SIZE, BLOCK_SIZE,
     BLOCK_HEADER_SIZE, BLOCK_DATA_SIZE, BLOCK_PER_GROUP
 )
-from wiithon.binary.Utils import encrypt_group
+from wiithon.binary.reader import encrypt_group
 
 
 class CryptPartWriter:

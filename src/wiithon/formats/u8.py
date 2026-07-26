@@ -3,8 +3,8 @@ import struct
 from io import BytesIO
 from typing import BinaryIO, List
 
-from wiithon.crypto.Constants import U8_MAGIC_WORD
-from wiithon.binary.Utils import read_u32, align
+from wiithon.crypto.layout import U8_MAGIC_WORD
+from wiithon.binary.reader import read_u32, align
 
 NODE_SIZE = 0xC
 ROOTNODE_OFFSET = 0x20

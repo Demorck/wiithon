@@ -1,4 +1,4 @@
-from wiithon.disc.WiiIsoPatcher import WiiIsoPatcher
+from wiithon.disc.patcher import WiiIsoPatcher
 from wiithon.formats.bcsv import BCSV, calculate_field_hash
 
 ISO_PATH = "../assets/smg.iso"

@@ -1,7 +1,7 @@
 from io import BytesIO
 from typing import BinaryIO
 
-from wiithon.binary.Utils import read_string, read_u8, read_u16, write_ndata, read_ndata
+from wiithon.binary.reader import read_string, read_u8, read_u16, write_ndata, read_ndata
 
 _buffer_size = 18
 _window_size = 4095
