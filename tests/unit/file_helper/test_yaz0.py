@@ -2,7 +2,7 @@ import unittest
 from io import BytesIO
 import random
 
-from wiithon.file_helper.yaz0 import Yaz0
+from wiithon.formats.yaz0 import Yaz0
 
 
 class TestYaz0(unittest.TestCase):

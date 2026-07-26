@@ -1,10 +1,10 @@
 from io import BytesIO
 
 from wiithon.crypto.CryptPartReader import CryptPartReader
-from wiithon.helpers.Enums import WiiPartType
-from wiithon.structs.DiscHeader import DiscHeader
-from wiithon.structs.WiiPartitionEntry import read_parts
-from wiithon.structs.WiiPartitionHeader import WiiPartitionHeader
+from wiithon.disc.Enums import WiiPartType
+from wiithon.disc.structs.DiscHeader import DiscHeader
+from wiithon.disc.structs.WiiPartitionEntry import read_parts
+from wiithon.disc.structs.WiiPartitionHeader import WiiPartitionHeader
 
 def main():
     # Opening ISO

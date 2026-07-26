@@ -1,6 +1,6 @@
 from io import BytesIO
-from wiithon.WiiIsoPatcher import WiiIsoPatcher
-from wiithon.file_helper.bnr import BNR
+from wiithon.disc.WiiIsoPatcher import WiiIsoPatcher
+from wiithon.formats.bnr import BNR
 
 ISO_PATH = "../assets/smg.iso"
 OUT_PATH = "../assets/game_patched.iso"

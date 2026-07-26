@@ -2,7 +2,7 @@ import unittest
 from io import BytesIO
 import random
 
-from wiithon.file_helper.lz77 import Lz77
+from wiithon.formats.lz77 import Lz77
 
 
 def _make_lz77(data: bytes, compression_method: int = 0x10) -> Lz77:

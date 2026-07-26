@@ -1,7 +1,7 @@
 import sys
 
 from wiithon.builder.CopyBuilder import CopyBuilder
-from wiithon.WiiIsoReader import WiiIsoReader
+from wiithon.disc.WiiIsoReader import WiiIsoReader
 from wiithon.builder.WiiDiscBuilder import WiiDiscBuilder
 
 def partition_copy(src_path: str, dst_path: str) -> None:

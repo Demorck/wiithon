@@ -1,7 +1,7 @@
 import unittest
 import struct
 
-from wiithon.helpers.PowerPC import (
+from wiithon.ppc.PowerPC import (
     b, bl, cntlzw,
     li, lis, addi, lwz, stw, lbz, stb, lhz, sth,
     ori, nop,

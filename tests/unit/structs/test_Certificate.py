@@ -2,8 +2,8 @@ import struct
 import unittest
 from io import BytesIO
 
-from wiithon.structs.Certificate import Certificate
-from wiithon.helpers.Enums import SignatureType, KeyType
+from wiithon.disc.structs.Certificate import Certificate
+from wiithon.disc.Enums import SignatureType, KeyType
 
 
 class TestCertificate(unittest.TestCase):

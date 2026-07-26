@@ -2,10 +2,10 @@ import unittest
 from io import BytesIO
 from unittest.mock import MagicMock
 
-from wiithon.WiiIsoPatcher import WiiIsoPatcher
-from wiithon.file_helper.rarc import Rarc, RarcNode, RarcFileEntry
-from wiithon.file_helper.yaz0 import Yaz0
-from wiithon.file_helper.resolver_path import resolve_read, resolve_write
+from wiithon.disc.WiiIsoPatcher import WiiIsoPatcher
+from wiithon.formats.rarc import Rarc, RarcNode, RarcFileEntry
+from wiithon.formats.yaz0 import Yaz0
+from wiithon.formats.resolver_path import resolve_read, resolve_write
 
 
 def _rarc_entry(name: str, file_id: int, is_dir: bool,

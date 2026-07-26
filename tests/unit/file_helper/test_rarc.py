@@ -5,7 +5,7 @@ from io import BytesIO
 import struct
 import tempfile
 
-from wiithon.file_helper.rarc import Rarc
+from wiithon.formats.rarc import Rarc
 
 class TestRarc(unittest.TestCase):
     def build_mock_rarc(self) -> bytes:

@@ -2,8 +2,8 @@ import struct
 import unittest
 from io import BytesIO
 
-from wiithon.helpers.Enums import SignatureType
-from wiithon.structs.Ticket import Ticket
+from wiithon.disc.Enums import SignatureType
+from wiithon.disc.structs.Ticket import Ticket
 
 
 class TestTicket(unittest.TestCase):

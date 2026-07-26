@@ -6,7 +6,7 @@ import unittest
 from typing import BinaryIO
 from unittest import mock
 
-from wiithon.WiiIsoReader import WiiIsoReader
+from wiithon.disc.WiiIsoReader import WiiIsoReader
 
 
 class TestWiiIsoReader(unittest.TestCase):

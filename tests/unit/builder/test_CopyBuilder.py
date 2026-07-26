@@ -4,8 +4,8 @@ from unittest.mock import MagicMock
 from wiithon.builder.CopyBuilder import CopyBuilder
 from wiithon.file_system_table.FST import FST
 from wiithon.file_system_table.FSTNode import FSTFile, FSTDirectory
-from wiithon.structs.WiiPartitionEntry import WiiPartitionEntry
-from wiithon.helpers.Enums import WiiPartType
+from wiithon.disc.structs.WiiPartitionEntry import WiiPartitionEntry
+from wiithon.disc.Enums import WiiPartType
 
 
 #  Helpers 

@@ -2,7 +2,7 @@ import struct
 import unittest
 from io import BytesIO
 
-from wiithon.structs.DOLHeader import DOLHeader
+from wiithon.formats.DOLHeader import DOLHeader
 
 
 class TestDOLHeader(unittest.TestCase):

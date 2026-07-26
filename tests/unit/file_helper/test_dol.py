@@ -2,8 +2,8 @@ import struct
 import unittest
 from io import BytesIO
 
-from wiithon.file_helper.dol import DOL, HEADER_SIZE, DATA_SECTIONS, TEXT_SECTIONS
-from wiithon.structs.DOLHeader import DOLHeader
+from wiithon.formats.dol import DOL, HEADER_SIZE, DATA_SECTIONS, TEXT_SECTIONS
+from wiithon.formats.DOLHeader import DOLHeader
 
 
 def build_mock_dol(text_data: bytes = b'\x60\x00\x00\x00' * 4,

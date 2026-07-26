@@ -6,9 +6,9 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from wiithon.WiiIsoPatcher import WiiIsoPatcher
+from wiithon.disc.WiiIsoPatcher import WiiIsoPatcher
 from wiithon.file_system_table.FSTNode import FSTFile, FSTDirectory
-from wiithon.helpers.Enums import WiiPartType
+from wiithon.disc.Enums import WiiPartType
 
 
 def _make_patcher():

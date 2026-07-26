@@ -2,9 +2,9 @@ import struct
 import unittest
 from io import BytesIO
 
-from wiithon.file_helper.u8 import U8, NODE_SIZE, ROOTNODE_OFFSET
-from wiithon.helpers.Constants import U8_MAGIC_WORD
-from wiithon.helpers.Utils import align
+from wiithon.formats.u8 import U8, NODE_SIZE, ROOTNODE_OFFSET
+from wiithon.crypto.Constants import U8_MAGIC_WORD
+from wiithon.binary.Utils import align
 
 
 def _build_u8(files: dict[str, bytes]) -> bytes:
