@@ -3,6 +3,8 @@ from typing import BinaryIO
 
 from wiithon.binary.reader import read_u32_shifted, read_u32
 from wiithon.disc.enums import WiiPartType
+from wiithon.disc.layout import PARTITION_TABLE_OFFSET, PARTITION_GROUP_COUNT
+
 
 class WiiPartitionEntry:
     """
@@ -49,10 +51,10 @@ def read_parts(stream: BinaryIO) -> list[WiiPartitionEntry]:
     :param stream:
     :return:
     """
-    stream.seek(0x40000)
+    stream.seek(PARTITION_TABLE_OFFSET)
 
     groups: list[tuple[int, int]] = []
-    for _ in range(4):
+    for _ in range(PARTITION_GROUP_COUNT):
         count = read_u32(stream)
         offset = read_u32_shifted(stream)
         groups.append((count, offset))

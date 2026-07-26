@@ -6,6 +6,8 @@ from typing import List, BinaryIO, Callable, Optional
 from wiithon.binary.align import align
 from wiithon.builder.source import PartitionSource
 from wiithon.crypto.part_writer import CryptPartWriter
+from wiithon.disc.layout import FIRST_PARTITION_OFFSET, BI2_OFFSET, APPLOADER_OFFSET, PARTITION_TABLE_OFFSET, \
+    PARTITION_TABLE_ENTRIES, REGION_OFFSET, MAGIC_WORD_OFFSET, WII_MAGIC_WORD
 from wiithon.fst.serializer import FSTToBytes
 from wiithon.fst.node import FSTFile
 from wiithon.crypto.layout import GROUP_SIZE, GROUP_DATA_SIZE
@@ -18,7 +20,7 @@ class WiiDiscBuilder:
         self.header: DiscHeader = header
         self.region: bytes = region
         self.partitions: List[tuple] = []
-        self.current_data_offset = 0x50000
+        self.current_data_offset = FIRST_PARTITION_OFFSET
 
     def add_partition(self, stream: BinaryIO, new_partition: PartitionSource, progress_cb: Optional[Callable]) -> None:
         """
@@ -76,9 +78,9 @@ class WiiDiscBuilder:
         part_disc_header = new_partition.get_encrypted_header()
         
         # BI2 and Apploader
-        crypt_writer.seek(0x440)
+        crypt_writer.seek(BI2_OFFSET)
         crypt_writer.write(new_partition.get_bi2())
-        crypt_writer.seek(0x2440)
+        crypt_writer.seek(APPLOADER_OFFSET)
         crypt_writer.write(new_partition.get_apploader())
         
         # DOL
@@ -185,16 +187,16 @@ class WiiDiscBuilder:
     def finish(self, stream: BinaryIO) -> None:
         stream.seek(0)
         self.header.write(stream)
-        stream.seek(0x40000)
+        stream.seek(PARTITION_TABLE_OFFSET)
         stream.write(struct.pack(">I", len(self.partitions)))
-        stream.write(struct.pack(">I", 0x40020 >> 2))
+        stream.write(struct.pack(">I", PARTITION_TABLE_ENTRIES >> 2))
         stream.write(b"\x00" * 24)
-        stream.seek(0x40020)
+        stream.seek(PARTITION_TABLE_ENTRIES)
         for partition_entry, _, _ in self.partitions:
             partition_entry.write(stream)
 
-        stream.seek(0x4E000)
+        stream.seek(REGION_OFFSET)
         stream.write(self.region)
 
-        stream.seek(0x4FFFC)
-        stream.write(struct.pack(">I", 0xC3F81A8E))
+        stream.seek(MAGIC_WORD_OFFSET)
+        stream.write(struct.pack(">I", WII_MAGIC_WORD))
