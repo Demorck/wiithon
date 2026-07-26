@@ -2,11 +2,14 @@ import hashlib
 import struct
 from typing import BinaryIO
 
-from wiithon.crypto.layout import (
-    IMET_TITLE_COUNT, IMET_PADDING_SIZE, IMET_BLOCK_SIZE, \
-    IMET_MAGIC_WORD, IMET_TITLE_MAX_BYTES, IMET_LANGUAGES
-)
 
+IMET_MAGIC_WORD = b"IMET"
+IMET_PADDING_SIZE = 0x40
+IMET_BLOCK_SIZE = 0x5C0
+IMET_TITLE_COUNT = 0x0A
+IMET_TITLE_MAX_BYTES = 0x54
+IMET_LANGUAGES = ["Japanese", "English", "German", "French", "Spanish",
+                  "Italian", "Dutch", "Simplified Chinese", "Traditional Chinese", "Korean"]
 
 class IMET:
     def __init__(self):
