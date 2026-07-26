@@ -7,7 +7,7 @@ from wiithon.disc.structs.tmd import TMD
 from wiithon.disc.structs.ticket import Ticket
 from wiithon.disc.enums import WiiPartType
 
-from wiithon.builder.source import WiiPartitionInterface
+from wiithon.builder.source import PartitionSource
 from wiithon.fst.tree import FST
 from wiithon.fst.node import FSTFile, FSTDirectory
 
@@ -31,7 +31,7 @@ def _build_from_directory_tree_recursive(path: str, current_entries: list) -> No
             fst_file = FSTFile(filename, 0, os.stat(entry.path).st_size)
             current_entries.append(fst_file)
 
-class DirectoryPartitionBuilder(WiiPartitionInterface):
+class DirectoryPartitionSource(PartitionSource):
     def __init__(self, path: str, partition_type: WiiPartType) -> None:
         sys_folder = os.path.join(path, "sys")
         self.files_dir = os.path.join(path, "files")

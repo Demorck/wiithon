@@ -1,6 +1,6 @@
 import sys
 
-from wiithon.builder.copy_source import CopyBuilder
+from wiithon.builder.copy_source import CopyPartitionSource
 from wiithon.disc.reader import WiiIsoReader
 from wiithon.builder.disc_builder import WiiDiscBuilder
 
@@ -16,7 +16,7 @@ def partition_copy(src_path: str, dst_path: str) -> None:
 
         with open(dst_path, 'w+b') as dest:
             for entry in reader.partitions:
-                copy_builder = CopyBuilder(reader, entry, None)
+                copy_builder = CopyPartitionSource(reader, entry, None)
                 builder.add_partition(dest, copy_builder, None)
 
             builder.finish(dest)

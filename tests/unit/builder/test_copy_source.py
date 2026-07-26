@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock
 
-from wiithon.builder.copy_source import CopyBuilder
+from wiithon.builder.copy_source import CopyPartitionSource
 from wiithon.fst.tree import FST
 from wiithon.fst.node import FSTFile, FSTDirectory
 from wiithon.disc.structs.partition_entry import WiiPartitionEntry
@@ -35,7 +35,7 @@ def _make_copy_builder(fst_entries=None, **kwargs):
     reader = MagicMock()
     reader.open_partition.return_value = info
 
-    return CopyBuilder(reader, entry, **kwargs), info
+    return CopyPartitionSource(reader, entry, **kwargs), info
 
 
 #  Getters

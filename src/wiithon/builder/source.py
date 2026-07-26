@@ -9,7 +9,7 @@ from wiithon.disc.enums import WiiPartType
 from wiithon.fst.tree import FST
 
 
-class WiiPartitionInterface(ABC):
+class PartitionSource(ABC):
     @abstractmethod
     def get_partition_type(self) -> WiiPartType: pass
     

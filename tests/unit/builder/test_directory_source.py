@@ -4,7 +4,7 @@ import unittest
 
 from wiithon.builder.directory_source import (
     build_from_directory_tree,
-    DirectoryPartitionBuilder,
+    DirectoryPartitionSource,
 )
 from wiithon.fst.node import FSTFile, FSTDirectory
 
@@ -88,15 +88,15 @@ class TestBuildFromDirectoryTree(unittest.TestCase):
         self.assertEqual(names, sorted(names))
 
 
-#  DirectoryPartitionBuilder.get_file_data
+#  DirectoryPartitionSource.get_file_data
 class TestDirectoryPartitionBuilderGetFileData(unittest.TestCase):
     """
     Contourne __init__ avec object.__new__ pour tester get_file_data
     sans devoir créer tous les fichiers binaires (tmd.bin, cert.bin, etc.).
     """
 
-    def _make_builder(self, files_dir: str) -> DirectoryPartitionBuilder:
-        builder = object.__new__(DirectoryPartitionBuilder)
+    def _make_builder(self, files_dir: str) -> DirectoryPartitionSource:
+        builder = object.__new__(DirectoryPartitionSource)
         builder.files_dir = files_dir
         return builder
 

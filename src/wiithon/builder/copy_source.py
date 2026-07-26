@@ -12,11 +12,11 @@ from wiithon.disc.enums import WiiPartType
 from wiithon.formats.dol import DOL
 
 from wiithon.disc.reader import WiiIsoReader
-from wiithon.builder.source import WiiPartitionInterface
+from wiithon.builder.source import PartitionSource
 from wiithon.fst.tree import FST
 
 
-class CopyBuilder(WiiPartitionInterface):
+class CopyPartitionSource(PartitionSource):
     def __init__(self, reader: WiiIsoReader, partition: WiiPartitionEntry,
                  fst_modifier: Optional[Callable[[FST], None]] = None,
                  dol_modifier: Optional[Callable[[DOL], None]] = None,

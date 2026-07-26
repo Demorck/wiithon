@@ -248,7 +248,7 @@ class TestBuildIntegration(unittest.TestCase):
         return reader
 
     @patch("wiithon.disc.patcher.WiiDiscBuilder")
-    @patch("wiithon.disc.patcher.CopyBuilder")
+    @patch("wiithon.disc.patcher.CopyPartitionSource")
     def test_fst_modifier_not_none_when_add_file_called(self, MockCopyBuilder, _):
         p = WiiIsoPatcher("dummy.iso")
         p.reader = self._make_reader_mock()
@@ -262,7 +262,7 @@ class TestBuildIntegration(unittest.TestCase):
         self.assertIsNotNone(kwargs.get("fst_modifier"))
 
     @patch("wiithon.disc.patcher.WiiDiscBuilder")
-    @patch("wiithon.disc.patcher.CopyBuilder")
+    @patch("wiithon.disc.patcher.CopyPartitionSource")
     def test_fst_modifier_is_none_when_nothing_configured(self, MockCopyBuilder, _):
         p = WiiIsoPatcher("dummy.iso")
         p.reader = self._make_reader_mock()

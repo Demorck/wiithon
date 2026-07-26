@@ -3,7 +3,7 @@ import hashlib
 from io import BytesIO
 from typing import List, BinaryIO, Callable, Optional
 
-from wiithon.builder.source import WiiPartitionInterface
+from wiithon.builder.source import PartitionSource
 from wiithon.crypto.part_writer import CryptPartWriter
 from wiithon.fst.serializer import FSTToBytes
 from wiithon.fst.node import FSTFile
@@ -22,7 +22,7 @@ class WiiDiscBuilder:
         self.partitions: List[tuple] = []
         self.current_data_offset = 0x50000
 
-    def add_partition(self, stream: BinaryIO, new_partition: WiiPartitionInterface, progress_cb: Optional[Callable]) -> None:
+    def add_partition(self, stream: BinaryIO, new_partition: PartitionSource, progress_cb: Optional[Callable]) -> None:
         """
         TODO: 160 lines long for this function so refactor it maybe
         :param stream:

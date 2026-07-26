@@ -12,7 +12,7 @@ from wiithon.disc.enums import WiiPartType
 from wiithon.formats.dol import DOL
 from wiithon.disc.reader import WiiIsoReader
 from wiithon.builder.disc_builder import WiiDiscBuilder
-from wiithon.builder.copy_source import CopyBuilder
+from wiithon.builder.copy_source import CopyPartitionSource
 
 T = TypeVar("T")
 
@@ -122,7 +122,7 @@ class WiiIsoPatcher:
         with open(output_path, "w+b") as dest:
             for entry in self.reader.partitions:
                 is_data = entry.part_type == WiiPartType.DATA
-                copy_builder = CopyBuilder(
+                copy_builder = CopyPartitionSource(
                     self.reader,
                     entry,
                     fst_modifier=self._build_fst_modifier() if is_data else None,
