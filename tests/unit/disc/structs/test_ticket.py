@@ -2,7 +2,7 @@ import struct
 import unittest
 from io import BytesIO
 
-from wiithon.disc.enums import SignatureType
+from wiithon.disc.structs.signature import SignatureType
 from wiithon.disc.structs.ticket import Ticket
 
 

@@ -3,7 +3,7 @@ import unittest
 from io import BytesIO
 
 from wiithon.disc.structs.certificate import Certificate
-from wiithon.disc.enums import SignatureType, KeyType
+from wiithon.disc.structs.signature import SignatureType, KeyType
 
 
 class TestCertificate(unittest.TestCase):

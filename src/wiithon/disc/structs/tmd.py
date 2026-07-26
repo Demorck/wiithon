@@ -2,7 +2,7 @@ import struct
 from io import BytesIO
 from typing import BinaryIO, List
 from wiithon.binary.reader import read_u8, read_u16, read_u32, read_u64
-from wiithon.disc.enums import SignatureType
+from wiithon.disc.structs.signature import SignatureType
 from wiithon.disc.structs.tmd_content import TMDContent
 
 """
