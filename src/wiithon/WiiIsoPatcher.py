@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Callable, Optional, ContextManager, T
+from typing import Callable, Optional, ContextManager, TypeVar, Iterator
 
 from io import BytesIO
 
@@ -13,6 +13,8 @@ from wiithon.file_helper.dol import DOL
 from wiithon.WiiIsoReader import WiiIsoReader
 from wiithon.builder.WiiDiscBuilder import WiiDiscBuilder
 from wiithon.builder.CopyBuilder import CopyBuilder
+
+T = TypeVar("T")
 
 # TODO: Currently patch only data partition
 class WiiIsoPatcher:
@@ -30,8 +32,14 @@ class WiiIsoPatcher:
 
     def __enter__(self) -> "WiiIsoPatcher":
         self.reader = WiiIsoReader(self.src_path)
-        self.reader.__enter__()
-        self.data_partition = self.reader.open_partition(self.reader.get_data_partition())
+        try:
+            self.reader.__enter__()
+            self.data_partition = self.reader.open_partition(self.reader.get_data_partition())
+        except BaseException:
+            self.reader.close()
+            self.reader = None
+            raise
+
         return self
 
     def __exit__(self, *args) -> None:
@@ -64,7 +72,7 @@ class WiiIsoPatcher:
         return self.data_partition.read_file(path)
 
     @contextmanager
-    def edit_as(self, path: str, cls: type[T], **kwargs) -> ContextManager[T]:
+    def edit_as(self, path: str, cls: type[T], **kwargs) -> Iterator[T]:
         data = resolve_read(self, path)
         obj = cls.read(BytesIO(data), **kwargs)
         yield obj

@@ -17,12 +17,16 @@ class WiiIsoReader:
     def __init__(self, path: str) -> None:
         self.path = path
         self.file: BinaryIO = open(path, "rb")
-        self.disc_header: DiscHeader = DiscHeader.read(self.file)
-        self.partitions: List[WiiPartitionEntry] = read_parts(self.file)
-        self.region: bytes = self.read_region()
-        self.magic_word: int = self.read_magic_word()
-        if self.magic_word != 0xC3F81A8E:
-            raise ValueError(f"magic word is not 0xC3F81A8E: {self.magic_word}")
+        try:
+            self.disc_header: DiscHeader = DiscHeader.read(self.file)
+            self.partitions: List[WiiPartitionEntry] = read_parts(self.file)
+            self.region: bytes = self.read_region()
+            self.magic_word: int = self.read_magic_word()
+            if self.magic_word != 0xC3F81A8E:
+                raise ValueError(f"magic word is not 0xC3F81A8E: {self.magic_word}")
+        except BaseException:
+            self.file.close()
+            raise
 
     def get_data_partition(self) -> Optional[WiiPartitionEntry]:
         return next((p for p in self.partitions if p.part_type == 0), None)
