@@ -1,4 +1,6 @@
-from wiithon.binary.reader import *
+import struct
+from typing import BinaryIO
+from wiithon.binary.reader import read_u16, read_u32, read_u64
 
 """
 Content Metadata (CMD) from TMD (Title Metadata)
