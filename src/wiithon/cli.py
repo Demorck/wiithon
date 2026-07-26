@@ -50,7 +50,7 @@ def iso_info(
     """Display metadata from a Wii ISO disc header."""
     _require_file(iso)
 
-    from wiithon.WiiIsoReader import WiiIsoReader
+    from wiithon.disc.WiiIsoReader import WiiIsoReader
 
     with WiiIsoReader(str(iso)) as reader:
         h = reader.disc_header
@@ -82,7 +82,7 @@ def iso_list(
     """List all files from a partition"""
     _require_file(iso)
 
-    from wiithon.WiiIsoReader import WiiIsoReader
+    from wiithon.disc.WiiIsoReader import WiiIsoReader
 
     with WiiIsoReader(str(iso)) as reader:
         candidates = [
@@ -136,7 +136,7 @@ def iso_extract(
     _require_file(iso)
     dest.mkdir(parents=True, exist_ok=True)
 
-    from wiithon.WiiIsoReader import WiiIsoReader
+    from wiithon.disc.WiiIsoReader import WiiIsoReader
 
     with WiiIsoReader(str(iso)) as reader:
         candidates = [
@@ -185,7 +185,7 @@ def dol_caves(
     """Find all code caves in a dol file"""
     _require_file(iso)
 
-    from wiithon.WiiIsoReader import WiiIsoReader
+    from wiithon.disc.WiiIsoReader import WiiIsoReader
 
     with WiiIsoReader(str(iso)) as reader:
         candidates = [
@@ -222,8 +222,8 @@ def rarc_infos(
     _require_file(rarc)
 
     from io import BytesIO
-    from wiithon.file_helper.rarc import Rarc
-    from wiithon.file_helper.yaz0 import Yaz0
+    from wiithon.formats.rarc import Rarc
+    from wiithon.formats.yaz0 import Yaz0
 
     data = rarc.read_bytes()
     if data[:4] == b"Yaz0":
@@ -247,8 +247,8 @@ def rarc_infos(
     dest.mkdir(parents=True, exist_ok=True)
 
     from io import BytesIO
-    from wiithon.file_helper.rarc import Rarc
-    from wiithon.file_helper.yaz0 import Yaz0
+    from wiithon.formats.rarc import Rarc
+    from wiithon.formats.yaz0 import Yaz0
 
     data = rarc.read_bytes()
     if data[:4] == b"Yaz0":
@@ -270,7 +270,6 @@ def rarc_pack(
     if not src.is_dir():
         _abort(f"{src} is not a directory.")
 
-    from wiithon.WiiIsoPatcher import WiiIsoPatcher
     # TODO: implement a rarc builder from folder
 
     console.print("[yellow]Not yet implemented.[/yellow]")
