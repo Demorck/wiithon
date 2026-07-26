@@ -3,6 +3,7 @@ import hashlib
 from io import BytesIO
 from typing import List, BinaryIO, Callable, Optional
 
+from wiithon.binary.align import align
 from wiithon.builder.source import PartitionSource
 from wiithon.crypto.part_writer import CryptPartWriter
 from wiithon.fst.serializer import FSTToBytes
@@ -11,9 +12,6 @@ from wiithon.crypto.layout import GROUP_SIZE, GROUP_DATA_SIZE
 from wiithon.disc.structs.disc_header import DiscHeader
 from wiithon.disc.structs.partition_entry import WiiPartitionEntry
 from wiithon.disc.structs.partition_header import WiiPartitionHeader
-
-def align_next(num: int, alignment: int) -> int:
-    return (num + alignment - 1) & ~(alignment - 1)
 
 class WiiDiscBuilder:
     def __init__(self, header: DiscHeader, region: bytes):
@@ -46,7 +44,7 @@ class WiiDiscBuilder:
         tmd_bytes = bytearray(tmd_buffer.getvalue())
         part_header.tmd_size = len(tmd_bytes)
         
-        part_header.certificate_chain_offset = align_next(part_header.tmd_offset + part_header.tmd_size, 0x20)
+        part_header.certificate_chain_offset = align(part_header.tmd_offset + part_header.tmd_size, 0x20)
         
         # Write cert chain
         stream.seek(part_data_off + part_header.certificate_chain_offset)
@@ -84,12 +82,12 @@ class WiiDiscBuilder:
         crypt_writer.write(new_partition.get_apploader())
         
         # DOL
-        part_disc_header.DOL_offset = align_next(crypt_writer.current_position, 0x20)
+        part_disc_header.DOL_offset = align(crypt_writer.current_position, 0x20)
         crypt_writer.seek(part_disc_header.DOL_offset)
         crypt_writer.write(new_partition.get_dol())
         
         # Write FST
-        part_disc_header.FST_offset = align_next(crypt_writer.current_position, 0x20)
+        part_disc_header.FST_offset = align(crypt_writer.current_position, 0x20)
         crypt_writer.seek(part_disc_header.FST_offset)
         fst_to_bytes.write_to(crypt_writer)
 
@@ -100,7 +98,7 @@ class WiiDiscBuilder:
         part_disc_header.FST_max_size = part_disc_header.FST_size
 
         # Write data
-        data_start = align_next(crypt_writer.current_position, 0x40)
+        data_start = align(crypt_writer.current_position, 0x40)
         crypt_writer.seek(data_start)
         processed_files = 0
         processed_file_bytes = 0
@@ -124,7 +122,7 @@ class WiiDiscBuilder:
                 
             # Align next to 0x40 with 0
             current_position = crypt_writer.current_position
-            next_start = align_next(current_position, 0x40)
+            next_start = align(current_position, 0x40)
             if next_start > current_position:
                 crypt_writer.write(b'\x00' * (next_start - current_position))
                 
