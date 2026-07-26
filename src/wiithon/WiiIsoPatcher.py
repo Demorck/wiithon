@@ -32,8 +32,14 @@ class WiiIsoPatcher:
 
     def __enter__(self) -> "WiiIsoPatcher":
         self.reader = WiiIsoReader(self.src_path)
-        self.reader.__enter__()
-        self.data_partition = self.reader.open_partition(self.reader.get_data_partition())
+        try:
+            self.reader.__enter__()
+            self.data_partition = self.reader.open_partition(self.reader.get_data_partition())
+        except BaseException:
+            self.reader.close()
+            self.reader = None
+            raise
+
         return self
 
     def __exit__(self, *args) -> None:
