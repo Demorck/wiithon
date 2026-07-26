@@ -7,7 +7,7 @@ from wiithon.crypto.layout import (
 
     BLOCK_HEADER_SIZE, BLOCK_PER_GROUP, BLOCK_SIZE,
     SUBGROUP_BY_GROUP, SUBBLOCK_SIZE, SUBBLOCK_BY_BLOCK,
-    BLOCK_BY_SUBGROUP, SUBGROUP_SIZE
+    BLOCK_BY_SUBGROUP, SUBGROUP_SIZE, IV_OFFSET, IV_SIZE, H1_OFFSET, H2_OFFSET, H1_SIZE
 )
 
 
@@ -24,7 +24,7 @@ def decrypt_block(block: bytes, title_key: bytes) -> bytes:
     :param title_key: 16-byte title key
     :return: decrypted data (0x7C00)
     """
-    data_iv = block[0x3D0:0x3E0]
+    data_iv = block[IV_OFFSET:IV_OFFSET + IV_SIZE]
     data_cipher = AES.new(title_key, AES.MODE_CBC, data_iv)
     data_section = data_cipher.decrypt(block[BLOCK_HEADER_SIZE:])
 
@@ -87,7 +87,7 @@ def encrypt_group(group_data: bytes | bytearray, title_key: bytes, h3_ref: bytea
 
             # Placing H0 in the block header then the padding
             buffer[block_start: block_start + len(h0)] = h0
-            buffer[block_start + len(h0): block_start + 0x280] = b'\x00' * 0x14
+            buffer[block_start + len(h0): block_start + H1_OFFSET] = b'\x00' * 0x14
 
         # Hashing h1 and placing it in the right place
         h2[subgroup_index * SHA1_SIZE:(subgroup_index + 1) * SHA1_SIZE] = hasher(h1).digest()
@@ -95,8 +95,8 @@ def encrypt_group(group_data: bytes | bytearray, title_key: bytes, h3_ref: bytea
         # Placing H1 in the block header
         for block_index in range(BLOCK_BY_SUBGROUP):
             block_start = subgroup_index * SUBGROUP_SIZE + block_index * BLOCK_SIZE
-            buffer[block_start + 0x280: block_start + 0x280 + len(h1)] = h1
-            buffer[block_start + 0x320: block_start + 0x340] = b'\x00' * 0x20
+            buffer[block_start + H1_OFFSET: block_start + H1_OFFSET + len(h1)] = h1
+            buffer[block_start + H1_OFFSET + H1_SIZE: block_start + H2_OFFSET] = b'\x00' * (H2_OFFSET - H1_OFFSET - H1_SIZE)
 
     # Calculate H3
     if h3_ref is not None:
@@ -108,17 +108,17 @@ def encrypt_group(group_data: bytes | bytearray, title_key: bytes, h3_ref: bytea
             block_start = subgroup_index * SUBGROUP_SIZE + block_index * BLOCK_SIZE
 
             # Placing H2 in the block header
-            buffer[block_start + 0x340: block_start + 0x340 + len(h2)] = h2
-            buffer[block_start + 0x3E0: block_start + 0x400] = b'\x00' * 0x20
+            buffer[block_start + H2_OFFSET: block_start + H2_OFFSET + len(h2)] = h2
+            buffer[block_start + IV_OFFSET + IV_SIZE: block_start + BLOCK_HEADER_SIZE] = b'\x00' * (BLOCK_HEADER_SIZE - IV_OFFSET - IV_SIZE)
 
-            cipher = AES.new(title_key, AES.MODE_CBC, b'\x00' * 16)
-            buffer[block_start: block_start + 0x400] = cipher.encrypt(bytes(buffer[block_start: block_start + 0x400]))
+            cipher = AES.new(title_key, AES.MODE_CBC, b'\x00' * IV_SIZE)
+            buffer[block_start: block_start + BLOCK_HEADER_SIZE] = cipher.encrypt(bytes(buffer[block_start: block_start + BLOCK_HEADER_SIZE]))
 
             # Encrypt data with the last 16 bytes (before padding) of encrypted header
-            iv = buffer[block_start + 0x3D0: block_start + 0x3E0]
+            iv = buffer[block_start + IV_OFFSET: block_start + IV_OFFSET + IV_SIZE]
             cipher2 = AES.new(title_key, AES.MODE_CBC, bytes(iv))
-            buffer[block_start + 0x400: block_start + BLOCK_SIZE] = cipher2.encrypt(
-                bytes(buffer[block_start + 0x400: block_start + BLOCK_SIZE])
+            buffer[block_start + BLOCK_HEADER_SIZE: block_start + BLOCK_SIZE] = cipher2.encrypt(
+                bytes(buffer[block_start + BLOCK_HEADER_SIZE: block_start + BLOCK_SIZE])
             )
 
     return bytes(buffer)
