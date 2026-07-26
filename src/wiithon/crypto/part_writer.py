@@ -5,7 +5,7 @@ from wiithon.crypto.layout import (
     GROUP_SIZE, GROUP_DATA_SIZE, BLOCK_SIZE,
     BLOCK_HEADER_SIZE, BLOCK_DATA_SIZE, BLOCK_PER_GROUP
 )
-from wiithon.binary.reader import encrypt_group
+from wiithon.crypto.blocks import encrypt_group
 
 
 class CryptPartWriter:
