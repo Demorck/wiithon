@@ -1,6 +1,5 @@
 import struct
 from typing import BinaryIO
-import json
 from typing import Any
 
 from wiithon.binary.common import ByteHelperError, STRING_FORMAT
