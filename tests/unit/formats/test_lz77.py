@@ -2,6 +2,7 @@ import unittest
 from io import BytesIO
 import random
 
+from wiithon.exceptions import InvalidFormatError
 from wiithon.formats.lz77 import Lz77
 
 
@@ -173,7 +174,7 @@ class TestLz77ReadWrite(unittest.TestCase):
 
     def test_read_rejects_wrong_magic_word(self):
         stream = BytesIO(b"Yaz0" + b"\x00" * 8)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(InvalidFormatError):
             Lz77.read(stream)
 
 

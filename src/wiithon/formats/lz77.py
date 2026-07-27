@@ -3,6 +3,7 @@ from typing import BinaryIO
 
 from wiithon.binary.reader import read_string, read_u8, read_u16, read_ndata
 from wiithon.binary.writer import write_ndata
+from wiithon.exceptions import InvalidFormatError
 
 _buffer_size = 18
 _window_size = 4095
@@ -21,7 +22,7 @@ class Lz77:
 
         obj.magic_word = read_string(stream, 0x04)
         if obj.magic_word != "LZ77":
-            raise ValueError("Trying to read a non-lz77 file with the lz77 struct")
+            raise InvalidFormatError("Trying to read a non-lz77 file with the lz77 struct")
 
         header = read_ndata(stream, 4, unpack_fmt='<I')
 

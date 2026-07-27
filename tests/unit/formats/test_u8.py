@@ -2,6 +2,7 @@ import struct
 import unittest
 from io import BytesIO
 
+from wiithon.exceptions import ArchiveIsADirectoryError, ArchiveFileNotFoundError
 from wiithon.formats.u8 import U8, NODE_SIZE, ROOTNODE_OFFSET, U8_MAGIC_WORD
 from wiithon.binary.align import align
 
@@ -79,11 +80,11 @@ class TestU8Read(unittest.TestCase):
         self.assertEqual(self.u8.get_file("meta/sound.bin"), b'\xCC' * 0x40)
 
     def test_missing_file_raises(self):
-        with self.assertRaises(FileNotFoundError):
+        with self.assertRaises(ArchiveFileNotFoundError):
             self.u8.get_file("meta/ghost.bin")
 
     def test_directory_path_raises(self):
-        with self.assertRaises(FileNotFoundError):
+        with self.assertRaises(ArchiveIsADirectoryError):
             self.u8.get_file("meta")
 
 

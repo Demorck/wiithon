@@ -2,7 +2,7 @@ from typing import BinaryIO, List
 import os
 
 from wiithon.binary.reader import read_string, read_u32, read_u16
-
+from wiithon.exceptions import InvalidFormatError, ArchiveFileNotFoundError
 
 RARC_MAGIC_WORD: str = "RARC"
 
@@ -58,7 +58,7 @@ class Rarc:
 
         obj.magic_word = read_string(stream, 0x04)
         if obj.magic_word != RARC_MAGIC_WORD:
-            raise ValueError("Trying to read a non-rarc file with the rarc struct")
+            raise InvalidFormatError("Trying to read a non-rarc file with the rarc struct")
 
         obj.file_length = read_u32(stream)
         read_u32(stream) # Length of header, always 0x20
@@ -274,7 +274,7 @@ class Rarc:
             if entry.name == name and entry.file_id != 0xFFFF and entry.type != 0x02:
                 return entry.data
 
-        raise FileNotFoundError(f"File not found in RARC: {name}")
+        raise ArchiveFileNotFoundError(f"File not found in RARC: {name}")
 
     def replace_file(self, name: str, data: bytes) -> None:
         for entry in self.entries:
@@ -282,7 +282,7 @@ class Rarc:
                 entry.data = data
                 return
 
-        raise FileNotFoundError(f"File not found in RARC: {name}")
+        raise ArchiveFileNotFoundError(f"File not found in RARC: {name}")
 
     def _find_node_for_path(self, parts: list[str]) -> RarcNode:
         node = self.nodes[0]  # root
@@ -295,7 +295,7 @@ class Rarc:
                     found = True
                     break
             if not found:
-                raise FileNotFoundError(f"Directory not found in RARC: {part}")
+                raise ArchiveFileNotFoundError(f"Directory not found in RARC: {part}")
         return node
 
     def get_file_by_path(self, path: str) -> bytes:
@@ -324,7 +324,7 @@ class Rarc:
                 f"'{filename}' is a directory with {len(files)} files called : {names}"
             )
 
-        raise FileNotFoundError(f"File not found: {path}")
+        raise ArchiveFileNotFoundError(f"File not found: {path}")
 
     def replace_file_by_path(self, path: str, data: bytes) -> None:
         parts = [p for p in path.split("/") if p]
@@ -335,4 +335,4 @@ class Rarc:
             if entry.name == filename and entry.type != 0x02:
                 entry.data = data
                 return
-        raise FileNotFoundError(f"File not found: {path}")
+        raise ArchiveFileNotFoundError(f"File not found: {path}")

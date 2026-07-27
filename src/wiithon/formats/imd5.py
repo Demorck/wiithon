@@ -3,6 +3,7 @@ from typing import BinaryIO
 import hashlib
 from wiithon.binary.reader import read_u32, read_string, read_bytes, read_u8
 from wiithon.binary.writer import write_u32, write_bytes
+from wiithon.exceptions import InvalidFormatError, CorruptedDataError
 
 
 class IMD5:
@@ -16,7 +17,7 @@ class IMD5:
     def unwrap(stream: BinaryIO) -> bytes:
         magic_word = read_string(stream, 4)
         if magic_word != "IMD5":
-            raise ValueError("Magic word is not IMD5")
+            raise InvalidFormatError("Magic word is not IMD5")
 
         filesize = read_u32(stream)
 
@@ -29,7 +30,7 @@ class IMD5:
         hash = hashlib.md5(payload)
 
         if hash.digest() != md5:
-            raise ValueError("MD5 hash does not match")
+            raise CorruptedDataError("MD5 hash does not match")
 
         return payload
 
