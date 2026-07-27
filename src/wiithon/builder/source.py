@@ -5,13 +5,12 @@ from wiithon.disc.structs.certificate import Certificate
 from wiithon.disc.structs.disc_header import DiscHeader
 from wiithon.disc.structs.tmd import TMD
 from wiithon.disc.structs.ticket import Ticket
-from wiithon.disc.enums import WiiPartType
 from wiithon.fst.tree import FST
 
 
 class PartitionSource(ABC):
     @abstractmethod
-    def get_partition_type(self) -> WiiPartType: pass
+    def get_partition_type(self) -> int: pass
     
     @abstractmethod
     def get_tmd(self) -> TMD: pass

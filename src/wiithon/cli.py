@@ -50,7 +50,7 @@ def iso_info(
     """Display metadata from a Wii ISO disc header."""
     _require_file(iso)
 
-    from wiithon.disc.WiiIsoReader import WiiIsoReader
+    from wiithon.disc.reader import WiiIsoReader
 
     with WiiIsoReader(str(iso)) as reader:
         h = reader.disc_header
@@ -82,7 +82,7 @@ def iso_list(
     """List all files from a partition"""
     _require_file(iso)
 
-    from wiithon.disc.WiiIsoReader import WiiIsoReader
+    from wiithon.disc.reader import WiiIsoReader
 
     with WiiIsoReader(str(iso)) as reader:
         candidates = [
@@ -136,7 +136,7 @@ def iso_extract(
     _require_file(iso)
     dest.mkdir(parents=True, exist_ok=True)
 
-    from wiithon.disc.WiiIsoReader import WiiIsoReader
+    from wiithon.disc.reader import WiiIsoReader
 
     with WiiIsoReader(str(iso)) as reader:
         candidates = [
@@ -185,7 +185,7 @@ def dol_caves(
     """Find all code caves in a dol file"""
     _require_file(iso)
 
-    from wiithon.disc.WiiIsoReader import WiiIsoReader
+    from wiithon.disc.reader import WiiIsoReader
 
     with WiiIsoReader(str(iso)) as reader:
         candidates = [

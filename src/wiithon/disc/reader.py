@@ -1,6 +1,7 @@
 from io import BytesIO
 from typing import BinaryIO, List, Optional
 
+from wiithon.disc.enums import WiiPartType
 from wiithon.disc.partition import WiiPartitionInfo
 from wiithon.crypto.part_reader import CryptPartReader
 from wiithon.fst.tree import FST
@@ -30,10 +31,10 @@ class WiiIsoReader:
             raise
 
     def get_data_partition(self) -> Optional[WiiPartitionEntry]:
-        return next((p for p in self.partitions if p.part_type == 0), None)
+        return next((p for p in self.partitions if p.part_type == WiiPartType.DATA), None)
 
     def get_update_partition(self) -> Optional[WiiPartitionEntry]:
-        return next((p for p in self.partitions if p.part_type == 1), None)
+        return next((p for p in self.partitions if p.part_type == WiiPartType.UPDATE), None)
 
     def get_partitions(self) -> List[WiiPartitionEntry]:
         return self.partitions
