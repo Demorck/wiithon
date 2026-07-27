@@ -4,6 +4,7 @@ from typing import BinaryIO, List, Optional
 from wiithon.disc.enums import WiiPartType
 from wiithon.disc.partition import WiiPartitionInfo
 from wiithon.crypto.part_reader import CryptPartReader
+from wiithon.exceptions import InvalidDiscError
 from wiithon.fst.tree import FST
 from wiithon.binary.reader import read_u32
 from wiithon.disc.structs.certificate import Certificate
@@ -25,7 +26,7 @@ class WiiIsoReader:
             self.region: bytes = self.read_region()
             self.magic_word: int = self.read_magic_word()
             if self.magic_word != WII_MAGIC_WORD:
-                raise ValueError(f"Wii agic word is not {WII_MAGIC_WORD:#X}, got {self.magic_word:#X}")
+                raise InvalidDiscError(f"Wii magic word is not {WII_MAGIC_WORD:#X}, got {self.magic_word:#X}")
         except BaseException:
             self.file.close()
             raise
