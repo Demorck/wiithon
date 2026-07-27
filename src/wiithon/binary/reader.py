@@ -2,7 +2,8 @@ import struct
 from typing import BinaryIO
 from typing import Any
 
-from wiithon.binary.common import ByteHelperError, STRING_FORMAT
+from wiithon.binary.common import STRING_FORMAT
+from wiithon.exceptions import BinaryError
 
 
 ###########################
@@ -29,7 +30,7 @@ def read_ndata(stream: BinaryIO, size: int = -1, offset: int = None, unpack_fmt:
         if size > 0:
             data_length = stream.seek(0, 2)
             if offset + size > data_length:
-                raise ByteHelperError(f"Offset {offset} + Length {size} ({offset + size}) is longer than the data size {data_length}.")
+                raise BinaryError(f"Offset {offset} + Length {size} ({offset + size}) is longer than the data size {data_length}.")
         stream.seek(offset)
 
     if unpack_fmt is not None:
