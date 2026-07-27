@@ -1,18 +1,20 @@
 from io import BytesIO
 from typing import BinaryIO, List, Optional
 
+from wiithon.disc.enums import WiiPartType
 from wiithon.disc.partition import WiiPartitionInfo
 from wiithon.crypto.part_reader import CryptPartReader
 from wiithon.fst.tree import FST
-from wiithon.binary.reader import read_u32, json_repr
+from wiithon.binary.reader import read_u32
 from wiithon.disc.structs.certificate import Certificate
 from wiithon.disc.structs.disc_header import DiscHeader
 from wiithon.disc.structs.tmd import TMD
 from wiithon.disc.structs.partition_entry import WiiPartitionEntry, read_parts
 from wiithon.disc.structs.partition_header import WiiPartitionHeader
 
+from wiithon.disc.layout import WII_MAGIC_WORD, REGION_OFFSET, REGION_SIZE, DISC_HEADER_SIZE, MAGIC_WORD_OFFSET
 
-@json_repr
+
 class WiiIsoReader:
     def __init__(self, path: str) -> None:
         self.path = path
@@ -22,27 +24,27 @@ class WiiIsoReader:
             self.partitions: List[WiiPartitionEntry] = read_parts(self.file)
             self.region: bytes = self.read_region()
             self.magic_word: int = self.read_magic_word()
-            if self.magic_word != 0xC3F81A8E:
-                raise ValueError(f"magic word is not 0xC3F81A8E: {self.magic_word}")
+            if self.magic_word != WII_MAGIC_WORD:
+                raise ValueError(f"Wii agic word is not {WII_MAGIC_WORD:#X}, got {self.magic_word:#X}")
         except BaseException:
             self.file.close()
             raise
 
     def get_data_partition(self) -> Optional[WiiPartitionEntry]:
-        return next((p for p in self.partitions if p.part_type == 0), None)
+        return next((p for p in self.partitions if p.part_type == WiiPartType.DATA), None)
 
     def get_update_partition(self) -> Optional[WiiPartitionEntry]:
-        return next((p for p in self.partitions if p.part_type == 1), None)
+        return next((p for p in self.partitions if p.part_type == WiiPartType.UPDATE), None)
 
     def get_partitions(self) -> List[WiiPartitionEntry]:
         return self.partitions
 
     def read_region(self) -> bytes:
-        self.file.seek(0x4E000)
-        return self.file.read(0x20)
+        self.file.seek(REGION_OFFSET)
+        return self.file.read(REGION_SIZE)
 
     def read_magic_word(self) -> int:
-        self.file.seek(0x4FFFC)
+        self.file.seek(MAGIC_WORD_OFFSET)
         return read_u32(self.file)
 
 
@@ -69,7 +71,7 @@ class WiiIsoReader:
         crypto = CryptPartReader(self.file, data_offset, title_key)
 
         # Disc Header
-        boot_data = crypto.read_at(0, 0x440)
+        boot_data = crypto.read_at(0, DISC_HEADER_SIZE)
         internal_header = DiscHeader.read(BytesIO(boot_data))
 
         # FST

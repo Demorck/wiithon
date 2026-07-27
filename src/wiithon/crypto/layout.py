@@ -5,25 +5,6 @@ Cryptographic constants and block-structure parameters for Wii encryption
 - Block & Group size parameters
 """
 
-# "Normal" Common key. Used by the majority of Wii games
-# 16 bytes AES-128 key, index 0 in the Ticket
-COMMON_KEY_NORMAL = bytes([
-    0xeb, 0xe4, 0x2a, 0x22, 0x5e, 0x85, 0x93, 0xe4,
-    0x48, 0xd9, 0xc5, 0x45, 0x73, 0x81, 0xaa, 0xf7
-])
-
-# Korean Common key. Used for korean titles ofc
-# index 1 in the Ticket
-COMMON_KEY_KOREAN = bytes([
-    0x63, 0xb8, 0x2b, 0xb4, 0xf4, 0x61, 0x4e, 0x2e,
-    0x13, 0xf2, 0xfe, 0xfb, 0xba, 0x4c, 0x9b, 0x7e
-])
-
-# Indexed by the common_key_index field from the Ticket:
-#   - 0 -> COMMON_KEY_NORMAL
-#   - 1 -> COMMON_KEY_KOREAN
-COMMON_KEYS = [COMMON_KEY_NORMAL, COMMON_KEY_KOREAN]
-
 # Raw block size on disc (header + encrypted data) - 32KB
 BLOCK_SIZE       : int = 0x8000
 # Header size per block (contains H0/H1/H2 hashes and AES IV)
@@ -49,33 +30,15 @@ SHA1_SIZE: int = 20
 # Subgroup size for encryption (0x8000 * 8 = 0x40 000)
 SUBGROUP_SIZE: int = BLOCK_SIZE * BLOCK_BY_SUBGROUP
 
+H0_OFFSET: int = 0x000
+H1_OFFSET: int = 0x280
+H2_OFFSET: int = 0x340
+
+H0_SIZE: int = SUBBLOCK_BY_BLOCK * SHA1_SIZE   # 0x26C
+H1_SIZE: int = BLOCK_BY_SUBGROUP * SHA1_SIZE   # 0x0A0
+H2_SIZE: int = SUBGROUP_BY_GROUP * SHA1_SIZE   # 0x0A0
 
 
-#######################################
-########### STRUCT CONST ##############
-#######################################
-
-            ############
-            ### IMET ###
-            ############
-
-IMET_MAGIC_WORD = b"IMET"
-IMET_PADDING_SIZE = 0x40
-IMET_BLOCK_SIZE = 0x5C0
-IMET_TITLE_COUNT = 0x0A
-IMET_TITLE_MAX_BYTES = 0x54
-IMET_LANGUAGES = ["Japanese", "English", "German", "French", "Spanish",
-                  "Italian", "Dutch", "Simplified Chinese", "Traditional Chinese", "Korean"]
-
-            ############
-            #### U8 ####
-            ############
-
-U8_MAGIC_WORD: bytes = b'\x55\xAA\x38\x2D'
-
-
-            ############
-            ### RARC ###
-            ############
-
-RARC_MAGIC_WORD: str = "RARC"
+AES_BLOCK_SIZE: int = 0x10
+IV_OFFSET: int = H2_OFFSET + H2_SIZE - AES_BLOCK_SIZE   # 0x3D0
+IV_SIZE:   int = AES_BLOCK_SIZE

@@ -1,5 +1,7 @@
-from wiithon.disc.enums import SignatureType
-from wiithon.binary.reader import *
+import struct
+from typing import BinaryIO
+from wiithon.binary.reader import read_u32
+from wiithon.disc.structs.signature import KeyType, SignatureType
 
 class Certificate:
     """

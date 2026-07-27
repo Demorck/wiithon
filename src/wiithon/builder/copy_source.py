@@ -41,8 +41,8 @@ class CopyPartitionSource(PartitionSource):
 
         self._file_overrides: dict[str, bytes] = file_overrides or {}
 
-    def get_partition_type(self) -> WiiPartType:
-        return WiiPartType(self.partition_type)
+    def get_partition_type(self) -> int:
+        return self.partition_type
 
     def get_ticket(self) -> Ticket:
         return self.ticket

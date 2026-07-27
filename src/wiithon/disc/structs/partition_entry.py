@@ -3,6 +3,8 @@ from typing import BinaryIO
 
 from wiithon.binary.reader import read_u32_shifted, read_u32
 from wiithon.disc.enums import WiiPartType
+from wiithon.disc.layout import PARTITION_TABLE_OFFSET, PARTITION_GROUP_COUNT
+
 
 class WiiPartitionEntry:
     """
@@ -10,7 +12,7 @@ class WiiPartitionEntry:
     https://wiibrew.org/wiki/Wii_disc#Partitions_information
     """
 
-    def __init__(self, offset, part_type) -> None:
+    def __init__(self, offset: int, part_type: int) -> None:
         self.offset: int = offset       # Partition offset (shifted)
         self.part_type: int = part_type    # WiiPartType (DATA=0, UPDATE=1, CHANNEL=2)
 
@@ -29,15 +31,10 @@ class WiiPartitionEntry:
         return f"WiiPartitionEntry(Offset: {self.offset:X}, Partition_type: {self.part_type})"
 
     def get_readable_part_type(self) -> str:
-        match self.part_type:
-            case WiiPartType.DATA:
-                return "data"
-            case WiiPartType.UPDATE:
-                return "update"
-            case WiiPartType.CHANNEL:
-                return "channel"
-            case _:
-                raise ValueError("Invalid partition type")
+        try:
+            return WiiPartType(self.part_type).name.lower()
+        except ValueError:
+            return f"unknown ({self.part_type:#x})"
 
 
 def read_parts(stream: BinaryIO) -> list[WiiPartitionEntry]:
@@ -49,10 +46,10 @@ def read_parts(stream: BinaryIO) -> list[WiiPartitionEntry]:
     :param stream:
     :return:
     """
-    stream.seek(0x40000)
+    stream.seek(PARTITION_TABLE_OFFSET)
 
     groups: list[tuple[int, int]] = []
-    for _ in range(4):
+    for _ in range(PARTITION_GROUP_COUNT):
         count = read_u32(stream)
         offset = read_u32_shifted(stream)
         groups.append((count, offset))

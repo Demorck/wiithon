@@ -2,7 +2,7 @@ import struct
 import unittest
 from io import BytesIO
 
-from wiithon.formats.dol import DOL, HEADER_SIZE, DATA_SECTIONS, TEXT_SECTIONS
+from wiithon.formats.dol import DOL, DOL_HEADER_SIZE, DOL_DATA_SECTIONS, DOL_TEXT_SECTIONS
 from wiithon.formats.dol_header import DOLHeader
 
 
@@ -11,7 +11,7 @@ def build_mock_dol(text_data: bytes = b'\x60\x00\x00\x00' * 4,
     out = BytesIO()
 
     header = DOLHeader()
-    header.text_offset = [HEADER_SIZE] + [0] * 6
+    header.text_offset = [DOL_HEADER_SIZE] + [0] * 6
     header.text_starts = [text_start] + [0] * 6
     header.text_length = [len(text_data)] + [0] * 6
     header.data_offset = [0] * 11
@@ -153,7 +153,7 @@ class TestDOLToBytes(unittest.TestCase):
         dol = DOL.read(BytesIO(raw))
         rebuilt = dol.to_bytes()
         dol2 = DOL.read(BytesIO(rebuilt))
-        self.assertEqual(dol2.header.text_offset[0], HEADER_SIZE)
+        self.assertEqual(dol2.header.text_offset[0], DOL_HEADER_SIZE)
 
 class TestAddTextSection(unittest.TestCase):
 
@@ -190,7 +190,7 @@ class TestAddTextSection(unittest.TestCase):
         self.assertEqual(self.dol.read_at(0x80004000, 4), b'\x60\x00\x00\x00')
 
     def test_raises_when_all_slots_used(self):
-        for i in range(TEXT_SECTIONS - 1):
+        for i in range(DOL_TEXT_SECTIONS - 1):
             self.dol.add_text_section(0x80700000 + i * 0x1000, b'\x60\x00\x00\x00' * 4)
         with self.assertRaises(RuntimeError):
             self.dol.add_text_section(0x80800000, b'\x60\x00\x00\x00' * 4)
@@ -228,7 +228,7 @@ class TestAddDataSection(unittest.TestCase):
         self.assertEqual(self.dol.header.data_length[0], 4 * 0x4)
 
     def test_raises_when_all_slots_used(self):
-        for i in range(DATA_SECTIONS):
+        for i in range(DOL_DATA_SECTIONS):
             self.dol.add_data_section(0x80700000 + i * 0x1000, b'\x00' * 4)
         with self.assertRaises(RuntimeError):
             self.dol.add_data_section(0x80800000, b'\x00' * 4)

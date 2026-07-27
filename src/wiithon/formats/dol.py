@@ -6,16 +6,16 @@ import struct
 from wiithon.formats.dol_header import DOLHeader
 from wiithon.ppc import instructions as ppc
 
-TEXT_SECTIONS = 7
-DATA_SECTIONS = 11
-HEADER_SIZE = 0x100
+DOL_TEXT_SECTIONS = 7
+DOL_DATA_SECTIONS = 11
+DOL_HEADER_SIZE = 0x100
 
 
 class DOL:
     def __init__(self):
         self.header: DOLHeader = DOLHeader()
-        self.text_sections: list[bytes] = [b''] * TEXT_SECTIONS
-        self.data_sections: list[bytes] = [b''] * DATA_SECTIONS
+        self.text_sections: list[bytes] = [b''] * DOL_TEXT_SECTIONS
+        self.data_sections: list[bytes] = [b''] * DOL_DATA_SECTIONS
 
     def __repr__(self):
         return f'Header: {{ \n  {repr(self.header)} \n }}'
@@ -27,14 +27,14 @@ class DOL:
 
         obj.header = DOLHeader.read(stream)
 
-        for i in range(TEXT_SECTIONS):
+        for i in range(DOL_TEXT_SECTIONS):
             if obj.header.text_length[i] == 0:
                 obj.text_sections[i] = b''
             else:
                 stream.seek(start + obj.header.text_offset[i])
                 obj.text_sections[i] = stream.read(obj.header.text_length[i])
 
-        for i in range(DATA_SECTIONS):
+        for i in range(DOL_DATA_SECTIONS):
             if obj.header.data_length[i] == 0:
                 obj.data_sections[i] = b''
             else:
@@ -44,7 +44,7 @@ class DOL:
         return obj
 
     def _virtual_to_section(self, virtual_addr: int) -> tuple[str, int, int]:
-        for i in range(TEXT_SECTIONS):
+        for i in range(DOL_TEXT_SECTIONS):
             length = self.header.text_length[i]
             if length == 0:
                 continue
@@ -52,7 +52,7 @@ class DOL:
             if start <= virtual_addr < start + length:
                 return 'text', i, virtual_addr - start
 
-        for i in range(DATA_SECTIONS):
+        for i in range(DOL_DATA_SECTIONS):
             length = self.header.data_length[i]
             if length == 0:
                 continue
@@ -63,14 +63,14 @@ class DOL:
         raise ValueError(f"Virtual address {virtual_addr:#010x} not found in any DOL section")
 
     def has_free_text_section(self) -> bool:
-        for i in range(TEXT_SECTIONS):
+        for i in range(DOL_TEXT_SECTIONS):
             if self.header.text_length[i] == 0:
                 return True
 
         return False
 
     def has_free_data_section(self) -> bool:
-        for i in range(DATA_SECTIONS):
+        for i in range(DOL_DATA_SECTIONS):
             if self.header.data_length[i] == 0:
                 return True
 
@@ -120,9 +120,9 @@ class DOL:
             self.data_sections[i] = bytes(buf)
 
     def to_bytes(self) -> bytes:
-        current_offset = HEADER_SIZE
+        current_offset = DOL_HEADER_SIZE
 
-        for i in range(TEXT_SECTIONS):
+        for i in range(DOL_TEXT_SECTIONS):
             section = self.text_sections[i]
             if len(section) == 0:
                 self.header.text_offset[i] = 0
@@ -132,7 +132,7 @@ class DOL:
                 self.header.text_length[i] = len(section)
                 current_offset += _align4(len(section))
 
-        for i in range(DATA_SECTIONS):
+        for i in range(DOL_DATA_SECTIONS):
             section = self.data_sections[i]
             if len(section) == 0:
                 self.header.data_offset[i] = 0
@@ -161,7 +161,7 @@ class DOL:
 
     def add_text_section(self, virtual_addr: int, data: bytes) -> None:
         if self._is_safe(virtual_addr, len(data)):
-            for i in range(TEXT_SECTIONS):
+            for i in range(DOL_TEXT_SECTIONS):
                 if self.header.text_length[i] == 0:
                     self.text_sections[i] = data
                     self.header.text_length[i] = len(data)
@@ -170,11 +170,11 @@ class DOL:
         else:
             raise RuntimeError(f"Virtual address {virtual_addr:#010x} is already in a section")
 
-        raise RuntimeError(f"No free text section slot (all {TEXT_SECTIONS} used)")
+        raise RuntimeError(f"No free text section slot (all {DOL_TEXT_SECTIONS} used)")
 
     def add_data_section(self, virtual_addr: int, data: bytes) -> None:
         if self._is_safe(virtual_addr, len(data)):
-            for i in range(DATA_SECTIONS):
+            for i in range(DOL_DATA_SECTIONS):
                 if self.header.data_length[i] == 0:
                     self.data_sections[i] = data
                     self.header.data_length[i] = len(data)
@@ -183,7 +183,7 @@ class DOL:
         else:
             raise RuntimeError(f"Virtual address {virtual_addr:#010x} is already in a section")
 
-        raise RuntimeError(f"No free data section slot (all {DATA_SECTIONS} used)")
+        raise RuntimeError(f"No free data section slot (all {DOL_DATA_SECTIONS} used)")
 
     def find_arena_lo_setter(self) -> int:
         """
@@ -197,7 +197,7 @@ class DOL:
         """
         checks = [(0, b'\x3c\x60'), (4, b'\x38\x63'), (8, b'\x38\x03'), (12, b'\x54\x03')]
 
-        for i in range(TEXT_SECTIONS):
+        for i in range(DOL_TEXT_SECTIONS):
             if self.header.text_length[i] == 0:
                 continue
             base = self.header.text_starts[i]
@@ -270,9 +270,9 @@ class DOL:
 
         all_sections = (
                 [(f"text[{i}]", self.text_sections[i], self.header.text_starts[i], self.header.text_length[i])
-                 for i in range(TEXT_SECTIONS)]
+                 for i in range(DOL_TEXT_SECTIONS)]
                 + [(f"data[{i}]", self.data_sections[i], self.header.data_starts[i], self.header.data_length[i])
-                   for i in range(DATA_SECTIONS)]
+                   for i in range(DOL_DATA_SECTIONS)]
         )
 
         for name, section, virtual_start, virtual_length in all_sections:

@@ -1,4 +1,6 @@
-from wiithon.binary.reader import *
+import struct
+from typing import BinaryIO
+from wiithon.binary.reader import read_u32
 
 
 class TicketTimeLimit:

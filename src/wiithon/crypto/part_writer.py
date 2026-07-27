@@ -3,9 +3,10 @@ from Crypto.Cipher import AES
 
 from wiithon.crypto.layout import (
     GROUP_SIZE, GROUP_DATA_SIZE, BLOCK_SIZE,
-    BLOCK_HEADER_SIZE, BLOCK_DATA_SIZE, BLOCK_PER_GROUP
+    BLOCK_HEADER_SIZE, BLOCK_DATA_SIZE, BLOCK_PER_GROUP, IV_OFFSET, IV_SIZE
 )
-from wiithon.binary.reader import encrypt_group
+from wiithon.crypto.blocks import encrypt_group
+from wiithon.disc.layout import H3_TABLE_SIZE
 
 
 class CryptPartWriter:
@@ -24,7 +25,7 @@ class CryptPartWriter:
         self.current_group = None  # cached group
         self.current_position: int = 0
 
-        self.h3_table = bytearray(0x18000)
+        self.h3_table = bytearray(H3_TABLE_SIZE)
 
     def write(self, data: bytes, directly = False) -> int:
         bytes_to_write = len(data)
@@ -83,17 +84,20 @@ class CryptPartWriter:
             start = i * BLOCK_SIZE
 
             # Save the encrypted IV for the data section
-            iv = bytes(self.group_cache[start + 0x3D0: start + 0x3E0])
+            iv = bytes(self.group_cache[
+                            start + IV_OFFSET:
+                            start + IV_OFFSET + IV_SIZE
+               ])
             
             # Header (blank IV)
-            header_cipher = AES.new(self.title_key, AES.MODE_CBC, b'\x00' * 16)
-            self.group_cache[start: start + 0x400] = header_cipher.decrypt(
-                bytes(self.group_cache[start: start + 0x400]))
+            header_cipher = AES.new(self.title_key, AES.MODE_CBC, b'\x00' * IV_SIZE)
+            self.group_cache[start: start + BLOCK_HEADER_SIZE] = header_cipher.decrypt(
+                bytes(self.group_cache[start: start + BLOCK_HEADER_SIZE]))
 
             # Data
             data_cipher = AES.new(self.title_key, AES.MODE_CBC, iv)
-            self.group_cache[start + 0x400: start + BLOCK_SIZE] = data_cipher.decrypt(
-                bytes(self.group_cache[start + 0x400: start + BLOCK_SIZE])
+            self.group_cache[start + BLOCK_HEADER_SIZE: start + BLOCK_SIZE] = data_cipher.decrypt(
+                bytes(self.group_cache[start + BLOCK_HEADER_SIZE: start + BLOCK_SIZE])
             )
 
     def _flush_group(self):

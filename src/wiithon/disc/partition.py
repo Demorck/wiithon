@@ -3,6 +3,7 @@ from io import BytesIO
 from typing import List, Optional
 
 from wiithon.crypto.part_reader import CryptPartReader
+from wiithon.disc.layout import APPLOADER_OFFSET, APPLOADER_HEADER_SIZE, BI2_OFFSET, BI2_SIZE
 from wiithon.fst.tree import FST
 from wiithon.fst.node import FSTNode, FSTDirectory, FSTFile
 from wiithon.disc.structs.apploader_header import ApploaderHeader
@@ -10,7 +11,7 @@ from wiithon.disc.structs.certificate import Certificate
 from wiithon.disc.structs.disc_header import DiscHeader
 from wiithon.disc.structs.tmd import TMD
 from wiithon.disc.structs.partition_header import WiiPartitionHeader
-from wiithon.formats.dol import DOL
+from wiithon.formats.dol import DOL, DOL_HEADER_SIZE, DOL_TEXT_SECTIONS, DOL_DATA_SECTIONS
 
 
 class WiiPartitionInfo:
@@ -51,24 +52,24 @@ class WiiPartitionInfo:
 
 
     def read_apploader(self) -> bytes:
-        apploader_offset = 0x2440 # maybe constant though
-        header_data = self.crypto.read_at(apploader_offset, 0x20)
+        apploader_offset = APPLOADER_OFFSET
+        header_data = self.crypto.read_at(apploader_offset, APPLOADER_HEADER_SIZE)
         apploader_header = ApploaderHeader.read(BytesIO(header_data))
-        total_size = 0x20 + apploader_header.size1 + apploader_header.size2
+        total_size = APPLOADER_HEADER_SIZE + apploader_header.size1 + apploader_header.size2
 
         return self.crypto.read_at(apploader_offset, total_size)
 
     def read_dol(self) -> DOL:
         dol_offset = self.internal_header.DOL_offset
-        header_data = self.crypto.read_at(dol_offset, 0x100)
+        header_data = self.crypto.read_at(dol_offset, DOL_HEADER_SIZE)
         dol_header = DOL.read(BytesIO(header_data))
 
-        dol_size = 0x100
-        for i in range(7):
+        dol_size = DOL_HEADER_SIZE
+        for i in range(DOL_TEXT_SECTIONS):
             end = dol_header.header.text_offset[i] + dol_header.header.text_length[i]
             dol_size = max(dol_size, end)
 
-        for i in range(11):
+        for i in range(DOL_DATA_SECTIONS):
             end = dol_header.header.data_offset[i] + dol_header.header.data_length[i]
             dol_size = max(dol_size, end)
 
@@ -76,8 +77,8 @@ class WiiPartitionInfo:
         return DOL.read(BytesIO(dol_data))
 
     def read_bi2(self) -> bytes:
-        bi2_offset = 0x440  # maybe constant though
-        bi2_size = 0x2000
+        bi2_offset = BI2_OFFSET
+        bi2_size = BI2_SIZE
 
         return self.crypto.read_at(bi2_offset, bi2_size)
 

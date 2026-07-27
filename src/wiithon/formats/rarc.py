@@ -1,9 +1,10 @@
 from typing import BinaryIO, List
 import os
 
-from wiithon.crypto.layout import RARC_MAGIC_WORD
 from wiithon.binary.reader import read_string, read_u32, read_u16
 
+
+RARC_MAGIC_WORD: str = "RARC"
 
 class RarcNode:
     def __init__(self):
