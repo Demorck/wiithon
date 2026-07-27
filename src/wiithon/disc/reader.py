@@ -25,7 +25,7 @@ class WiiIsoReader:
             self.region: bytes = self.read_region()
             self.magic_word: int = self.read_magic_word()
             if self.magic_word != WII_MAGIC_WORD:
-                raise ValueError(f"magic word is not 0xC3F81A8E: {self.magic_word}")
+                raise ValueError(f"Wii agic word is not {WII_MAGIC_WORD:#X}, got {self.magic_word:#X}")
         except BaseException:
             self.file.close()
             raise
