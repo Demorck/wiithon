@@ -3,6 +3,7 @@ from io import BytesIO
 from typing import BinaryIO
 import struct
 
+from wiithon.exceptions import DolSectionNotFoundError, DolSectionOverlapError, DolError, DolNoFreeSectionError
 from wiithon.formats.dol_header import DOLHeader
 from wiithon.ppc import instructions as ppc
 
@@ -60,7 +61,7 @@ class DOL:
             if start <= virtual_addr < start + length:
                 return 'data', i, virtual_addr - start
 
-        raise ValueError(f"Virtual address {virtual_addr:#010x} not found in any DOL section")
+        raise DolSectionNotFoundError(f"Virtual address {virtual_addr:#010x} not found in any DOL section")
 
     def has_free_text_section(self) -> bool:
         for i in range(DOL_TEXT_SECTIONS):
@@ -81,7 +82,7 @@ class DOL:
         section = self.text_sections[i] if stype == 'text' else self.data_sections[i]
 
         if offset + size > len(section):
-            raise ValueError(
+            raise DolSectionOverlapError(
                 f"Read of {size} bytes at {virtual_addr:#010x} overflows section "
                 f"(section size={len(section):#x}, offset={offset:#x})"
             )
@@ -94,7 +95,7 @@ class DOL:
         end = section.find(b'\x00', offset)
 
         if end == -1:
-            raise ValueError(
+            raise DolError(
                  f"No null terminator found after {virtual_addr:#010x} "
                  f"(section size={len(section):#x}, offset={offset:#x})"
             )
@@ -106,7 +107,7 @@ class DOL:
         section = self.text_sections[i] if stype == 'text' else self.data_sections[i]
 
         if offset + len(data) > len(section):
-            raise ValueError(
+            raise DolSectionOverlapError(
                 f"Write of {len(data)} bytes at {virtual_addr:#010x} overflows section "
                 f"(section size={len(section):#x}, offset={offset:#x})"
             )
@@ -168,9 +169,9 @@ class DOL:
                     self.header.text_starts[i] = virtual_addr
                     return
         else:
-            raise RuntimeError(f"Virtual address {virtual_addr:#010x} is already in a section")
+            raise DolError(f"Virtual address {virtual_addr:#010x} is already in a section")
 
-        raise RuntimeError(f"No free text section slot (all {DOL_TEXT_SECTIONS} used)")
+        raise DolNoFreeSectionError(f"No free text section slot (all {DOL_TEXT_SECTIONS} used)")
 
     def add_data_section(self, virtual_addr: int, data: bytes) -> None:
         if self._is_safe(virtual_addr, len(data)):
@@ -181,9 +182,9 @@ class DOL:
                     self.header.data_starts[i] = virtual_addr
                     return
         else:
-            raise RuntimeError(f"Virtual address {virtual_addr:#010x} is already in a section")
+            raise DolError(f"Virtual address {virtual_addr:#010x} is already in a section")
 
-        raise RuntimeError(f"No free data section slot (all {DOL_DATA_SECTIONS} used)")
+        raise DolNoFreeSectionError(f"No free data section slot (all {DOL_DATA_SECTIONS} used)")
 
     def find_arena_lo_setter(self) -> int:
         """
@@ -206,7 +207,7 @@ class DOL:
                 if all(data[off + o:off + o + 2] == e for o, e in checks):
                     return base + off
 
-        raise RuntimeError(f"No arenaLo is found. Consider passing through the argument and manual searching.")
+        raise DolError(f"No arenaLo is found. Consider passing through the argument and manual searching.")
 
     def read_arena_lo(self, lis_vaddr: int) -> int:
         """Decodes the arenaLo value from a lis+addi/ori pair at lis_vaddr."""
@@ -247,7 +248,7 @@ class DOL:
             elif self.has_free_data_section():
                 self.add_data_section(cursor, data)
             else:
-                raise RuntimeError("No free section found.")
+                raise DolNoFreeSectionError("No free section found.")
 
             addrs.append(cursor)
             cursor = (cursor + len(data) + 31) & ~31

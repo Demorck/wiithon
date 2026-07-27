@@ -9,6 +9,7 @@ from wiithon.disc.structs.tmd import TMD
 from wiithon.disc.structs.ticket import Ticket
 from wiithon.disc.structs.partition_entry import WiiPartitionEntry
 from wiithon.disc.enums import WiiPartType
+from wiithon.exceptions import FstFileNotFoundError
 from wiithon.formats.dol import DOL
 
 from wiithon.disc.reader import WiiIsoReader
@@ -79,4 +80,4 @@ class CopyPartitionSource(PartitionSource):
             data = self.partition_info.crypto.read_at(node.original_offset, node.length)
             return data
 
-        raise FileNotFoundError(f"File not found in FST: {path}")
+        raise FstFileNotFoundError(f"File not found in FST: {path}")

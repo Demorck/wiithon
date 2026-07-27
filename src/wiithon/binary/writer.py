@@ -1,7 +1,9 @@
 import struct
 from typing import BinaryIO, Any
 
-from wiithon.binary.common import ByteHelperError, STRING_FORMAT
+from wiithon.binary.common import STRING_FORMAT
+from wiithon.exceptions import BinaryError
+
 
 ###########################
 ####### WRITE UTILS #######
@@ -152,7 +154,7 @@ def write_string(stream: BinaryIO, new_value: str, expected_size: int, padding_b
     encoded_string = new_value.encode(str_fmt)
     str_len = len(encoded_string)
     if str_len > expected_size:
-        raise ByteHelperError(f"String \"{new_value}\" is too long (max length: {str(expected_size)})")
+        raise BinaryError(f"String \"{new_value}\" is too long (max length: {str(expected_size)})")
 
     padding_length = expected_size - str_len
     new_value = encoded_string + (padding_byte * padding_length)

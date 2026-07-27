@@ -1,6 +1,7 @@
 from io import BytesIO
 from typing import Callable
 
+from wiithon.exceptions import InvalidFormatError, FstFileNotFoundError
 from wiithon.formats.lz77 import Lz77
 from wiithon.formats.rarc import Rarc
 from wiithon.formats.u8 import U8
@@ -13,7 +14,7 @@ def _split_path(fst, path: str) -> tuple[str, list[str]]:
         node = fst.find_node(parts[:i])
         if node is not None and node.is_file:
             return "/".join(parts[:i]), parts[i:]
-    raise FileNotFoundError(path)
+    raise FstFileNotFoundError(path)
 
 def _open_archive(data: bytes) -> tuple[object, Callable]:
     if data[:4] == b"Yaz0":
@@ -49,7 +50,7 @@ def _open_archive(data: bytes) -> tuple[object, Callable]:
         arc = U8.read(BytesIO(data))
         return arc, lambda arc: arc.get_bytes()
 
-    raise ValueError(f"Unknown format: {data[:4]!r}")
+    raise InvalidFormatError(f"Unknown archive format: {data[:4]!r}")
 
 def resolve_read(patcher, path: str) -> bytes:
     fst_path, archive_parts = _split_path(patcher.data_partition.fst, path)

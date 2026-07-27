@@ -4,6 +4,7 @@ from typing import NamedTuple, Union
 from abc import ABC, abstractmethod
 
 import wiithon.binary.reader as fh
+from wiithon.exceptions import InvalidFormatError, CorruptedDataError
 
 BCSV_HEADER_SIZE: int = 0x10
 BCSV_FIELD_SIZE: int = 0xC
@@ -107,7 +108,7 @@ class BCSVFieldKey(BCSVKey):
         return self.field.field_name
 
 
-class BCSVFileError(Exception):
+class BCSVFileError(InvalidFormatError):
     """Thrown when an error occurs while parsing/writing BCSV data."""
     pass
 
@@ -431,7 +432,7 @@ class BCSV:
         """
         data_length: int = raw_data.seek(0, 2)
         if data_length < BCSV_HEADER_SIZE:
-            raise BCSVFileError("Provided BCSV BytesIO is not in a valid format.")
+            raise InvalidFormatError("Provided BCSV BytesIO is not in a valid format.")
 
         if field_names is None:
             BCSVEntry.hash_names = {}
@@ -450,14 +451,14 @@ class BCSV:
         remainder_bytes: int = fields_size % BCSV_FIELD_SIZE
         read_field_count: int = int(fields_size / BCSV_FIELD_SIZE)
         if remainder_bytes != 0 or not read_field_count == field_count: # Make sure there is no extra space between fields and entries
-            raise BCSVFileError("When trying to read the fields block of the BCSV file, field block has an "
+            raise CorruptedDataError("When trying to read the fields block of the BCSV file, field block has an "
                 f"incorrect size.\nExpected field count: {field_count}\nExpected Byte count: {fields_size}\n"
                 f"Remainder Bytes: {remainder_bytes}\nAmount of fields found: {read_field_count}")
 
         # Load all data entries / rows of this table.
         calc_data_size: int = entry_data_offset + (entry_size_bytes * entry_count)
         if calc_data_size > data_length: # Simple check, doesn't take into account the string pool
-            raise BCSVFileError("When trying to read the data entries block of the BCSV file, the entry size "
+            raise CorruptedDataError("When trying to read the data entries block of the BCSV file, the entry size "
                 f"was incorrect.\nExpected data size: {data_length}\nCalculated data size: {calc_data_size}")
 
         offset: int = BCSV_HEADER_SIZE

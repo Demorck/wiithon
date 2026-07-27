@@ -7,6 +7,7 @@ from typing import BinaryIO
 from unittest import mock
 
 from wiithon.disc.reader import WiiIsoReader
+from wiithon.exceptions import InvalidDiscError
 
 
 class TestWiiIsoReader(unittest.TestCase):
@@ -42,7 +43,7 @@ class TestWiiIsoReader(unittest.TestCase):
             return handle
 
         with mock.patch.object(builtins, "open", tracking_open):
-            with self.assertRaises(ValueError):
+            with self.assertRaises(InvalidDiscError):
                 WiiIsoReader(iso_path)
 
         self.assertTrue(opened, "no file was opened")

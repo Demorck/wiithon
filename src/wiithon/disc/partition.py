@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from wiithon.crypto.part_reader import CryptPartReader
 from wiithon.disc.layout import APPLOADER_OFFSET, APPLOADER_HEADER_SIZE, BI2_OFFSET, BI2_SIZE
+from wiithon.exceptions import FstIsADirectoryError, FstFileNotFoundError
 from wiithon.fst.tree import FST
 from wiithon.fst.node import FSTNode, FSTDirectory, FSTFile
 from wiithon.disc.structs.apploader_header import ApploaderHeader
@@ -40,13 +41,13 @@ class WiiPartitionInfo:
                     break
 
             if node is None:
-                raise FileNotFoundError(f"File not found: {path}")
+                raise FstFileNotFoundError(f"File not found: {path}")
 
             if isinstance(node, FSTDirectory):
                 current_list = node.children
 
         if not isinstance(node, FSTFile):
-            raise IsADirectoryError(f"Path is a directory: {path}")
+            raise FstIsADirectoryError(f"Path is a directory: {path}")
 
         return self.crypto.read_at(node.offset, node.length)
 

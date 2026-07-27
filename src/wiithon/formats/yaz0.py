@@ -3,6 +3,7 @@ from typing import BinaryIO
 from collections import deque
 
 from wiithon.binary.reader import read_string, read_u32, read_u8
+from wiithon.exceptions import InvalidFormatError, CorruptedDataError
 
 
 class Yaz0:
@@ -17,7 +18,7 @@ class Yaz0:
 
         obj.magic_word = read_string(stream, 0x04)
         if obj.magic_word != "Yaz0":
-            raise ValueError("Trying to read a non-yaz0 file with the yaz0 struct")
+            raise InvalidFormatError("Trying to read a non-yaz0 file with the yaz0 struct")
 
         obj.size = read_u32(stream)
         stream.read(0x8)
@@ -68,7 +69,7 @@ class Yaz0:
                         number_to_copy += 2
 
                     if number_to_copy < 3 or number_to_copy > 0x111:
-                        raise ValueError("Something happens when decompressing yaz0 file")
+                        raise CorruptedDataError("Something happens when decompressing yaz0 file")
 
                     for j in range(number_to_copy):
                         dest_buffer.append(dest_buffer[copy_src])

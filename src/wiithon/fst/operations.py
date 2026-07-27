@@ -1,6 +1,7 @@
 from typing import List
 import bisect
 
+from wiithon.exceptions import FstError
 from wiithon.fst.node import FSTNode, FSTDirectory
 
 def find_node(entries: List[FSTNode], path_parts: List[str]) -> FSTNode | None:
@@ -52,7 +53,7 @@ def add_node(entries: List[FSTNode], path_parts: List[str], new_node: FSTNode) -
             found = current_list[index]
 
         if not found.is_directory:
-            raise ValueError("Creating through a file")
+            raise FstError("Creating through a file")
 
         current_list = found.children
 

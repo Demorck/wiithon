@@ -5,6 +5,7 @@ from typing import BinaryIO, List
 
 from wiithon.binary.reader import read_u32
 from wiithon.binary.align import align
+from wiithon.exceptions import InvalidFormatError, ArchiveFileNotFoundError, ArchiveIsADirectoryError
 
 NODE_SIZE = 0xC
 ROOTNODE_OFFSET = 0x20
@@ -32,7 +33,7 @@ class U8:
 
         magic = stream.read(4)
         if magic != U8_MAGIC_WORD:
-            raise ValueError(f"Invalid magic word for U8 {magic:!r} instead of {U8_MAGIC_WORD}")
+            raise InvalidFormatError(f"Invalid magic word for U8 {magic:!r} instead of {U8_MAGIC_WORD}")
 
         rootnode_offset = read_u32(stream) # Always 0x20
         header_size = read_u32(stream)
@@ -95,25 +96,25 @@ class U8:
     def _node_index(self, path: str) -> int:
         parts = [p for p in path.split('/') if p]
         if not self.nodes:
-            raise FileNotFoundError("Empty U8 archive")
+            raise ArchiveFileNotFoundError("Empty U8 archive")
 
         index = self._search(parts, 1, self.nodes[0].size)
         if index is None:
-            raise FileNotFoundError(f"Not found in U8: {path}")
+            raise ArchiveFileNotFoundError(f"Not found in U8: {path}")
 
         return index
 
     def get_file(self, path: str) -> bytes:
         node = self.nodes[self._node_index(path)]
         if node.is_dir:
-            raise FileNotFoundError(f"Path is directory: {path}")
+            raise ArchiveIsADirectoryError(f"Path is directory: {path}")
 
         return node.data
 
     def replace_file(self, path: str, data: bytes) -> None:
         node = self.nodes[self._node_index(path)]
         if node.is_dir:
-            raise FileNotFoundError(f"Path is directory: {path}")
+            raise ArchiveIsADirectoryError(f"Path is directory: {path}")
 
         node.data = data
         node.size = len(data)

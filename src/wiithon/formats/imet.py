@@ -2,6 +2,7 @@ import hashlib
 import struct
 from typing import BinaryIO
 
+from wiithon.exceptions import InvalidFormatError
 
 IMET_MAGIC_WORD = b"IMET"
 IMET_PADDING_SIZE = 0x40
@@ -29,7 +30,7 @@ class IMET:
         obj._raw_block = stream.read(IMET_BLOCK_SIZE)
 
         if len(obj._raw_block) < IMET_BLOCK_SIZE or obj._raw_block[:4] != IMET_MAGIC_WORD:
-            raise ValueError(f"Invalid IMET magic: {obj._raw_block[:4]!r}")
+            raise InvalidFormatError(f"Invalid IMET magic: {obj._raw_block[:4]!r}")
 
         obj.hash_size = struct.unpack_from(">I", obj._raw_block, 0x04)[0]
         obj.icon_size        = struct.unpack_from(">I", obj._raw_block, 0x0C)[0]
