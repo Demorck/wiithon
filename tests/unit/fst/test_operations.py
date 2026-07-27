@@ -1,4 +1,6 @@
 import unittest
+
+from wiithon.exceptions import FstError
 from wiithon.fst.node import FSTNode, FSTDirectory, FSTFile
 from wiithon.fst.operations import find_node, remove_node, add_node
 
@@ -105,7 +107,7 @@ class TestAddNode(unittest.TestCase):
     def test_add_through_file_raises(self) -> None:
         entries = self._build_tree()
         new_file = FSTFile("bug.txt")
-        with self.assertRaises(ValueError):
+        with self.assertRaises(FstError):
             add_node(entries, ["Data", "movie", "intro.thp", "impossible"], new_file)
 
 
