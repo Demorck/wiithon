@@ -2,6 +2,7 @@ import struct
 import unittest
 from io import BytesIO
 
+from wiithon.exceptions import DolError, DolNoFreeSectionError, DolSectionOverlapError, DolSectionNotFoundError
 from wiithon.formats.dol import DOL, DOL_HEADER_SIZE, DOL_DATA_SECTIONS, DOL_TEXT_SECTIONS
 from wiithon.formats.dol_header import DOLHeader
 
@@ -67,11 +68,11 @@ class TestDOLReadAt(unittest.TestCase):
         self.assertEqual(result, b'\x38\x60\x00\x01' * 2)
 
     def test_read_invalid_address(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(DolSectionNotFoundError):
             self.dol.read_at(0x80000000, 4)
 
     def test_read_overflow(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(DolSectionOverlapError):
             self.dol.read_at(self.text_start, len(self.text_data) + 4)
 
 class TestDOLReadUntilNullAt(unittest.TestCase):
@@ -91,7 +92,7 @@ class TestDOLReadUntilNullAt(unittest.TestCase):
         self.assertEqual(result, b'World')
 
     def test_read_null_not_found(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(DolError):
             self.dol.read_until_null_at(self.text_start + 12)
 
 
@@ -113,11 +114,11 @@ class TestDOLWriteAt(unittest.TestCase):
         self.assertEqual(self.dol.read_at(self.text_start, 4), b'\x60\x00\x00\x00')
 
     def test_write_invalid_address(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(DolSectionNotFoundError):
             self.dol.write_at(0x90000000, b'\x60\x00\x00\x00')
 
     def test_write_overflow(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(DolSectionOverlapError):
             self.dol.write_at(self.text_start, b'\x00' * (len(self.text_data) + 4))
 
 
@@ -192,7 +193,7 @@ class TestAddTextSection(unittest.TestCase):
     def test_raises_when_all_slots_used(self):
         for i in range(DOL_TEXT_SECTIONS - 1):
             self.dol.add_text_section(0x80700000 + i * 0x1000, b'\x60\x00\x00\x00' * 4)
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(DolNoFreeSectionError):
             self.dol.add_text_section(0x80800000, b'\x60\x00\x00\x00' * 4)
 
 
@@ -230,7 +231,7 @@ class TestAddDataSection(unittest.TestCase):
     def test_raises_when_all_slots_used(self):
         for i in range(DOL_DATA_SECTIONS):
             self.dol.add_data_section(0x80700000 + i * 0x1000, b'\x00' * 4)
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(DolNoFreeSectionError):
             self.dol.add_data_section(0x80800000, b'\x00' * 4)
 
 
@@ -275,7 +276,7 @@ class TestFindArenaLoSetter(unittest.TestCase):
     def test_raises_when_pattern_absent(self):
         raw = build_mock_dol(b'\x60\x00\x00\x00' * 16)
         dol = DOL.read(BytesIO(raw))
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(DolError):
             dol.find_arena_lo_setter()
 
 
