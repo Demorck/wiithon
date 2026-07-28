@@ -1,3 +1,4 @@
+import itertools
 import struct
 import hashlib
 from io import BytesIO
@@ -8,13 +9,34 @@ from wiithon.builder.source import PartitionSource
 from wiithon.crypto.part_writer import CryptPartWriter
 from wiithon.disc.layout import FIRST_PARTITION_OFFSET, BI2_OFFSET, APPLOADER_OFFSET, PARTITION_TABLE_OFFSET, \
     PARTITION_TABLE_ENTRIES, REGION_OFFSET, MAGIC_WORD_OFFSET, WII_MAGIC_WORD, PART_TMD_OFFSET, PART_DATA_OFFSET, \
-    PART_H3_OFFSET, TMD_H3_HASH_OFFSET, TMD_DATA_SIZE_OFFSET, TMD_SIGNATURE_SIZE, TMD_FAKESIGN_PADDING, TMD_SIGNED_START
+    PART_H3_OFFSET, TMD_H3_HASH_OFFSET, TMD_DATA_SIZE_OFFSET, TMD_SIGNATURE_SIZE, TMD_FAKESIGN_PADDING, \
+    TMD_SIGNED_START, TMD_SIGNATURE_OFFSET
 from wiithon.fst.serializer import FSTToBytes
 from wiithon.fst.node import FSTFile
-from wiithon.crypto.layout import GROUP_SIZE, GROUP_DATA_SIZE
+from wiithon.crypto.layout import GROUP_SIZE, GROUP_DATA_SIZE, SHA1_SIZE
 from wiithon.disc.structs.disc_header import DiscHeader
 from wiithon.disc.structs.partition_entry import WiiPartitionEntry
 from wiithon.disc.structs.partition_header import WiiPartitionHeader
+
+U64_SIZE: int = 8
+
+def fakesign_tmd(tmd_bytes: bytearray, h3: bytes, data_size: int) -> None:
+    """Patch a TMD in place so Dolphin accepts it without a valid signature.
+
+    Writes the H3 hash and the partition data size, zeroes the signature,
+    then brute-forces the padding until the SHA-1 of the signed blob starts
+    with a null byte.
+
+    See https://wiibrew.org/wiki/Title_metadata
+    """
+    tmd_bytes[TMD_H3_HASH_OFFSET: TMD_H3_HASH_OFFSET + SHA1_SIZE] = hashlib.sha1(h3).digest()
+    tmd_bytes[TMD_DATA_SIZE_OFFSET: TMD_DATA_SIZE_OFFSET + U64_SIZE] = struct.pack(">Q", data_size)
+    tmd_bytes[TMD_SIGNATURE_OFFSET: TMD_SIGNATURE_OFFSET + TMD_SIGNATURE_SIZE] = b'\x00' * TMD_SIGNATURE_SIZE
+
+    for candidate in itertools.count():
+        tmd_bytes[TMD_FAKESIGN_PADDING: TMD_FAKESIGN_PADDING + U64_SIZE] = struct.pack("=Q", candidate)
+        if hashlib.sha1(tmd_bytes[TMD_SIGNED_START:]).digest()[0] == 0:
+            break
 
 class WiiDiscBuilder:
     def __init__(self, header: DiscHeader, region: bytes):
@@ -158,36 +180,8 @@ class WiiDiscBuilder:
         part_header.data_offset = PART_DATA_OFFSET
         part_header.data_size = total_size
         
-        # TMD hash and signature (signature is not correct says Dolphin but who cares)
-        hasher = hashlib.sha1()
-        hasher.update(h3)
-        digest = hasher.digest()
-        
-        tmd_bytes[
-            TMD_H3_HASH_OFFSET:
-            TMD_H3_HASH_OFFSET + 20
-        ] = digest
-
-        tmd_bytes[
-            TMD_DATA_SIZE_OFFSET:
-            TMD_DATA_SIZE_OFFSET + 8
-        ] = struct.pack(">Q", total_size)
-        
-        # Just 0
-        tmd_bytes[4:0x104] = b'\x00' * TMD_SIGNATURE_SIZE
-        
-        # Brute force starting hash to \x00
-        for i in range(0xFFFFFFFFFFFFFFFF):
-            tmd_bytes[
-                TMD_FAKESIGN_PADDING:
-                TMD_FAKESIGN_PADDING+8
-            ] = struct.pack("=Q", i)
-            temp_hasher = hashlib.sha1()
-            temp_hasher.update(tmd_bytes[TMD_SIGNED_START:])
-            hash_res = temp_hasher.digest()
-            if hash_res[0] == 0:
-                break
-                
+        # # TMD hash and signature (signature is not correct says Dolphin but who cares)
+        fakesign_tmd(tmd_bytes, h3, total_size)
         stream.seek(part_data_off + part_header.tmd_offset)
         stream.write(tmd_bytes)
         
