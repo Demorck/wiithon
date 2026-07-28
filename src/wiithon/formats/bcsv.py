@@ -4,7 +4,7 @@ from typing import NamedTuple, Union
 from abc import ABC, abstractmethod
 
 import wiithon.binary.reader as fh
-from wiithon.exceptions import InvalidFormatError, CorruptedDataError
+from wiithon.exceptions import InvalidFormatError, CorruptedDataError, BCSVFileError
 
 BCSV_HEADER_SIZE: int = 0x10
 BCSV_FIELD_SIZE: int = 0xC
@@ -106,11 +106,6 @@ class BCSVFieldKey(BCSVKey):
             str: Provided field's field_name.
         """
         return self.field.field_name
-
-
-class BCSVFileError(InvalidFormatError):
-    """Thrown when an error occurs while parsing/writing BCSV data."""
-    pass
 
 
 def calculate_field_hash(field_name: str) -> int:
