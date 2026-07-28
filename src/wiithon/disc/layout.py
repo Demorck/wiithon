@@ -15,6 +15,8 @@ BI2_SIZE:                 int = 0x2000
 APPLOADER_OFFSET:         int = 0x2440
 APPLOADER_HEADER_SIZE:    int = 0x20
 
+SECTION_ALIGNMENT: int = 0x20
+FILE_ALIGNMENT:    int = 0x40
 
 PART_TMD_OFFSET:   int = 0x2C0
 PART_H3_OFFSET:    int = 0x8000
