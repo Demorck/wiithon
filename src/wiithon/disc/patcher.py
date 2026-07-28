@@ -100,10 +100,10 @@ class WiiIsoPatcher:
         }
 
     def modify_banner_title(self, new_title: str, language: str = "English") -> None:
-        bnr_bytes = self.read_file("../../../assets/opening.bnr")
+        bnr_bytes = self.read_file("opening.bnr")
         bnr = BNR.read(BytesIO(bnr_bytes))
         bnr.imet.set_title(new_title, language)
-        self.replace_file("../../../assets/opening.bnr", bnr.get_bytes())
+        self.replace_file("opening.bnr", bnr.get_bytes())
 
     def modify_title(self, new_title: str) -> None:
         self.reader.disc_header.game_title = new_title
