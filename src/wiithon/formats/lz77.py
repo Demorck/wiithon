@@ -73,6 +73,11 @@ class Lz77:
         write_ndata(stream, header, pack_fmt='<I')
         stream.write(Lz77.compress(self.data))
 
+    def get_bytes(self) -> bytes:
+        buffer = BytesIO()
+        self.write(buffer)
+        return buffer.getvalue()
+
     @staticmethod
     def compress(uncompressed_data: bytes) -> bytes:
         size = len(uncompressed_data)

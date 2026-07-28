@@ -55,7 +55,7 @@ class TestRarc(unittest.TestCase):
         
         rarc = Rarc.read(stream)
         
-        self.assertEqual(rarc.magic_word, "RARC")
+        self.assertEqual(rarc.magic_word, b"RARC")
         self.assertEqual(rarc.number_nodes, 1)
         self.assertEqual(rarc.total_directory, 2)
         

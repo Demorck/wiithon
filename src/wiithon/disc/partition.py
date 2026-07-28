@@ -29,22 +29,10 @@ class WiiPartitionInfo:
         self.partition_offset = partition_offset
 
     def read_file(self, path: str) -> bytes:
-        parts = path.strip("/").split('/')
-        node: Optional[FSTNode] = None
-        current_list = self.fst.entries
+        node = self.fst.find_node(path)
 
-        for part in parts:
-            node = None
-            for child in current_list:
-                if child.name == part:
-                    node = child
-                    break
-
-            if node is None:
-                raise FstFileNotFoundError(f"File not found: {path}")
-
-            if isinstance(node, FSTDirectory):
-                current_list = node.children
+        if node is None:
+            raise FstFileNotFoundError(f"File not found: {path}")
 
         if not isinstance(node, FSTFile):
             raise FstIsADirectoryError(f"Path is a directory: {path}")

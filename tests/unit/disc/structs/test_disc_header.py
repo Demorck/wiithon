@@ -2,11 +2,15 @@ import struct
 import unittest
 from io import BytesIO
 
+from unit.disc.structs._roundtrip import RoundTripMixin
 from wiithon.disc.structs.disc_header import DiscHeader
 
 
-class TestDiscHeader(unittest.TestCase):
+class TestDiscHeader(RoundTripMixin, unittest.TestCase):
     """Unit tests for DiscHeader."""
+
+    def test_round_trip_is_stable(self) -> None:
+        self.assert_round_trip(DiscHeader, self._build_raw_header())
 
     def _build_raw_header(self) -> bytes:
         """Build raw binary data for a DiscHeader.

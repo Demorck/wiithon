@@ -27,6 +27,10 @@ class InvalidDiscError(InvalidFormatError):
 class CorruptedDataError(WiithonError):
     """Header parsed, but the content is inconsistent (bad hash, bad sizes)"""
 
+
+class NoDataPartitionError(WiithonError):
+    """The disc image has no DATA partition"""
+
 # FST
 class FstError(WiithonError):
     """Error while walking the disc File System Table"""
@@ -53,6 +57,11 @@ class ArchiveIsADirectoryError(ArchiveError, IsADirectoryError):
     """The archive path points at a directory, a file was expected"""
 
 
+class BCSVFileError(InvalidFormatError):
+    """Thrown when an error occurs while parsing/writing BCSV data."""
+    pass
+
+
 # DOL
 class DolError(WiithonError):
     """Error while inspecting or patching a DOL executable"""
@@ -68,3 +77,14 @@ class DolSectionOverlapError(DolError):
 
 class DolNoFreeSectionError(DolError):
     """All text or data section slots are already used"""
+
+
+__all__ = [
+    "WiithonError",
+    "BinaryError",
+    "InvalidFormatError", "InvalidDiscError", "CorruptedDataError", "NoDataPartitionError",
+    "FstError", "FstFileNotFoundError", "FstIsADirectoryError",
+    "ArchiveError", "ArchiveFileNotFoundError", "ArchiveIsADirectoryError",
+    "BCSVFileError",
+    "DolError", "DolSectionNotFoundError", "DolSectionOverlapError", "DolNoFreeSectionError",
+]
