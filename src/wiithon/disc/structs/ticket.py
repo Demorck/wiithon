@@ -1,8 +1,8 @@
 from typing import BinaryIO
-import struct
 
 from wiithon.disc.structs.signature import SignatureType
-from wiithon.binary.reader import read_u32, read_u16, read_u8
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
 from wiithon.crypto.keys import decrypt_title_key, encrypt_title_key
 from wiithon.disc.structs.ticket_time_limit import TicketTimeLimit
 
@@ -75,28 +75,29 @@ class Ticket:
         :return: Ticket
         """
         obj = cls()
+        reader = BinaryReader(stream)
 
-        obj.signature_type          = SignatureType(read_u32(stream))
-        obj.signature               = stream.read(0x100)
-        stream.read(0x3C) # Padding 0x3C
-        obj.signature_issuer        = stream.read(0x40)
-        obj.ecdh                    = stream.read(0x3C)
-        stream.read(0x03) # Reserved - padding 3 bytes
+        obj.signature_type          = SignatureType(reader.u32())
+        obj.signature               = reader.bytes(0x100)
+        reader.skip(0x3C) # Padding 0x3C
+        obj.signature_issuer        = reader.bytes(0x40)
+        obj.ecdh                    = reader.bytes(0x3C)
+        reader.skip(0x03) # Reserved - padding 3 bytes
 
-        obj.encrypted_key           = stream.read(0x10)
-        stream.read(0x01)
-        obj.ticket_id               = stream.read(0x08)
-        obj.console_id              = stream.read(0x04)
-        obj.title_id                = stream.read(0x08)
-        obj.unkown                  = read_u16(stream)
-        obj.ticket_version          = read_u16(stream)
-        obj.permitted_title_mask    = read_u32(stream)
-        obj.permit_mark             = read_u32(stream)
-        obj.title_export_allowed    = read_u8(stream)
-        obj.common_key_index        = read_u8(stream)
-        stream.read(0x30)
-        obj.content_access_permission = stream.read(0x40)
-        obj.unknown2 = read_u16(stream)
+        obj.encrypted_key           = reader.bytes(0x10)
+        reader.skip(0x01)
+        obj.ticket_id               = reader.bytes(0x08)
+        obj.console_id              = reader.bytes(0x04)
+        obj.title_id                = reader.bytes(0x08)
+        obj.unkown                  = reader.u16()
+        obj.ticket_version          = reader.u16()
+        obj.permitted_title_mask    = reader.u32()
+        obj.permit_mark             = reader.u32()
+        obj.title_export_allowed    = reader.u8()
+        obj.common_key_index        = reader.u8()
+        reader.skip(0x30)
+        obj.content_access_permission = reader.bytes(0x40)
+        obj.unknown2 = reader.u16()
         obj.time_limit = [TicketTimeLimit.read(stream) for _ in range(0x08)]
 
         obj.title_key = decrypt_title_key(
@@ -113,30 +114,32 @@ class Ticket:
         :param stream: Binary IO stream
         :return: None
         """
+        writer = BinaryWriter(stream)
         encrypted = encrypt_title_key(
             self.title_key,
             self.common_key_index,
             self.title_id
         )
-        stream.write(struct.pack('>I', self.signature_type))
-        stream.write(self.signature)
-        stream.write(b'\x00' * 0x3C)  # padding
-        stream.write(self.signature_issuer)
-        stream.write(self.ecdh)
-        stream.write(b'\x00' * 0x03)  # padding
-        stream.write(encrypted)
-        stream.write(b'\x00' * 0x01)  # padding
-        stream.write(self.ticket_id)
-        stream.write(self.console_id)
-        stream.write(self.title_id)
-        stream.write(struct.pack('>H', self.unkown))
-        stream.write(struct.pack('>H', self.ticket_version))
-        stream.write(struct.pack('>I', self.permitted_title_mask))
-        stream.write(struct.pack('>I', self.permit_mark))
-        stream.write(struct.pack('>B', self.title_export_allowed))
-        stream.write(struct.pack('>B', self.common_key_index))
-        stream.write(b'\x00' * 0x30)  # padding
-        stream.write(self.content_access_permission)
-        stream.write(struct.pack('>H', self.unknown2))
+
+        writer.u32(self.signature_type)
+        writer.bytes(self.signature)
+        writer.pad(0x3C)  # padding
+        writer.bytes(self.signature_issuer)
+        writer.bytes(self.ecdh)
+        writer.pad(0x03)  # padding
+        writer.bytes(encrypted)
+        writer.pad(0x01)  # padding
+        writer.bytes(self.ticket_id)
+        writer.bytes(self.console_id)
+        writer.bytes(self.title_id)
+        writer.u16(self.unkown)
+        writer.u16(self.ticket_version)
+        writer.u32(self.permitted_title_mask)
+        writer.u32(self.permit_mark)
+        writer.u8(self.title_export_allowed)
+        writer.u8(self.common_key_index)
+        writer.pad(0x30)  # padding
+        writer.bytes(self.content_access_permission)
+        writer.u16(self.unknown2)
         for tl in self.time_limit:
             tl.write(stream)

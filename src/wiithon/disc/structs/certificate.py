@@ -1,7 +1,9 @@
-import struct
 from typing import BinaryIO
-from wiithon.binary.reader import read_u32
 from wiithon.disc.structs.signature import KeyType, SignatureType
+
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
+
 
 class Certificate:
     """
@@ -47,7 +49,8 @@ class Certificate:
         """
         obj = cls()
 
-        obj.signature_type = SignatureType(read_u32(stream))
+        reader = BinaryReader(stream)
+        obj.signature_type = SignatureType(reader.u32())
         length: int = 0
         if obj.signature_type == SignatureType.RSA_2048:
             length = 256
@@ -56,23 +59,23 @@ class Certificate:
         elif obj.signature_type == SignatureType.ELLIPSIS:
             length = 64
 
-        obj.signature = stream.read(length)
-        stream.read(0x3C)
-        obj.issuer = stream.read(0x40)
-        obj.key_type = KeyType(read_u32(stream))
-        obj.child_identity = stream.read(0x40)
-        obj.key_id = read_u32(stream)
+        obj.signature = reader.bytes(length)
+        reader.skip(0x3C)
+        obj.issuer = reader.bytes(0x40)
+        obj.key_type = KeyType(reader.u32())
+        obj.child_identity = reader.bytes(0x40)
+        obj.key_id = reader.u32()
         if obj.key_type == KeyType.RSA_2048:
-            obj.key = stream.read(0x100)
-            obj.public_exponent = read_u32(stream)
-            stream.read(0x34)
+            obj.key = reader.bytes(0x100)
+            obj.public_exponent = reader.u32()
+            reader.bytes(0x34)
         elif obj.key_type == KeyType.RSA_4096:
-            obj.key = stream.read(0x200)
-            obj.public_exponent = read_u32(stream)
-            stream.read(0x34)
+            obj.key = reader.bytes(0x200)
+            obj.public_exponent = reader.u32()
+            reader.bytes(0x34)
         elif obj.key_type == KeyType.ECC_B233:
-            obj.key = stream.read(0x3C)
-            stream.read(0x60)
+            obj.key = reader.bytes(0x3C)
+            reader.bytes(0x60)
 
         return obj
 
@@ -82,17 +85,19 @@ class Certificate:
 
         :param stream: Binary IO stream
         """
-        stream.write(struct.pack('>I', self.signature_type))
-        stream.write(self.signature)
-        stream.write(b'\x00' * 0x3C)
-        stream.write(self.issuer)
-        stream.write(struct.pack('>I', self.key_type))
-        stream.write(self.child_identity)
-        stream.write(struct.pack('>I', self.key_id))
-        stream.write(self.key)
+        writer = BinaryWriter(stream)
+
+        writer.u32(self.signature_type)
+        writer.bytes(self.signature)
+        writer.pad(0x3C)
+        writer.bytes(self.issuer)
+        writer.u32(self.key_type)
+        writer.bytes(self.child_identity)
+        writer.u32(self.key_id)
+        writer.bytes(self.key)
 
         if self.key_type in (KeyType.RSA_4096, KeyType.RSA_2048):
-            stream.write(struct.pack('>I', self.public_exponent))
-            stream.write(b'\x00' * 0x34)
+            writer.u32(self.public_exponent)
+            writer.pad(0x34)
         else:
-            stream.write(b'\x00' * 60)
+            writer.pad(0x3C)

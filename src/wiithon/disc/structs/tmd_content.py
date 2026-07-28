@@ -1,6 +1,7 @@
 import struct
 from typing import BinaryIO
-from wiithon.binary.reader import read_u16, read_u32, read_u64
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
 
 """
 Content Metadata (CMD) from TMD (Title Metadata)
@@ -45,12 +46,13 @@ class TMDContent:
         :return: TMDContent
         """
         obj = cls()
+        reader = BinaryReader(stream)
 
-        obj.id              = read_u32(stream)
-        obj.index           = read_u16(stream)
-        obj.content_type    = read_u16(stream)
-        obj.size            = read_u64(stream)
-        obj.hash            = stream.read(0x14)
+        obj.id              = reader.u32()
+        obj.index           = reader.u16()
+        obj.content_type    = reader.u16()
+        obj.size            = reader.u64()
+        obj.hash            = reader.bytes(0x14)
 
         return obj
 
@@ -61,8 +63,10 @@ class TMDContent:
         :param stream: Binary IO stream
         :return: None
         """
-        stream.write(struct.pack('>I', self.id))
-        stream.write(struct.pack('>H', self.index))
-        stream.write(struct.pack('>H', self.content_type))
-        stream.write(struct.pack('>Q', self.size))
-        stream.write(self.hash)
+        writer = BinaryWriter(stream)
+
+        writer.u32(self.id)
+        writer.u16(self.index)
+        writer.u16(self.content_type)
+        writer.u64(self.size)
+        writer.bytes(self.hash)

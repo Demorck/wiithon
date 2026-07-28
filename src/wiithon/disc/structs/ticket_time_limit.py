@@ -1,6 +1,6 @@
-import struct
 from typing import BinaryIO
-from wiithon.binary.reader import read_u32
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
 
 
 class TicketTimeLimit:
@@ -30,8 +30,9 @@ class TicketTimeLimit:
         :return: Time limit entry
         """
         obj = cls()
-        obj.enable_time_limit = read_u32(stream)
-        obj.time_limit = read_u32(stream)
+        reader = BinaryReader(stream)
+        obj.enable_time_limit = reader.u32()
+        obj.time_limit = reader.u32()
 
         return obj
 
@@ -42,4 +43,6 @@ class TicketTimeLimit:
         :param stream: Binary IO stream
         :return: None
         """
-        stream.write(struct.pack('>II', self.enable_time_limit, self.time_limit))
+        writer = BinaryWriter(stream)
+        writer.u32(self.enable_time_limit)
+        writer.u32(self.time_limit)

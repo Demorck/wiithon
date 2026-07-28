@@ -1,7 +1,7 @@
 from typing import BinaryIO
-import struct
 
-from wiithon.binary.reader import read_u32, read_u32_shifted
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
 from wiithon.disc.structs.ticket import Ticket
 
 
@@ -28,15 +28,16 @@ class WiiPartitionHeader:
         :return:
         """
         obj = cls()
+        reader = BinaryReader(stream)
 
         obj.ticket                   = Ticket.read(stream)
-        obj.tmd_size                 = read_u32(stream)
-        obj.tmd_offset               = read_u32_shifted(stream)
-        obj.certificate_chain_size   = read_u32(stream)
-        obj.certificate_chain_offset = read_u32_shifted(stream)
-        obj.global_hash_table_offset = read_u32_shifted(stream)
-        obj.data_offset              = read_u32_shifted(stream)
-        obj.data_size                = read_u32_shifted(stream)
+        obj.tmd_size                 = reader.u32()
+        obj.tmd_offset               = reader.u32_shifted()
+        obj.certificate_chain_size   = reader.u32()
+        obj.certificate_chain_offset = reader.u32_shifted()
+        obj.global_hash_table_offset = reader.u32_shifted()
+        obj.data_offset              = reader.u32_shifted()
+        obj.data_size                = reader.u32_shifted()
 
         return obj
 
@@ -46,11 +47,13 @@ class WiiPartitionHeader:
         :param stream:
         :return:
         """
+        writer = BinaryWriter(stream)
         self.ticket.write(stream)
-        stream.write(struct.pack('>I', self.tmd_size))
-        stream.write(struct.pack('>I', self.tmd_offset >> 2))
-        stream.write(struct.pack('>I', self.certificate_chain_size))
-        stream.write(struct.pack('>I', self.certificate_chain_offset >> 2))
-        stream.write(struct.pack('>I', self.global_hash_table_offset >> 2))
-        stream.write(struct.pack('>I', self.data_offset >> 2))
-        stream.write(struct.pack('>I', self.data_size >> 2))
+
+        writer.u32(self.tmd_size)
+        writer.u32_shifted(self.tmd_offset)
+        writer.u32(self.certificate_chain_size)
+        writer.u32_shifted(self.certificate_chain_offset)
+        writer.u32_shifted(self.global_hash_table_offset)
+        writer.u32_shifted(self.data_offset)
+        writer.u32_shifted(self.data_size)
