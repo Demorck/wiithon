@@ -2,12 +2,17 @@ import struct
 import unittest
 from io import BytesIO
 
+from unit.disc.structs._roundtrip import RoundTripMixin
 from wiithon.disc.structs.signature import SignatureType
 from wiithon.disc.structs.ticket import Ticket
 
 
-class TestTicket(unittest.TestCase):
+class TestTicket(RoundTripMixin,unittest.TestCase):
     """Unit tests for Ticket read/write"""
+
+
+    def test_round_trip_is_stable(self) -> None:
+        self.assert_round_trip(Ticket, self._build_raw_ticket())
 
     def _build_raw_ticket(self) -> bytes:
         """Build a fake raw ticket binary for testing"""

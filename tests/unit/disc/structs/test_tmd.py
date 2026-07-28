@@ -2,11 +2,16 @@ import struct
 import unittest
 from io import BytesIO
 
+from unit.disc.structs._roundtrip import RoundTripMixin
 from wiithon.disc.structs.tmd import TMD
 from wiithon.disc.structs.signature import SignatureType
 
-class TestTMD(unittest.TestCase):
+class TestTMD(RoundTripMixin, unittest.TestCase):
     """Unit tests for TMD."""
+
+
+    def test_round_trip_is_stable(self) -> None:
+        self.assert_round_trip(TMD, self._build_raw_tmd())
 
     def _build_raw_tmd(self, num_contents: int = 2) -> bytes:
         """Build raw binary data for a TMD with N contents.

@@ -2,12 +2,16 @@ import struct
 import unittest
 from io import BytesIO
 
+from unit.disc.structs._roundtrip import RoundTripMixin
 from wiithon.disc.structs.certificate import Certificate
 from wiithon.disc.structs.signature import SignatureType, KeyType
 
 
-class TestCertificate(unittest.TestCase):
+class TestCertificate(RoundTripMixin, unittest.TestCase):
     """Unit tests for Certificate."""
+
+    def test_round_trip_is_stable(self) -> None:
+        self.assert_round_trip(Certificate, self._build_raw_cert())
 
     def _build_raw_cert(self, sig_type: SignatureType = SignatureType.RSA_2048,
                         key_type: KeyType = KeyType.RSA_2048) -> bytes:

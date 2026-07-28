@@ -2,11 +2,16 @@ import struct
 import unittest
 from io import BytesIO
 
+from unit.disc.structs._roundtrip import RoundTripMixin
 from wiithon.disc.structs.partition_header import WiiPartitionHeader
 
 
-class TestWiiPartitionHeader(unittest.TestCase):
+class TestWiiPartitionHeader(RoundTripMixin, unittest.TestCase):
     """Unit tests for WiiPartitionHeader."""
+
+
+    def test_round_trip_is_stable(self) -> None:
+        self.assert_round_trip(WiiPartitionHeader, self._build_raw_header())
 
     def _build_raw_ticket(self) -> bytes:
         """Build a minimal valid raw ticket for embedding in the header.

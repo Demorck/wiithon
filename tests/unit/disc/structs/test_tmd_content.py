@@ -2,10 +2,15 @@ import struct
 import unittest
 from io import BytesIO
 
+from unit.disc.structs._roundtrip import RoundTripMixin
 from wiithon.disc.structs.tmd_content import TMDContent
 
-class TestTMDContent(unittest.TestCase):
+class TestTMDContent(RoundTripMixin, unittest.TestCase):
     """Unit tests for TMDContent."""
+
+
+    def test_round_trip_is_stable(self) -> None:
+        self.assert_round_trip(TMDContent, self._build_raw_content())
 
     def _build_raw_content(self, content_id: int = 0x00000001,
                            index: int = 0,
