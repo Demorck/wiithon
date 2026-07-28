@@ -336,3 +336,8 @@ class Rarc:
                 entry.data = data
                 return
         raise ArchiveFileNotFoundError(f"File not found: {path}")
+
+    def get_bytes(self) -> bytes:
+        buffer = BytesIO()
+        self.write(buffer)
+        return buffer.getvalue()

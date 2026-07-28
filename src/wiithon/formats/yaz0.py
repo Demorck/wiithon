@@ -42,6 +42,11 @@ class Yaz0:
         stream.write(b'\x00' * 8)
         stream.write(Yaz0.compress(self.data))
 
+    def get_bytes(self) -> bytes:
+        buffer = BytesIO()
+        self.write(buffer)
+        return buffer.getvalue()
+
     @staticmethod
     def uncompress(compressed_data: bytes, size: int) -> bytes:
         dest_buffer = bytearray()
