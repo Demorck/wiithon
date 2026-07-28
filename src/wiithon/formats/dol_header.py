@@ -1,7 +1,8 @@
 from typing import BinaryIO
-import struct
 
-from wiithon.binary.reader import read_u32
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
+
 
 class DOLHeader:
     """
@@ -50,17 +51,18 @@ class DOLHeader:
         """
 
         obj = cls()
+        reader = BinaryReader(stream)
 
-        obj.text_offset = list(struct.unpack('>7I', stream.read(7 * 4)))
-        obj.data_offset = list(struct.unpack('>11I', stream.read(11 * 4)))
-        obj.text_starts = list(struct.unpack('>7I', stream.read(7 * 4)))
-        obj.data_starts = list(struct.unpack('>11I', stream.read(11 * 4)))
-        obj.text_length = list(struct.unpack('>7I', stream.read(7 * 4)))
-        obj.data_length = list(struct.unpack('>11I', stream.read(11 * 4)))
-        obj.bss_start = read_u32(stream)
-        obj.bss_size = read_u32(stream)
-        obj.entry_point = read_u32(stream)
-        stream.read(0x1C)
+        obj.text_offset = reader.list_u32(7)
+        obj.data_offset = reader.list_u32(11)
+        obj.text_starts = reader.list_u32(7)
+        obj.data_starts = reader.list_u32(11)
+        obj.text_length = reader.list_u32(7)
+        obj.data_length = reader.list_u32(11)
+        obj.bss_start = reader.u32()
+        obj.bss_size = reader.u32()
+        obj.entry_point = reader.u32()
+        reader.skip(0x1C)
 
         return obj
 
@@ -70,13 +72,15 @@ class DOLHeader:
         :param stream:
         :return:
         """
-        stream.write(struct.pack('>7I', *self.text_offset))
-        stream.write(struct.pack('>11I', *self.data_offset))
-        stream.write(struct.pack('>7I', *self.text_starts))
-        stream.write(struct.pack('>11I', *self.data_starts))
-        stream.write(struct.pack('>7I', *self.text_length))
-        stream.write(struct.pack('>11I', *self.data_length))
-        stream.write(struct.pack('>I', self.bss_start))
-        stream.write(struct.pack('>I', self.bss_size))
-        stream.write(struct.pack('>I', self.entry_point))
-        stream.write(b'\x00' * 0x1C)
+        writer = BinaryWriter(stream)
+
+        writer.list_u32(self.text_offset)
+        writer.list_u32(self.data_offset)
+        writer.list_u32(self.text_starts)
+        writer.list_u32(self.data_starts)
+        writer.list_u32(self.text_length)
+        writer.list_u32(self.data_length)
+        writer.u32(self.bss_start)
+        writer.u32(self.bss_size)
+        writer.u32(self.entry_point)
+        writer.pad(0x1C)

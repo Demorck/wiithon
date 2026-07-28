@@ -65,7 +65,7 @@ Disc Header:
         :return:
         """
         obj = cls()
-        reader = BinaryReader(stream)
+        reader = BinaryReader(stream, encoding='ascii')
 
         obj.game_id = reader.bytes(0x06)
 
@@ -100,7 +100,7 @@ Disc Header:
         :param stream:
         :return:
         """
-        writer = BinaryWriter(stream)
+        writer = BinaryWriter(stream, encoding='ascii')
         
         writer.bytes(self.game_id)
         writer.u8(self.disc_num)
@@ -110,7 +110,7 @@ Disc Header:
         writer.pad(0x0E)
         writer.u32(self.wii_magic_word)
         writer.u32(self.gamecube_magic_word)
-        writer.string(self.game_title, 0x40, encoding='ascii')
+        writer.string(self.game_title, 0x40)
         writer.u8(self.disable_hash_verification)
         writer.u8(self.disable_disc_encryption)
         writer.pad(0x39E)

@@ -6,7 +6,7 @@ from wiithon.disc.partition import WiiPartitionInfo
 from wiithon.crypto.part_reader import CryptPartReader
 from wiithon.exceptions import InvalidDiscError
 from wiithon.fst.tree import FST
-from wiithon.binary.reader import read_u32
+from wiithon.binary.reader import BinaryReader
 from wiithon.disc.structs.certificate import Certificate
 from wiithon.disc.structs.disc_header import DiscHeader
 from wiithon.disc.structs.tmd import TMD
@@ -45,8 +45,9 @@ class WiiIsoReader:
         return self.file.read(REGION_SIZE)
 
     def read_magic_word(self) -> int:
-        self.file.seek(MAGIC_WORD_OFFSET)
-        return read_u32(self.file)
+        reader = BinaryReader(self.file)
+        reader.seek(MAGIC_WORD_OFFSET)
+        return reader.u32()
 
 
     def open_partition(self, entry: WiiPartitionEntry) -> WiiPartitionInfo:

@@ -1,8 +1,8 @@
 from io import BytesIO
 from typing import BinaryIO
 
-from wiithon.binary.reader import read_string, read_u8, read_u16, read_ndata
-from wiithon.binary.writer import write_ndata
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
 from wiithon.exceptions import InvalidFormatError
 
 _buffer_size = 18
@@ -20,16 +20,17 @@ class Lz77:
     def read(cls, stream: BinaryIO) -> "Lz77":
         obj = cls()
 
-        obj.magic_word = read_string(stream, 0x04)
-        if obj.magic_word != "LZ77":
+        reader = BinaryReader(stream)
+        obj.magic_word = reader.string(0x04)
+        if obj.magic_word != "LZ77": #TODO Constant here
             raise InvalidFormatError("Trying to read a non-lz77 file with the lz77 struct")
 
-        header = read_ndata(stream, 4, unpack_fmt='<I')
+        header = reader.u32_le()
 
         obj.compression_method = header & 0xFF
         obj.size = header >> 8
 
-        compressed_data: bytes = stream.read()
+        compressed_data: bytes = reader.bytes()
         obj.data = Lz77.uncompress(compressed_data, obj.size)
 
         return obj
@@ -38,14 +39,14 @@ class Lz77:
     @staticmethod
     def uncompress(compressed_data: bytes, size: int) -> bytes:
         dest_buffer = bytearray()
-        src_buffer = BytesIO(compressed_data)
+        reader = BinaryReader.from_bytes(compressed_data)
 
         while len(dest_buffer) < size:
-            flags = read_u8(src_buffer)
+            flags = reader.u8()
 
             for _ in range(8):
                 if flags & 0x80: # 0x80 = 1000 000
-                    reference = read_u16(src_buffer)
+                    reference = reader.u16()
                     length = 3 + ((reference >> 12) & 0xF)
                     offset = reference & 0xFFF
                     pointer = len(dest_buffer) - offset - 1
@@ -55,7 +56,7 @@ class Lz77:
                         if len(dest_buffer) >= size:
                             break
                 else:
-                    data = read_u8(src_buffer)
+                    data = reader.u8()
                     dest_buffer.append(data)
 
                 flags <<= 1
@@ -67,11 +68,12 @@ class Lz77:
 
     def write(self, stream: BinaryIO) -> None:
         self.size = len(self.data)
+        writer = BinaryWriter(stream)
 
-        stream.write(self.magic_word.encode('ascii'))
+        writer.string(self.magic_word, encoding='ascii')
         header = (self.size << 8) | self.compression_method
-        write_ndata(stream, header, pack_fmt='<I')
-        stream.write(Lz77.compress(self.data))
+        writer.u32_le(header)
+        writer.bytes(Lz77.compress(self.data))
 
     def get_bytes(self) -> bytes:
         buffer = BytesIO()

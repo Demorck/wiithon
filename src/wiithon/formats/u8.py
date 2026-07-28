@@ -3,8 +3,9 @@ import struct
 from io import BytesIO
 from typing import BinaryIO, List
 
-from wiithon.binary.reader import read_u32
+from wiithon.binary.reader import BinaryReader
 from wiithon.binary.align import align
+from wiithon.binary.writer import BinaryWriter
 from wiithon.exceptions import InvalidFormatError, ArchiveFileNotFoundError, ArchiveIsADirectoryError
 
 NODE_SIZE = 0xC
@@ -29,48 +30,55 @@ class U8:
     @classmethod
     def read(cls, stream: BinaryIO) -> "U8":
         obj = cls()
-        base = stream.tell()
+        reader = BinaryReader(stream)
+        base = reader.tell()
 
-        magic = stream.read(4)
+        magic = reader.bytes(4)
         if magic != U8_MAGIC_WORD:
             raise InvalidFormatError(f"Invalid magic word for U8 {magic:!r} instead of {U8_MAGIC_WORD}")
 
-        rootnode_offset = read_u32(stream) # Always 0x20
-        header_size = read_u32(stream)
+        rootnode_offset = reader.u32() # Always 0x20
+        header_size = reader.u32()
 
-        read_u32(stream) # data offset, recomputed on write
-        stream.read(0x10)
+        reader.skip(0x04) # data offset, recomputed on write
+        reader.skip(0x10)
 
-        stream.seek(base + rootnode_offset)
+        reader.seek(base + rootnode_offset)
 
-        raw_root_node = stream.read(NODE_SIZE)
-        total_nodes = struct.unpack_from(">I", raw_root_node, 8)[0]
+        raw_root_node = reader.bytes(NODE_SIZE)
+        total_nodes = struct.unpack_from(">I", raw_root_node, 8)[0] # Maybe change this one to a new writer ? Maybe overkill though
         raw_nodes = [raw_root_node]
 
         for _ in range(total_nodes - 1):
-            raw_nodes.append(stream.read(NODE_SIZE))
+            raw_nodes.append(reader.bytes(NODE_SIZE))
 
-        string_table = stream.read(header_size - total_nodes * NODE_SIZE)
+        string_table = reader.bytes(header_size - total_nodes * NODE_SIZE)
 
         def _find_in_table(offset: int) -> str:
             end = string_table.find(b"\x00", offset)
             raw_string = string_table[offset:] if end == -1 else string_table[offset:end]
             return raw_string.decode('ascii', errors='replace')
 
-
         for raw_node in raw_nodes:
             node = U8Node()
-            node.is_dir = raw_node[0] == 0x01
-            node.name_offset = (raw_node[1] << 16) | (raw_node[2] << 8) | raw_node[3]
-            node.data_offset = struct.unpack_from(">I", raw_node, 4)[0]
-            node.size = struct.unpack_from(">I", raw_node, 8)[0]
+            node_reader = BinaryReader.from_bytes(raw_node)
+            node.is_dir = node_reader.u8() == 0x01
+
+            node.name_offset = (
+                    (node_reader.u8() << 16) |
+                    (node_reader.u8() << 8)  |
+                     node_reader.u8()
+            )
+
+            node.data_offset = node_reader.u32()
+            node.size = node_reader.u32()
             node.name = _find_in_table(node.name_offset)
             obj.nodes.append(node)
 
 
         for node in obj.nodes:
             if not node.is_dir:
-                stream.seek(base + node.data_offset)
+                reader.seek(base + node.data_offset)
                 node.data = stream.read(node.size)
 
         return obj
@@ -122,6 +130,7 @@ class U8:
     def write(self, stream: BinaryIO) -> None:
         string_table: bytearray = bytearray()
         string_map: dict[str, int] = {}
+        writer = BinaryWriter(stream)
 
         def _add(name: str) -> int:
             if name not in string_map:
@@ -144,32 +153,32 @@ class U8:
                 cursor = align(cursor + node.size, 0x20)
 
         # Header
-        stream.write(U8_MAGIC_WORD)
-        stream.write(struct.pack(">I", ROOTNODE_OFFSET))
-        stream.write(struct.pack(">I", header_size))
-        stream.write(struct.pack(">I", data_section))
-        stream.write(b'\x00' * 16)
+        writer.bytes(U8_MAGIC_WORD)
+        writer.u32(ROOTNODE_OFFSET)
+        writer.u32(header_size)
+        writer.u32(data_section)
+        writer.pad(0x10)
 
         # Nodes
         for node in self.nodes:
             type_node = ((0x01 if node.is_dir else 0x00) << 24) | (node.name_offset & 0xFFFFFF)
-            stream.write(struct.pack(">I", type_node))
-            stream.write(struct.pack(">I", node.data_offset))
-            stream.write(struct.pack(">I", node.size))
+            writer.u32(type_node)
+            writer.u32(node.data_offset)
+            writer.u32(node.size)
 
         # String table
-        stream.write(string_table)
+        writer.bytes(string_table)
 
         # Padding
-        stream.write(b"\x00" * (data_section - ROOTNODE_OFFSET - header_size))
+        writer.pad(data_section - ROOTNODE_OFFSET - header_size)
 
         # File data (0x20 aligned)
         written = data_section
         for node in self.nodes:
             if not node.is_dir:
-                stream.write(node.data)
+                writer.bytes(node.data)
                 next_aligned = align(written + len(node.data), 0x20)
-                stream.write(b'\x00' * (next_aligned - written - len(node.data)))
+                writer.pad(next_aligned - written - len(node.data))
                 written = next_aligned
 
     def get_bytes(self) -> bytes:

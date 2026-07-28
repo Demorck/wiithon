@@ -3,6 +3,7 @@ from io import BytesIO
 from typing import BinaryIO
 import struct
 
+from wiithon.binary.reader import BinaryReader
 from wiithon.exceptions import DolSectionNotFoundError, DolSectionOverlapError, DolError, DolNoFreeSectionError
 from wiithon.formats.dol_header import DOLHeader
 from wiithon.ppc import instructions as ppc
@@ -24,7 +25,8 @@ class DOL:
     @classmethod
     def read(cls, stream: BinaryIO) -> "DOL":
         obj = cls()
-        start = stream.tell()
+        reader = BinaryReader(stream)
+        start = reader.tell()
 
         obj.header = DOLHeader.read(stream)
 
@@ -33,14 +35,14 @@ class DOL:
                 obj.text_sections[i] = b''
             else:
                 stream.seek(start + obj.header.text_offset[i])
-                obj.text_sections[i] = stream.read(obj.header.text_length[i])
+                obj.text_sections[i] = reader.bytes(obj.header.text_length[i])
 
         for i in range(DOL_DATA_SECTIONS):
             if obj.header.data_length[i] == 0:
                 obj.data_sections[i] = b''
             else:
                 stream.seek(start + obj.header.data_offset[i])
-                obj.data_sections[i] = stream.read(obj.header.data_length[i])
+                obj.data_sections[i] = reader.bytes(obj.header.data_length[i])
 
         return obj
 
