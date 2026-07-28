@@ -3,6 +3,7 @@ from typing import Callable, Optional, TypeVar, Iterator
 
 from io import BytesIO
 
+from wiithon import NoDataPartitionError
 from wiithon.formats.bnr import BNR
 from wiithon.formats.archive import resolve_read, resolve_write
 from wiithon.fst.tree import FST
@@ -34,7 +35,12 @@ class WiiIsoPatcher:
         self.reader = WiiIsoReader(self.src_path)
         try:
             self.reader.__enter__()
-            self.data_partition = self.reader.open_partition(self.reader.get_data_partition())
+            entry = self.reader.get_data_partition()
+            if entry is None:
+                raise NoDataPartitionError(f"No DATA partition in {self.src_path}")
+
+            self.data_partition = self.reader.open_partition(entry)
+
         except BaseException:
             self.reader.close()
             self.reader = None

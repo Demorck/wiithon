@@ -27,6 +27,10 @@ class InvalidDiscError(InvalidFormatError):
 class CorruptedDataError(WiithonError):
     """Header parsed, but the content is inconsistent (bad hash, bad sizes)"""
 
+
+class NoDataPartitionError(WiithonError):
+    """The disc image has no DATA partition"""
+
 # FST
 class FstError(WiithonError):
     """Error while walking the disc File System Table"""
@@ -78,7 +82,7 @@ class DolNoFreeSectionError(DolError):
 __all__ = [
     "WiithonError",
     "BinaryError",
-    "InvalidFormatError", "InvalidDiscError", "CorruptedDataError",
+    "InvalidFormatError", "InvalidDiscError", "CorruptedDataError", "NoDataPartitionError",
     "FstError", "FstFileNotFoundError", "FstIsADirectoryError",
     "ArchiveError", "ArchiveFileNotFoundError", "ArchiveIsADirectoryError",
     "BCSVFileError",
