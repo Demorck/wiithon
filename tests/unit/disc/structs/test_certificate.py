@@ -2,7 +2,7 @@ import struct
 import unittest
 from io import BytesIO
 
-from unit.disc.structs._roundtrip import RoundTripMixin
+from tests.unit.disc.structs._roundtrip import RoundTripMixin
 from wiithon.disc.structs.certificate import Certificate
 from wiithon.disc.structs.signature import SignatureType, KeyType
 
