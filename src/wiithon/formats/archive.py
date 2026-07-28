@@ -1,11 +1,47 @@
 from io import BytesIO
-from typing import Callable
+from typing import runtime_checkable, Protocol, BinaryIO, Callable
 
 from wiithon.exceptions import InvalidFormatError, FstFileNotFoundError
 from wiithon.formats.lz77 import Lz77
-from wiithon.formats.rarc import Rarc
-from wiithon.formats.u8 import U8
+from wiithon.formats.rarc import Rarc, RARC_MAGIC_WORD
+from wiithon.formats.u8 import U8, U8_MAGIC_WORD
 from wiithon.formats.yaz0 import Yaz0
+
+@runtime_checkable
+class Archive(Protocol):
+
+    def get_file_by_path(self, path: str) -> bytes:
+        pass
+
+    def replace_file_by_path(self, path: str, data: bytes) -> None:
+        pass
+
+    def get_bytes(self) -> bytes:
+        pass
+
+@runtime_checkable
+class Container(Protocol):
+    data: bytes
+
+    @classmethod
+    def read(cls, stream: BinaryIO) -> "Container":
+        pass
+
+    def get_bytes(self) -> bytes:
+        pass
+
+ContainerFactory = Callable[[BinaryIO], Container]
+ArchiveFactory = Callable[[BinaryIO], Archive]
+
+_CONTAINERS: dict[bytes, type] = {
+    b"Yaz0": Yaz0,
+    b"LZ77": Lz77,
+}
+
+_ARCHIVES: dict[bytes, type] = {
+    RARC_MAGIC_WORD: Rarc,
+    U8_MAGIC_WORD: U8,
+}
 
 
 def _split_path(fst, path: str) -> tuple[str, list[str]]:
@@ -16,41 +52,31 @@ def _split_path(fst, path: str) -> tuple[str, list[str]]:
             return "/".join(parts[:i]), parts[i:]
     raise FstFileNotFoundError(path)
 
-def _open_archive(data: bytes) -> tuple[object, Callable]:
-    if data[:4] == b"Yaz0":
-        yaz0 = Yaz0.read(BytesIO(data))
-        inner, inner_serialize = _open_archive(yaz0.data)
-        def yaz0_serialize(arc):
-            buf = BytesIO()
-            Yaz0.from_data(inner_serialize(arc)).write(buf)
-            return buf.getvalue()
-        return inner, yaz0_serialize
 
-    if data[:4] == b"LZ77":
-        lz = Lz77.read(BytesIO(data))
-        inner, inner_serialize = _open_archive(lz.data)
+def _open_archive(data: bytes) -> tuple[Archive, list[Container]]:
+    containers: list[Container] = []
 
-        def lz77_serialize(arc):
-            lz.data = inner_serialize(arc)
-            buf = BytesIO()
-            lz.write(buf)
-            return buf.getvalue()
+    # For people who don't know about walrus operator `:=`
+    # It evaluates the expression from the right and the variable on the left gets the evaluation
+    while (container_cls := _CONTAINERS.get(data[:4])) is not None:
+        container = container_cls.read(BytesIO(data))
+        containers.append(container)
+        data = container.data
 
-        return inner, lz77_serialize
+    archive_cls = _ARCHIVES.get(data[:4])
+    if archive_cls is None:
+        raise InvalidFormatError(f"Unknown archive format: {data[:4]!r}")
 
-    if data[:4] == b"RARC":
-        arc = Rarc.read(BytesIO(data))
-        def serialize(arc):
-            buf = BytesIO(); arc.write(buf); return buf.getvalue()
-        return arc, serialize
+    return archive_cls.read(BytesIO(data)), containers
 
 
+def _serialize_archive(archive: Archive, containers: list[Container]) -> bytes:
+    data = archive.get_bytes()
+    for container in reversed(containers):
+        container.data = data
+        data = container.get_bytes()
+    return data
 
-    if data[:4] == b"\x55\xAA\x38\x2D":
-        arc = U8.read(BytesIO(data))
-        return arc, lambda arc: arc.get_bytes()
-
-    raise InvalidFormatError(f"Unknown archive format: {data[:4]!r}")
 
 def resolve_read(patcher, path: str) -> bytes:
     fst_path, archive_parts = _split_path(patcher.data_partition.fst, path)
@@ -66,6 +92,6 @@ def resolve_write(patcher, path: str, new_data: bytes) -> None:
         patcher.replace_file(fst_path, new_data)
         return
     data = patcher.read_file(fst_path)
-    arc, serialize = _open_archive(data)
+    arc, containers = _open_archive(data)
     arc.replace_file_by_path("/".join(archive_parts), new_data)
-    patcher.replace_file(fst_path, serialize(arc))
+    patcher.replace_file(fst_path, _serialize_archive(arc, containers))

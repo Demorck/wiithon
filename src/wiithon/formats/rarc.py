@@ -2,10 +2,10 @@ from io import BytesIO
 from typing import BinaryIO, List
 import os
 
-from wiithon.binary.reader import read_string, read_u32, read_u16
+from wiithon.binary.reader import read_string, read_u32, read_u16, read_bytes
 from wiithon.exceptions import InvalidFormatError, ArchiveFileNotFoundError
 
-RARC_MAGIC_WORD: str = "RARC"
+RARC_MAGIC_WORD: bytes = b'RARC'
 
 class RarcNode:
     def __init__(self):
@@ -34,7 +34,7 @@ class Rarc:
     def __init__(self):
         # Header
         self.base_offset: int = 0
-        self.magic_word: str = ""
+        self.magic_word: bytes = b""
         self.file_length: int = 0
         self.data_offset: int = 0
         self.data_length: int = 0
@@ -57,7 +57,7 @@ class Rarc:
         obj = cls()
         obj.base_offset = stream.tell()
 
-        obj.magic_word = read_string(stream, 0x04)
+        obj.magic_word = read_bytes(stream, 4)
         if obj.magic_word != RARC_MAGIC_WORD:
             raise InvalidFormatError("Trying to read a non-rarc file with the rarc struct")
 

@@ -112,7 +112,7 @@ class TestRarcTransform(unittest.TestCase):
     def test_output_is_valid_rarc(self):
         result = rarc_transform(lambda r: None)(self.rarc_bytes)
         rarc = Rarc.read(BytesIO(result))
-        self.assertEqual(rarc.magic_word, "RARC")
+        self.assertEqual(rarc.magic_word, b"RARC")
 
     def test_unmodified_file_is_preserved(self):
         rarc_bytes = _make_rarc_bytes({"a.bin": b"aaa", "b.bin": b"bbb"})
