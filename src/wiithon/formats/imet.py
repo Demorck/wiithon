@@ -1,7 +1,8 @@
 import hashlib
-import struct
 from typing import BinaryIO
 
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
 from wiithon.exceptions import InvalidFormatError
 
 IMET_MAGIC_WORD = b"IMET"
@@ -24,18 +25,20 @@ class IMET:
     @classmethod
     def read(cls, stream: BinaryIO) -> "IMET":
         obj = cls()
-        start = stream.tell()
+        reader = BinaryReader(stream)
+        start = reader.tell()
 
-        stream.seek(start + IMET_PADDING_SIZE)
-        obj._raw_block = stream.read(IMET_BLOCK_SIZE)
+        reader.seek(start + IMET_PADDING_SIZE)
+        obj._raw_block = reader.bytes(IMET_BLOCK_SIZE)
 
         if len(obj._raw_block) < IMET_BLOCK_SIZE or obj._raw_block[:4] != IMET_MAGIC_WORD:
             raise InvalidFormatError(f"Invalid IMET magic: {obj._raw_block[:4]!r}")
 
-        obj.hash_size = struct.unpack_from(">I", obj._raw_block, 0x04)[0]
-        obj.icon_size        = struct.unpack_from(">I", obj._raw_block, 0x0C)[0]
-        obj.banner_size      = struct.unpack_from(">I", obj._raw_block, 0x10)[0]
-        obj.sound_size       = struct.unpack_from(">I", obj._raw_block, 0x14)[0]
+        reader.seek(0x04)
+        obj.hash_size        = reader.u32()
+        obj.icon_size        = reader.u32()
+        obj.banner_size      = reader.u32()
+        obj.sound_size       = reader.u32()
 
         for i in range(IMET_TITLE_COUNT):
             off = 0x1C + i * IMET_TITLE_MAX_BYTES
@@ -60,10 +63,17 @@ class IMET:
         self.titles[IMET_LANGUAGES.index(language)] = title
 
     def write(self, stream: BinaryIO) -> None:
-        stream.write(b'\x00' * IMET_PADDING_SIZE)
+        writer = BinaryWriter(stream)
+
+        writer.pad(IMET_PADDING_SIZE)
 
         buf = bytearray(self._raw_block)
-        struct.pack_into(">III", buf, 0x0C, self.icon_size, self.banner_size, self.sound_size)
+
+        writer.seek(0x0C)
+        writer.u32(self.icon_size)
+        writer.u32(self.banner_size)
+        writer.u32(self.sound_size)
+
         for i in range(IMET_TITLE_COUNT):
             off = 0x1C + i * IMET_TITLE_MAX_BYTES
             encoded = self.titles[i].encode("utf-16-be")[:IMET_TITLE_MAX_BYTES]
@@ -75,7 +85,7 @@ class IMET:
         digest = hashlib.md5(hashed).digest()
         buf[0x5B0:0x5C0] = digest
 
-        stream.write(bytes(buf))
+        writer.bytes(bytes(buf))
 
     def __repr__(self) -> str:
         lines = [f"IMET  icon={self.icon_size:#x}  banner={self.banner_size:#x}  sound={self.sound_size:#x}"]

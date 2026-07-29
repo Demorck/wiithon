@@ -2,7 +2,8 @@ from io import BytesIO
 from typing import BinaryIO
 from collections import deque
 
-from wiithon.binary.reader import read_string, read_u32, read_u8
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
 from wiithon.exceptions import InvalidFormatError, CorruptedDataError
 
 
@@ -15,15 +16,16 @@ class Yaz0:
     @classmethod
     def read(cls, stream: BinaryIO) -> "Yaz0":
         obj = cls()
+        reader = BinaryReader(stream)
 
-        obj.magic_word = read_string(stream, 0x04)
-        if obj.magic_word != "Yaz0":
+        obj.magic_word = reader.string(0x04)
+        if obj.magic_word != "Yaz0": #TODO: Constants here
             raise InvalidFormatError("Trying to read a non-yaz0 file with the yaz0 struct")
 
-        obj.size = read_u32(stream)
-        stream.read(0x8)
+        obj.size = reader.u32()
+        reader.skip(0x08)
 
-        compressed_data: bytes = stream.read()
+        compressed_data: bytes = reader.bytes()
         obj.data = Yaz0.uncompress(compressed_data, obj.size)
 
         return obj
@@ -37,10 +39,11 @@ class Yaz0:
         return obj
 
     def write(self, stream: BinaryIO):
-        stream.write(self.magic_word.encode('ascii'))
-        stream.write(self.size.to_bytes(4, byteorder='big'))
-        stream.write(b'\x00' * 8)
-        stream.write(Yaz0.compress(self.data))
+        writer = BinaryWriter(stream)
+        writer.string(self.magic_word, encoding='ascii')
+        writer.u32(self.size)
+        writer.pad(0x08)
+        writer.bytes(Yaz0.compress(self.data))
 
     def get_bytes(self) -> bytes:
         buffer = BytesIO()
@@ -50,26 +53,26 @@ class Yaz0:
     @staticmethod
     def uncompress(compressed_data: bytes, size: int) -> bytes:
         dest_buffer = bytearray()
-        src_buffer = BytesIO(compressed_data)
+        reader = BinaryReader.from_bytes(compressed_data)
 
         while len(dest_buffer) < size:
-            group_header = read_u8(src_buffer)
+            group_header = reader.u8()
             for i in range(8):
                 if len(dest_buffer) >= size:
                     break
 
                 if group_header & (0x80 >> i):
-                    dest_buffer.append(read_u8(src_buffer))
+                    dest_buffer.append(reader.u8())
                 else:
-                    byte1 = read_u8(src_buffer)
-                    byte2 = read_u8(src_buffer)
+                    byte1 = reader.u8()
+                    byte2 = reader.u8()
 
                     distance = ((byte1 & 0xF) << 8) | byte2
                     copy_src = len(dest_buffer) - distance - 1
                     
                     number_to_copy = byte1 >> 4
                     if number_to_copy == 0:
-                        number_to_copy = read_u8(src_buffer) + 0x12
+                        number_to_copy = reader.u8() + 0x12
                     else:
                         number_to_copy += 2
 

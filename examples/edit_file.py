@@ -40,5 +40,5 @@ if __name__ == "__main__":
             print("\n=== AFTER ===")
             display_bcsv(bcsv)
 
-        patcher.build(OUTPUT_PATH)
-        print(f"\nPatched : {OUTPUT_PATH}")
+        # patcher.build(OUTPUT_PATH)
+        # print(f"\nPatched : {OUTPUT_PATH}")

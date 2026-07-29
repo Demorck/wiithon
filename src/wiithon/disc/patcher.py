@@ -86,10 +86,6 @@ class WiiIsoPatcher:
         obj.write(buf)
         resolve_write(self, path, buf.getvalue())
 
-    def transform_file(self, path: str, fn: Callable[[bytes], bytes]) -> None:
-        original = self.data_partition.read_file(path)
-        self.replace_file(path, fn(original))
-
     def patch_dol(self, fn: Callable[[DOL], None]) -> None:
         self.dol_modifier = fn
 

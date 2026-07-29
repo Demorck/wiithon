@@ -1,7 +1,7 @@
-import struct
 from typing import BinaryIO
 
-from wiithon.binary.reader import read_u32_shifted, read_u32
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
 from wiithon.disc.enums import WiiPartType
 from wiithon.disc.layout import PARTITION_TABLE_OFFSET, PARTITION_GROUP_COUNT
 
@@ -19,13 +19,18 @@ class WiiPartitionEntry:
     @classmethod
     def read(cls, stream: BinaryIO) -> "WiiPartitionEntry":
         obj = cls(0, 0)
-        obj.offset = read_u32_shifted(stream)
-        obj.part_type = read_u32(stream)
+        reader = BinaryReader(stream)
+
+        obj.offset = reader.u32_shifted()
+        obj.part_type = reader.u32()
+
         return obj
 
     def write(self, stream: BinaryIO) -> None:
-        stream.write(struct.pack('>I', self.offset >> 2))
-        stream.write(struct.pack('>I', self.part_type))
+        writer = BinaryWriter(stream)
+
+        writer.u32_shifted(self.offset)
+        writer.u32(self.part_type)
 
     def __repr__(self):
         return f"WiiPartitionEntry(Offset: {self.offset:X}, Partition_type: {self.part_type})"
@@ -46,19 +51,20 @@ def read_parts(stream: BinaryIO) -> list[WiiPartitionEntry]:
     :param stream:
     :return:
     """
-    stream.seek(PARTITION_TABLE_OFFSET)
+    reader = BinaryReader(stream)
+    reader.seek(PARTITION_TABLE_OFFSET)
 
     groups: list[tuple[int, int]] = []
     for _ in range(PARTITION_GROUP_COUNT):
-        count = read_u32(stream)
-        offset = read_u32_shifted(stream)
+        count = reader.u32()
+        offset = reader.u32_shifted()
         groups.append((count, offset))
 
     entries: list[WiiPartitionEntry] = []
     for count, offset in groups:
         if count == 0:
             continue
-        stream.seek(offset)
+        reader.seek(offset)
         for _ in range(count):
             entries.append(WiiPartitionEntry.read(stream))
 

@@ -2,7 +2,8 @@ from io import BytesIO
 from typing import BinaryIO, List
 import os
 
-from wiithon.binary.reader import read_string, read_u32, read_u16, read_bytes
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
 from wiithon.exceptions import InvalidFormatError, ArchiveFileNotFoundError
 
 RARC_MAGIC_WORD: bytes = b'RARC'
@@ -55,60 +56,60 @@ class Rarc:
     @classmethod
     def read(cls, stream: BinaryIO) -> "Rarc":
         obj = cls()
-        obj.base_offset = stream.tell()
+        reader = BinaryReader(stream)
+        obj.base_offset = reader.tell()
 
-        obj.magic_word = read_bytes(stream, 4)
+        obj.magic_word = reader.bytes(0x04)
         if obj.magic_word != RARC_MAGIC_WORD:
             raise InvalidFormatError("Trying to read a non-rarc file with the rarc struct")
 
-        obj.file_length = read_u32(stream)
-        read_u32(stream) # Length of header, always 0x20
+        obj.file_length = reader.u32()
+        reader.skip(0x04) # Length of header, always 0x20
 
-        obj.data_offset = read_u32(stream)
-        obj.data_length = read_u32(stream)
-        stream.read(0xC)
+        obj.data_offset = reader.u32()
+        obj.data_length = reader.u32()
+        reader.skip(0xC)
         
-        info_block_pos = stream.tell()
+        info_block_pos = reader.tell()
 
-        obj.number_nodes = read_u32(stream)
-        obj.offset_first_node = read_u32(stream)
-        obj.total_directory = read_u32(stream)
-        obj.offset_first_directory = read_u32(stream)
-        obj.string_table_length = read_u32(stream)
-        obj.string_table_offset = read_u32(stream)
-        obj.number_of_files = read_u16(stream)
+        obj.number_nodes = reader.u32()
+        obj.offset_first_node = reader.u32()
+        obj.total_directory = reader.u32()
+        obj.offset_first_directory = reader.u32()
+        obj.string_table_length = reader.u32()
+        obj.string_table_offset = reader.u32()
+        obj.number_of_files = reader.u16()
 
-        read_u16(stream)
-        read_u32(stream)
+        reader.skip(0x02 + 0x04)
 
         # Read nodes
-        stream.seek(info_block_pos + obj.offset_first_node)
+        reader.seek(info_block_pos + obj.offset_first_node)
         for _ in range(obj.number_nodes):
             node = RarcNode()
-            node.type = read_string(stream, 4)
-            node.name_offset = read_u32(stream)
-            node.name_hash = read_u16(stream)
-            node.entry_count = read_u16(stream)
-            node.first_entry_index = read_u32(stream)
+            node.type = reader.string(0x04)
+            node.name_offset = reader.u32()
+            node.name_hash = reader.u16()
+            node.entry_count = reader.u16()
+            node.first_entry_index = reader.u32()
             obj.nodes.append(node)
 
         # Read file entries
-        stream.seek(info_block_pos + obj.offset_first_directory)
+        reader.seek(info_block_pos + obj.offset_first_directory)
         for _ in range(obj.total_directory):
             entry = RarcFileEntry()
-            entry.file_id = read_u16(stream)
-            entry.name_hash = read_u16(stream)
-            entry.attributes = read_u32(stream)
+            entry.file_id = reader.u16()
+            entry.name_hash = reader.u16()
+            entry.attributes = reader.u32()
             entry.type = entry.attributes >> 24
             entry.name_offset = entry.attributes & 0x00FFFFFF
-            entry.data_offset_or_idx = read_u32(stream)
-            entry.data_size = read_u32(stream)
-            entry.padding = read_u32(stream)
+            entry.data_offset_or_idx = reader.u32()
+            entry.data_size = reader.u32()
+            entry.padding = reader.u32()
             obj.entries.append(entry)
 
         # Read string table
-        stream.seek(info_block_pos + obj.string_table_offset)
-        obj.string_table = stream.read(obj.string_table_length)
+        reader.seek(info_block_pos + obj.string_table_offset)
+        obj.string_table = reader.bytes(obj.string_table_length)
 
         # Resolve names and read data
         for entry in obj.entries:
@@ -120,12 +121,12 @@ class Rarc:
 
             if entry.file_id != 0xFFFF and entry.type != 0x02:
                 abs_data_offset = obj.base_offset + 0x20 + obj.data_offset + entry.data_offset_or_idx
-                current_pos = stream.tell()
-                stream.seek(abs_data_offset)
-                entry.data = stream.read(entry.data_size)
-                stream.seek(current_pos)
+                current_pos = reader.tell()
+                reader.seek(abs_data_offset)
+                entry.data = reader.bytes(entry.data_size)
+                reader.seek(current_pos)
 
-        stream.seek(obj.base_offset + obj.file_length)
+        reader.seek(obj.base_offset + obj.file_length)
         return obj
 
     def extract_to(self, output_dir: str):
@@ -157,6 +158,7 @@ class Rarc:
     def write(self, stream: BinaryIO):
         string_table_bytes = bytearray()
         string_map = {}
+        writer = BinaryWriter(stream)
         
         def add_string(name: str) -> int:
             if name in string_map:
@@ -222,53 +224,52 @@ class Rarc:
         self.file_length = 0x40 + self.string_table_offset + self.string_table_length + self.data_length
 
         # Header
-        stream.write(b"RARC")
-        stream.write(self.file_length.to_bytes(4, 'big'))
-        stream.write((0x20).to_bytes(4, 'big'))
-        stream.write(self.data_offset.to_bytes(4, 'big'))
-        stream.write(self.data_length.to_bytes(4, 'big'))
-        stream.write(b'\x00' * 12)
+        writer.bytes(RARC_MAGIC_WORD)
+        writer.u32(self.file_length)
+        writer.u32(0x20)
+        writer.u32(self.data_offset)
+        writer.u32(self.data_length)
+        writer.pad(0x0C)
 
         # Info block (at 0x20)
-        stream.write(self.number_nodes.to_bytes(4, 'big'))
-        stream.write(self.offset_first_node.to_bytes(4, 'big'))
-        stream.write(self.total_directory.to_bytes(4, 'big'))
-        stream.write(self.offset_first_directory.to_bytes(4, 'big'))
-        stream.write(self.string_table_length.to_bytes(4, 'big'))
-        stream.write(self.string_table_offset.to_bytes(4, 'big'))
+        writer.u32(self.number_nodes)
+        writer.u32(self.offset_first_node)
+        writer.u32(self.total_directory)
+        writer.u32(self.offset_first_directory)
+        writer.u32(self.string_table_length)
+        writer.u32(self.string_table_offset)
         
         file_id_counter = 0
         for entry in self.entries:
             if entry.file_id != 0xFFFF:
                 file_id_counter += 1
-        
-        stream.write(file_id_counter.to_bytes(2, 'big'))
-        stream.write(b'\x00\x00')
-        stream.write(b'\x00\x00\x00\x00')
+
+        writer.u16(file_id_counter)
+        writer.pad(0x06)
 
         # Nodes
         for node in self.nodes:
-            stream.write(node.type.ljust(4, '\x00').encode('ascii')[:4])
-            stream.write(node.name_offset.to_bytes(4, 'big'))
-            stream.write(node.name_hash.to_bytes(2, 'big'))
-            stream.write(node.entry_count.to_bytes(2, 'big'))
-            stream.write(node.first_entry_index.to_bytes(4, 'big'))
+            writer.string(node.type, 0x04, encoding='ascii')
+            writer.u32(node.name_offset)
+            writer.u16(node.name_hash)
+            writer.u16(node.entry_count)
+            writer.u32(node.first_entry_index)
 
         # Entries
         for entry in self.entries:
-            stream.write(entry.file_id.to_bytes(2, 'big'))
-            stream.write(entry.name_hash.to_bytes(2, 'big'))
+            writer.u16(entry.file_id)
+            writer.u16(entry.name_hash)
             attr = (entry.type << 24) | (entry.name_offset & 0x00FFFFFF)
-            stream.write(attr.to_bytes(4, 'big'))
-            stream.write(entry.data_offset_or_idx.to_bytes(4, 'big'))
-            stream.write(entry.data_size.to_bytes(4, 'big'))
-            stream.write((0).to_bytes(4, 'big'))
+            writer.u32(attr)
+            writer.u32(entry.data_offset_or_idx)
+            writer.u32(entry.data_size)
+            writer.u32(0)
 
         # String table
-        stream.write(self.string_table)
+        writer.bytes(self.string_table)
 
         # Data payload
-        stream.write(payload)
+        writer.bytes(payload)
 
     def get_file(self, name: str) -> bytes:
         for entry in self.entries:

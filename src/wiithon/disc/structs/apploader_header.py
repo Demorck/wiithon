@@ -1,7 +1,7 @@
 from typing import BinaryIO
-import struct
 
-from wiithon.binary.reader import read_u32
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
 
 class ApploaderHeader:
     """
@@ -14,14 +14,17 @@ class ApploaderHeader:
     @classmethod
     def read(cls, stream: BinaryIO) -> 'ApploaderHeader':
         obj = cls()
+        reader = BinaryReader(stream)
 
-        stream.read(0x14)
-        obj.size1 = read_u32(stream)
-        obj.size2 = read_u32(stream)
+        reader.skip(0x14)
+        obj.size1 = reader.u32()
+        obj.size2 = reader.u32()
 
         return obj
 
     def write(self, stream: BinaryIO) -> None:
-        stream.write(b'\x00' * 0x14)
-        stream.write(struct.pack('>I', self.size1))
-        stream.write(struct.pack('>I', self.size2))
+        writer = BinaryWriter(stream)
+
+        writer.pad(0x14)
+        writer.u32(self.size1)
+        writer.u32(self.size2)

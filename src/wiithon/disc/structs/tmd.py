@@ -1,7 +1,7 @@
-import struct
 from io import BytesIO
 from typing import BinaryIO, List
-from wiithon.binary.reader import read_u8, read_u16, read_u32, read_u64
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
 from wiithon.disc.structs.signature import SignatureType
 from wiithon.disc.structs.tmd_content import TMDContent
 
@@ -96,26 +96,27 @@ class TMD:
         :return: TMD
         """
         obj = cls()
+        reader = BinaryReader(stream)
 
-        obj.signature_type         = SignatureType(read_u32(stream))
-        obj.signature              = stream.read(0x100)
-        stream.read(0x3C)
-        obj.signature_issuer       = stream.read(0x40)
-        obj.version                = read_u8(stream)
-        obj.ca_crl_version         = read_u8(stream)
-        obj.signer_crl_version     = read_u8(stream)
-        obj.is_virtual_wii         = read_u8(stream)
-        obj.system_version         = read_u64(stream)
-        obj.title_id               = read_u64(stream)
-        obj.title_type             = read_u32(stream)
-        obj.group_id               = read_u16(stream)
-        obj.fake_signature_padding = stream.read(0x38)  # 7 x u64 = 8*7 = 56
-        stream.read(0x06)
-        obj.access_flags           = read_u32(stream)
-        obj.title_version          = read_u16(stream)
-        obj.num_contents           = read_u16(stream)
-        obj.boot_index               = read_u16(stream)
-        stream.read(0x02)
+        obj.signature_type         = SignatureType(reader.u32())
+        obj.signature              = reader.bytes(0x100)
+        reader.skip(0x3C)
+        obj.signature_issuer       = reader.bytes(0x40)
+        obj.version                = reader.u8()
+        obj.ca_crl_version         = reader.u8()
+        obj.signer_crl_version     = reader.u8()
+        obj.is_virtual_wii         = reader.u8()
+        obj.system_version         = reader.u64()
+        obj.title_id               = reader.u64()
+        obj.title_type             = reader.u32()
+        obj.group_id               = reader.u16()
+        obj.fake_signature_padding = reader.bytes(0x38)  # 7 x u64 = 8*7 = 56
+        reader.skip(0x06)
+        obj.access_flags           = reader.u32()
+        obj.title_version          = reader.u16()
+        obj.num_contents           = reader.u16()
+        obj.boot_index               = reader.u16()
+        reader.skip(0x02)
         obj.contents = [TMDContent.read(stream) for _ in range(obj.num_contents)]
 
         return obj
@@ -128,25 +129,26 @@ class TMD:
         :return: None
         """
         self.num_contents = len(self.contents)
+        writer = BinaryWriter(stream)
 
-        stream.write(struct.pack('>I', self.signature_type))
-        stream.write(self.signature)
-        stream.write(b'\x00' * 0x3C)
-        stream.write(self.signature_issuer)
-        stream.write(struct.pack('>B', self.version))
-        stream.write(struct.pack('>B', self.ca_crl_version))
-        stream.write(struct.pack('>B', self.signer_crl_version))
-        stream.write(struct.pack('>B', self.is_virtual_wii))
-        stream.write(struct.pack('>Q', self.system_version))
-        stream.write(struct.pack('>Q', self.title_id))
-        stream.write(struct.pack('>I', self.title_type))
-        stream.write(struct.pack('>H', self.group_id))
-        stream.write(self.fake_signature_padding)
-        stream.write(b'\x00' * 0x06)
-        stream.write(struct.pack('>I', self.access_flags))
-        stream.write(struct.pack('>H', self.title_version))
-        stream.write(struct.pack('>H', self.num_contents))
-        stream.write(struct.pack('>H', self.boot_index))
-        stream.write(b'\x00' * 0x02)
+        writer.u32(self.signature_type)
+        writer.bytes(self.signature)
+        writer.pad(0x3C)
+        writer.bytes(self.signature_issuer)
+        writer.u8(self.version)
+        writer.u8(self.ca_crl_version)
+        writer.u8(self.signer_crl_version)
+        writer.u8(self.is_virtual_wii)
+        writer.u64(self.system_version)
+        writer.u64(self.title_id)
+        writer.u32(self.title_type)
+        writer.u16(self.group_id)
+        writer.bytes(self.fake_signature_padding)
+        writer.pad(0x06)
+        writer.u32(self.access_flags)
+        writer.u16(self.title_version)
+        writer.u16(self.num_contents)
+        writer.u16(self.boot_index)
+        writer.pad(0x02)
         for content in self.contents:
             content.write(stream)

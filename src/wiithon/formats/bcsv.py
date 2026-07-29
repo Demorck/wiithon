@@ -3,7 +3,8 @@ from io import BytesIO
 from typing import NamedTuple, Union
 from abc import ABC, abstractmethod
 
-import wiithon.binary.reader as fh
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
 from wiithon.exceptions import InvalidFormatError, CorruptedDataError, BCSVFileError
 
 BCSV_HEADER_SIZE: int = 0x10
@@ -62,7 +63,7 @@ class BCSVNameKey(BCSVKey):
         """
         Returns the internal name of the key/field
         
-        Args:
+        Returns:
             str: Direct key/field name.
         """
         return self.name
@@ -82,7 +83,7 @@ class BCSVHashKey(BCSVKey):
         """
         Returns the stringified version of the hash_val
         
-        Args:
+        Returns:
             str: stringified hashed value.
         """
         return str(self.hash_val)
@@ -102,7 +103,7 @@ class BCSVFieldKey(BCSVKey):
         """
         Returns the field's field_name value
         
-        Args:
+        Returns:
             str: Provided field's field_name.
         """
         return self.field.field_name
@@ -211,11 +212,12 @@ class BCSVField:
         Args:
             raw_bytes (BytesIO): Field bytes
         """
-        field_hash: int = fh.read_u32(raw_bytes, 0x0)
-        field_bitmask: int = fh.read_u32(raw_bytes, 0x4)
-        field_offset: int = fh.read_u16(raw_bytes, 0x8)
-        field_shift: int = fh.read_u8(raw_bytes, 0xA)
-        field_type: int = fh.read_u8(raw_bytes, 0xB)
+        reader = BinaryReader(raw_bytes)
+        field_hash: int = reader.u32()
+        field_bitmask: int = reader.u32()
+        field_offset: int = reader.u16()
+        field_shift: int = reader.u8()
+        field_type: int = reader.u8()
         return cls(field_hash, field_bitmask, field_offset, field_shift, field_type)
 
 
@@ -227,85 +229,91 @@ class BCSVField:
             bytes: The field object back in its bytes format.
         """
         field_bytes: BytesIO = BytesIO()
-        fh.write_u32(field_bytes, self.field_hash, 0x0)
-        fh.write_u32(field_bytes, self.field_bitmask, 0x4)
-        fh.write_u16(field_bytes, self.field_offset, 0x8)
-        fh.write_u8(field_bytes, self.field_shift, 0xA)
-        fh.write_u8(field_bytes, self.field_type, 0xB)
+        writer = BinaryWriter(field_bytes)
+        writer.u32(self.field_hash)
+        writer.u32(self.field_bitmask)
+        writer.u16(self.field_offset)
+        writer.u8(self.field_shift)
+        writer.u8(self.field_type)
         return field_bytes.getvalue()
 
 
-    def get_value_from_bytes(self, entry_bytes: BytesIO, str_fmt: str = STRING_FORMAT, error_handling: str = "strict") -> BCSVValue:
+    def get_value_from_bytes(self, reader: BinaryReader) -> BCSVValue:
         """
         Gets the field's value from a given BCSV entry's bytes.
         
         Args:
-            entry_bytes (BytesIO): Given BCSV entry/row data.
-            str_fmt (str): Output decoding format.
-            error_handling (str): See decode's "errors" field
+            reader (BinaryReader): The reader
 
         Returns:
             BCSVValue: Converted object from bytes into its field_type format.
         """
         value: int | None = None
+        reader.seek(self.field_offset)
         match self.field_type:
             case BCSVType.LONG | BCSVType.UNSIGNED_LONG:
-                value = fh.read_s32(entry_bytes, self.field_offset)
+                value = reader.s32()
                 if self.field_bitmask == 0xFFFFFFFF and self.field_shift == 0:
                     return value
             case BCSVType.SHORT:
-                value = fh.read_s16(entry_bytes, self.field_offset)
+                value = reader.s16()
                 if self.field_bitmask == 0xFFFF and self.field_shift == 0:
                     return value
             case BCSVType.BYTE:
-                value = fh.read_s8(entry_bytes, self.field_offset)
+                value = reader.s8()
                 if self.field_bitmask == 0xFF and self.field_shift == 0:
                     return value
             case BCSVType.FLOAT:
-                return fh.read_float(entry_bytes, self.field_offset)
+                return reader.float()
             case BCSVType.STRING_OFFSET:
-                return fh.read_u32(entry_bytes, self.field_offset)
+                return reader.u32()
             case BCSVType.STRING:
-                return fh.read_string(entry_bytes, BCSV_MAX_STRING_LENGTH, self.field_offset, str_fmt, error_handling)
+                return reader.string(BCSV_MAX_STRING_LENGTH)
             case _:
                 raise TypeError(f"Unsupported BCSV Field type: {self.field_type}")
 
         return (value & self.field_bitmask) >> self.field_shift
 
 
-    def set_value_in_buffer(self, entry_bytes: BytesIO, entry_value: BCSVValue, string_pool: list[StringPoolElement], str_fmt: str = STRING_FORMAT):
+    def set_value_in_buffer(self, reader: BinaryReader, writer: BinaryWriter, entry_value: BCSVValue, string_pool: list[StringPoolElement]):
         """
         Sets the field's value into a given BCSV entry's bytes.
         
         Args:
-            entry_bytes (BytesIO): Given BCSV entry/row data.
+            reader (BinaryReader): The Binary reader
+            writer (BinaryWriter): The Binary writer
             entry_value (BCSVValue): Value to transwer back to bytes.
             string_pool (list[StringPoolElement]): List of strings to write back into the string pool
-            str_fmt (str): Encoding format.
         """
+        reader.seek(self.field_offset)
         match self.field_type:
             case BCSVType.LONG | BCSVType.UNSIGNED_LONG:
                 value = entry_value
                 if not (self.field_bitmask == 0xFFFFFFFF and self.field_shift == 0):
-                    value: int = fh.read_s32(entry_bytes, self.field_offset)
+                    value: int = reader.s32()
                     value |= (int(entry_value) << int(self.field_shift)) & int(self.field_bitmask)
-                fh.write_s32(entry_bytes, value, self.field_offset)
+                writer.seek(self.field_offset)
+                writer.s32(value)
             case BCSVType.SHORT:
                 value = entry_value
                 if not (self.field_bitmask == 0xFFFF and self.field_shift == 0):
-                    value: int = fh.read_s16(entry_bytes, self.field_offset)
+                    value: int = reader.s16()
                     value |= (int(entry_value) << int(self.field_shift)) & int(self.field_bitmask)
-                fh.write_s16(entry_bytes, value, self.field_offset)
+                writer.seek(self.field_offset)
+                writer.s16(value)
             case BCSVType.BYTE:
                 value = entry_value
                 if not (self.field_bitmask == 0xFF and self.field_shift == 0):
-                    value: int = fh.read_s8(entry_bytes, self.field_offset)
+                    value: int = reader.s8()
                     value |= (int(entry_value) << int(self.field_shift)) & int(self.field_bitmask)
-                fh.write_s8(entry_bytes, value, self.field_offset)
+                writer.seek(self.field_offset)
+                writer.s8(value)
             case BCSVType.FLOAT:
-                fh.write_float(entry_bytes, float(entry_value), self.field_offset)
+                writer.seek(self.field_offset)
+                writer.float(float(entry_value))
             case BCSVType.STRING:
-                fh.write_string(entry_bytes, str(entry_value), BCSVTypeSize.STRING, offset=self.field_offset, str_fmt=str_fmt)
+                writer.seek(self.field_offset)
+                writer.string(str(entry_value), BCSVTypeSize.STRING)
             case BCSVType.STRING_OFFSET:
                 value: str = str(entry_value)
                 pool_element: StringPoolElement = next((element for element in string_pool if
@@ -315,12 +323,12 @@ class BCSVField:
                     if string_pool:
                         highest_pair: StringPoolElement = string_pool[-1]
                         # + 1 because null byte terminated
-                        pool_offset: int = highest_pair.offset + len(highest_pair.value.encode(str_fmt)) + 1
+                        pool_offset: int = highest_pair.offset + len(highest_pair.value.encode(writer.encoding)) + 1
 
                     pool_element = StringPoolElement(value, pool_offset)
                     string_pool.append(pool_element)
-
-                fh.write_s32(entry_bytes, pool_element.offset, self.field_offset)
+                writer.seek(self.field_offset)
+                writer.s32(pool_element.offset)
             case _:
                 raise TypeError(f"Unsupported BCSV Field type: {self.field_type}")
 
@@ -426,6 +434,7 @@ class BCSV:
             str_fmt (str): Output decoding format.
         """
         data_length: int = raw_data.seek(0, 2)
+        raw_data.seek(0)
         if data_length < BCSV_HEADER_SIZE:
             raise InvalidFormatError("Provided BCSV BytesIO is not in a valid format.")
 
@@ -435,11 +444,12 @@ class BCSV:
             BCSVEntry.hash_names = field_names
 
         bcsv: BCSV = cls() # initialize the class with some empty entry/field lists.
+        reader = BinaryReader(raw_data, encoding=str_fmt)
         bcsv.str_fmt = str_fmt
-        entry_count: int = fh.read_u32(raw_data, 0x0)
-        field_count: int = fh.read_u32(raw_data, 0x4)
-        entry_data_offset: int = fh.read_u32(raw_data, 0x8)
-        entry_size_bytes: int = fh.read_u32(raw_data, 0xC)
+        entry_count: int = reader.u32()
+        field_count: int = reader.u32()
+        entry_data_offset: int = reader.u32()
+        entry_size_bytes: int = reader.u32()
 
         # Load all headers of this file
         fields_size: int = entry_data_offset - BCSV_HEADER_SIZE # BCSV Field details start after the above 16 bytes
@@ -458,7 +468,8 @@ class BCSV:
 
         offset: int = BCSV_HEADER_SIZE
         for _ in range(field_count):
-            field_bytes: BytesIO = BytesIO(fh.read_bytes(raw_data, BCSV_FIELD_SIZE, offset))
+            reader.seek(offset)
+            field_bytes: BytesIO = BytesIO(reader.bytes(BCSV_FIELD_SIZE))
             bcsv_field: BCSVField = BCSVField.import_field(field_bytes)
             if bcsv_field.field_hash in BCSVEntry.hash_names: # Replace hashes with field names if provided
                 bcsv_field.field_name = field_names[bcsv_field.field_hash]
@@ -466,17 +477,20 @@ class BCSV:
             offset += BCSV_FIELD_SIZE
 
         # Read everything after the calculated data size until the end of the BCSV byte data.
-        string_table_bytes: BytesIO = BytesIO(fh.read_bytes(raw_data, -1, calc_data_size))
+        reader.seek(calc_data_size)
+        string_table_bytes: BytesIO = BytesIO(reader.bytes())
 
         offset = entry_data_offset
         for _ in range(entry_count):
             bcsv_entry: BCSVEntry = BCSVEntry()
-            entry_bytes: BytesIO = BytesIO(fh.read_bytes(raw_data, entry_size_bytes, offset))
+            reader.seek(offset)
+            entry_reader = BinaryReader(BytesIO(reader.bytes(entry_size_bytes)), encoding=str_fmt)
 
             for bcsv_field in bcsv.fields:
-                value: BCSVValue = bcsv_field.get_value_from_bytes(entry_bytes, str_fmt)
+                value: BCSVValue = bcsv_field.get_value_from_bytes(entry_reader)
                 if bcsv_field.field_type == BCSVType.STRING_OFFSET:
-                    value = fh.read_string_until_null(string_table_bytes, value, str_fmt=str_fmt) # Read until a null byte is hit
+                    reader.seek(calc_data_size + value)
+                    value = reader.string_until_null()
                 bcsv_entry[bcsv_field] = value
             bcsv.entries.append(bcsv_entry)
             offset += entry_size_bytes
@@ -502,10 +516,11 @@ class BCSV:
         entry_size: int = self.calculate_data_entry_size()
 
         bcsv_data: BytesIO = BytesIO()
-        fh.write_u32(bcsv_data, entry_count, 0x0)
-        fh.write_u32(bcsv_data, field_count, 0x4)
-        fh.write_u32(bcsv_data, entry_data_offset, 0x8)
-        fh.write_u32(bcsv_data, entry_size, 0xC)
+        writer = BinaryWriter(bcsv_data)
+        writer.u32(entry_count)
+        writer.u32(field_count)
+        writer.u32(entry_data_offset)
+        writer.u32(entry_size)
 
         # Write the header data back into the bcsv file
         offset = BCSV_HEADER_SIZE
@@ -513,7 +528,9 @@ class BCSV:
             if not isinstance(field, BCSVField):
                 raise TypeError(f"Field provided is not of type 'BCSVField'.\nReceived field type: {type(field)}\n"
                     f"Field: {field}\nField Index: {self.fields.index(field)}")
-            fh.write_bytes(bcsv_data, field.export_field(), offset)
+
+            writer.seek(offset)
+            writer.bytes(field.export_field())
             offset += BCSV_FIELD_SIZE
 
         # Now write the entries back into the bcsv file
@@ -526,26 +543,34 @@ class BCSV:
 
             entry_bytes: BytesIO = BytesIO(bytearray(entry_size))
             # Loop through all fields to write into the bcsv for each entry
+            entry_reader = BinaryReader(entry_bytes, encoding=str_fmt)
+            entry_writer = BinaryWriter(entry_bytes, encoding=str_fmt)
             for field in self.fields:
-                field.set_value_in_buffer(entry_bytes, entry[field], string_pool, str_fmt=str_fmt)
+                field.set_value_in_buffer(entry_reader, entry_writer, entry[field], string_pool)
 
             # Update the entry bytes into the BCSV data object.
-            fh.write_bytes(bcsv_data, entry_bytes.getvalue(), offset)
+            writer.seek(offset)
+            writer.bytes(entry_bytes.getvalue())
             offset += entry_size
 
         # Create an empty string pool to write data to and eventually append to the end.
         string_pool_bytes: BytesIO = BytesIO()
+        pool_writer = BinaryWriter(string_pool_bytes, encoding=str_fmt)
         for pool_element in string_pool:
-            fh.write_string(string_pool_bytes, pool_element.value, len(pool_element.value.encode(str_fmt)), offset=pool_element.offset, str_fmt=str_fmt, add_null_byte=True)
+            pool_writer.seek(pool_element.offset)
+            pool_writer.string(pool_element.value,
+                               size=len(pool_element.value.encode(str_fmt)),
+                               add_null_byte=True)
 
         # Add the string pool bytes into BCSV data.
-        fh.write_bytes(bcsv_data, string_pool_bytes.getvalue(), offset)
+        writer.seek(offset)
+        writer.bytes(string_pool_bytes.getvalue())
 
         # BCSV Files are then padded with @ if their file size are not divisible by 32.
-        curr_length = bcsv_data.seek(0, 2)
+        curr_length = writer.size()
         if curr_length % 32 > 0:
             bcsv_data.seek(curr_length)
-            fh.write_string(bcsv_data, "", 32 - (curr_length % 32), b"@", curr_length, str_fmt=str_fmt)
+            writer.pad(32 - (curr_length % 32), b"@")
 
         return bcsv_data
 
