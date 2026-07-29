@@ -1,5 +1,6 @@
 import struct
-from typing import BinaryIO
+from io import BytesIO
+from typing import BinaryIO, List
 from wiithon.binary.common import STRING_FORMAT
 from wiithon.exceptions import BinaryError
 
@@ -8,6 +9,11 @@ class BinaryReader:
     def __init__(self, stream: BinaryIO, encoding: str = STRING_FORMAT) -> None:
         self.stream = stream
         self.encoding = encoding
+
+    @classmethod
+    def from_bytes(cls, data: bytes) -> "BinaryReader":
+        stream = BytesIO(data)
+        return cls(stream)
 
     def seek(self, offset: int) -> None:
         self.stream.seek(offset)
@@ -67,11 +73,18 @@ class BinaryReader:
             raise BinaryError(f"Tried to read {size} bytes, got {len(data)}.")
         return data
 
-    # Strings
-    def string(self, size: int, encoding: str | None = None, errors: str = "strict") -> str:
-        return self.bytes(size).split(b'\x00')[0].decode(encoding or self.encoding, errors=errors)
+    def list_u32(self, size: int) -> List[int]:
+        result_list = list()
+        for _ in range(size):
+            result_list.append(self.u32())
 
-    def string_until_null(self, encoding: str | None = None, errors: str = "strict") -> str:
+        return result_list
+
+    # Strings
+    def string(self, size: int, encoding: str | None = None) -> str:
+        return self.bytes(size).split(b'\x00')[0].decode(encoding or self.encoding)
+
+    def string_until_null(self, encoding: str | None = None) -> str:
         encoding = encoding or self.encoding
         null_byte = '\0'.encode(encoding)
         chars = bytearray()
@@ -81,4 +94,4 @@ class BinaryReader:
                 break
             chars += byte
 
-        return chars.decode(encoding, errors=errors)
+        return chars.decode(encoding)
