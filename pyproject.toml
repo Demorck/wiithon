@@ -48,6 +48,25 @@ Documentation = "https://github.com/Demorck/wiithon/tree/master/docs"
 [project.scripts]
 wiithon = "wiithon.cli:app"
 
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11", "build"]
+
+[tool.ruff]
+line-length = 120
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src/wiithon/binary", "src/wiithon/exceptions.py", "src/wiithon/crypto"]
+warn_unused_ignores = true
+
+[tool.mypy.overrides]
+module = "Crypto.*"
+ignore_missing_imports = true
+
 [tool.hatch.version]
 path = "src/wiithon/__init__.py"
 

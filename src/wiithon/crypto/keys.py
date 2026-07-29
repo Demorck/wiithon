@@ -54,7 +54,7 @@ def encrypt_title_key(decrypted_key: bytes, common_key_index: int, title_id: byt
     cipher = AES.new(COMMON_KEYS[common_key_index], AES.MODE_CBC, iv)
     return cipher.encrypt(decrypted_key)
 
-def get_length_from_key_type(key_type: KeyType) -> (int, int, int):
+def get_length_from_key_type(key_type: KeyType) -> tuple[int, int, int]:
     """
     Return (key_size, exponent_size, padding_size) for a certificate key type
 
