@@ -39,6 +39,7 @@ class Yaz0:
         return obj
 
     def write(self, stream: BinaryIO):
+        self.size = len(self.data)
         writer = BinaryWriter(stream)
         writer.string(self.magic_word, encoding='ascii')
         writer.u32(self.size)
