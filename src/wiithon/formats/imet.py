@@ -29,7 +29,7 @@ class IMET:
         start = reader.tell()
 
         reader.seek(start + IMET_PADDING_SIZE)
-        obj._raw_block = reader.bytes(IMET_BLOCK_SIZE)
+        obj._raw_block = reader.raw(IMET_BLOCK_SIZE)
 
         if len(obj._raw_block) < IMET_BLOCK_SIZE or obj._raw_block[:4] != IMET_MAGIC_WORD:
             raise InvalidFormatError(f"Invalid IMET magic: {obj._raw_block[:4]!r}")
@@ -85,7 +85,7 @@ class IMET:
         digest = hashlib.md5(hashed).digest()
         buf[0x5B0:0x5C0] = digest
 
-        writer.bytes(bytes(buf))
+        writer.raw(bytes(buf))
 
     def __repr__(self) -> str:
         lines = [f"IMET  icon={self.icon_size:#x}  banner={self.banner_size:#x}  sound={self.sound_size:#x}"]

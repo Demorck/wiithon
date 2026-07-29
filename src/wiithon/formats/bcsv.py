@@ -13,7 +13,7 @@ BCSV_MAX_STRING_LENGTH: int = 0x20
 
 STRING_FORMAT: str = "utf-8"
 
-type BCSVValue = int | str | float
+BCSVValue = int | str | float
 
 class BCSVKey(ABC):
     """Abstract Base Class for all BCSV Keys."""
@@ -45,7 +45,7 @@ class BCSVKey(ABC):
         else:
             raise TypeError(
                 f"Unsupported key type: '{type(key).__name__}'.\n"
-                f"Please use one of the following: {', '.join(["str", "int", "BCSVField"])}"
+                f"Please use one of the following: {', '.join(['str', 'int', 'BCSVField'])}"
             )
 
 
@@ -469,7 +469,7 @@ class BCSV:
         offset: int = BCSV_HEADER_SIZE
         for _ in range(field_count):
             reader.seek(offset)
-            field_bytes: BytesIO = BytesIO(reader.bytes(BCSV_FIELD_SIZE))
+            field_bytes: BytesIO = BytesIO(reader.raw(BCSV_FIELD_SIZE))
             bcsv_field: BCSVField = BCSVField.import_field(field_bytes)
             if bcsv_field.field_hash in BCSVEntry.hash_names: # Replace hashes with field names if provided
                 bcsv_field.field_name = field_names[bcsv_field.field_hash]
@@ -478,13 +478,12 @@ class BCSV:
 
         # Read everything after the calculated data size until the end of the BCSV byte data.
         reader.seek(calc_data_size)
-        string_table_bytes: BytesIO = BytesIO(reader.bytes())
 
         offset = entry_data_offset
         for _ in range(entry_count):
             bcsv_entry: BCSVEntry = BCSVEntry()
             reader.seek(offset)
-            entry_reader = BinaryReader(BytesIO(reader.bytes(entry_size_bytes)), encoding=str_fmt)
+            entry_reader = BinaryReader(BytesIO(reader.raw(entry_size_bytes)), encoding=str_fmt)
 
             for bcsv_field in bcsv.fields:
                 value: BCSVValue = bcsv_field.get_value_from_bytes(entry_reader)
@@ -530,7 +529,7 @@ class BCSV:
                     f"Field: {field}\nField Index: {self.fields.index(field)}")
 
             writer.seek(offset)
-            writer.bytes(field.export_field())
+            writer.raw(field.export_field())
             offset += BCSV_FIELD_SIZE
 
         # Now write the entries back into the bcsv file
@@ -550,7 +549,7 @@ class BCSV:
 
             # Update the entry bytes into the BCSV data object.
             writer.seek(offset)
-            writer.bytes(entry_bytes.getvalue())
+            writer.raw(entry_bytes.getvalue())
             offset += entry_size
 
         # Create an empty string pool to write data to and eventually append to the end.
@@ -564,7 +563,7 @@ class BCSV:
 
         # Add the string pool bytes into BCSV data.
         writer.seek(offset)
-        writer.bytes(string_pool_bytes.getvalue())
+        writer.raw(string_pool_bytes.getvalue())
 
         # BCSV Files are then padded with @ if their file size are not divisible by 32.
         curr_length = writer.size()

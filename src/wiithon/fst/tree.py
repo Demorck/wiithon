@@ -50,7 +50,7 @@ class FST:
         for node in raw_nodes:
             node.write(stream)
 
-        writer.bytes(strings)
+        writer.raw(strings)
 
     def count_files(self) -> int:
         return sum(e.count_files() for e in self.entries)

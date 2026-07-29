@@ -6,7 +6,10 @@
 /assets
 /extract
 
-.venv/
+.venv*/
 **/__pycache__
 
 /temp
+
+/dist/
+*.egg-info/

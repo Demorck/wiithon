@@ -35,14 +35,14 @@ class DOL:
                 obj.text_sections[i] = b''
             else:
                 reader.seek(start + obj.header.text_offset[i])
-                obj.text_sections[i] = reader.bytes(obj.header.text_length[i])
+                obj.text_sections[i] = reader.raw(obj.header.text_length[i])
 
         for i in range(DOL_DATA_SECTIONS):
             if obj.header.data_length[i] == 0:
                 obj.data_sections[i] = b''
             else:
                 stream.seek(start + obj.header.data_offset[i])
-                obj.data_sections[i] = reader.bytes(obj.header.data_length[i])
+                obj.data_sections[i] = reader.raw(obj.header.data_length[i])
 
         return obj
 
@@ -209,7 +209,7 @@ class DOL:
                 if all(data[off + o:off + o + 2] == e for o, e in checks):
                     return base + off
 
-        raise DolError(f"No arenaLo is found. Consider passing through the argument and manual searching.")
+        raise DolError("No arenaLo is found. Consider passing through the argument and manual searching.")
 
     def read_arena_lo(self, lis_vaddr: int) -> int:
         """Decodes the arenaLo value from a lis+addi/ori pair at lis_vaddr."""

@@ -68,7 +68,7 @@ class BinaryWriter:
     def u32_le(self, data: int) -> None:
         self._write_number(data, '<I')
 
-    def bytes(self, data: bytes) -> None:
+    def raw(self, data: bytes) -> None:
         self.stream.write(data)
 
 
@@ -82,6 +82,6 @@ class BinaryWriter:
                 f"which does not fit in a {size} byte field"
             )
 
-        self.bytes(encoded + padding * (size - len(encoded)))
+        self.raw(encoded + padding * (size - len(encoded)))
         if add_null_byte:
-            self.bytes(b'\x00')
+            self.raw(b'\x00')

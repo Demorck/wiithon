@@ -67,7 +67,7 @@ class BinaryReader:
     def u32_le(self) -> int:
         return self._read_number(4, '<I')
 
-    def bytes(self, size: int = -1) -> bytes:
+    def raw(self, size: int = -1) -> bytes:
         data = self.stream.read(size)
         if 0 <= size != len(data):
             raise BinaryError(f"Tried to read {size} bytes, got {len(data)}.")
@@ -82,7 +82,7 @@ class BinaryReader:
 
     # Strings
     def string(self, size: int, encoding: str | None = None) -> str:
-        return self.bytes(size).split(b'\x00')[0].decode(encoding or self.encoding)
+        return self.raw(size).split(b'\x00')[0].decode(encoding or self.encoding)
 
     def string_until_null(self, encoding: str | None = None) -> str:
         encoding = encoding or self.encoding

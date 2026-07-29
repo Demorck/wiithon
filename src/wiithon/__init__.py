@@ -8,6 +8,9 @@ from wiithon.exceptions import (
     DolError, DolSectionNotFoundError, DolSectionOverlapError, DolNoFreeSectionError,
 )
 
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
+
 from wiithon.disc.reader import WiiIsoReader
 from wiithon.disc.patcher import WiiIsoPatcher
 from wiithon.disc.partition import WiiPartitionInfo
@@ -41,6 +44,9 @@ __all__ = [
     "BCSVFileError",
 
     # API
+    ## Binary
+    "BinaryReader", "BinaryWriter",
+
     ## Disc
     "WiiIsoReader", "WiiIsoPatcher", "WiiPartitionInfo", "WiiPartType",
 

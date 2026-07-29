@@ -59,7 +59,7 @@ class Rarc:
         reader = BinaryReader(stream)
         obj.base_offset = reader.tell()
 
-        obj.magic_word = reader.bytes(0x04)
+        obj.magic_word = reader.raw(0x04)
         if obj.magic_word != RARC_MAGIC_WORD:
             raise InvalidFormatError("Trying to read a non-rarc file with the rarc struct")
 
@@ -109,7 +109,7 @@ class Rarc:
 
         # Read string table
         reader.seek(info_block_pos + obj.string_table_offset)
-        obj.string_table = reader.bytes(obj.string_table_length)
+        obj.string_table = reader.raw(obj.string_table_length)
 
         # Resolve names and read data
         for entry in obj.entries:
@@ -123,7 +123,7 @@ class Rarc:
                 abs_data_offset = obj.base_offset + 0x20 + obj.data_offset + entry.data_offset_or_idx
                 current_pos = reader.tell()
                 reader.seek(abs_data_offset)
-                entry.data = reader.bytes(entry.data_size)
+                entry.data = reader.raw(entry.data_size)
                 reader.seek(current_pos)
 
         reader.seek(obj.base_offset + obj.file_length)
@@ -224,7 +224,7 @@ class Rarc:
         self.file_length = 0x40 + self.string_table_offset + self.string_table_length + self.data_length
 
         # Header
-        writer.bytes(RARC_MAGIC_WORD)
+        writer.raw(RARC_MAGIC_WORD)
         writer.u32(self.file_length)
         writer.u32(0x20)
         writer.u32(self.data_offset)
@@ -266,10 +266,10 @@ class Rarc:
             writer.u32(0)
 
         # String table
-        writer.bytes(self.string_table)
+        writer.raw(self.string_table)
 
         # Data payload
-        writer.bytes(payload)
+        writer.raw(payload)
 
     def get_file(self, name: str) -> bytes:
         for entry in self.entries:
