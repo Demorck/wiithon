@@ -5,6 +5,7 @@ from typing import List, Optional
 from wiithon.crypto.part_reader import CryptPartReader
 from wiithon.disc.layout import APPLOADER_OFFSET, APPLOADER_HEADER_SIZE, BI2_OFFSET, BI2_SIZE
 from wiithon.exceptions import FstIsADirectoryError, FstFileNotFoundError
+from wiithon.formats.dol_header import DOLHeader
 from wiithon.fst.tree import FST
 from wiithon.fst.node import FSTNode, FSTDirectory, FSTFile
 from wiithon.disc.structs.apploader_header import ApploaderHeader
@@ -51,16 +52,14 @@ class WiiPartitionInfo:
     def read_dol(self) -> DOL:
         dol_offset = self.internal_header.DOL_offset
         header_data = self.crypto.read_at(dol_offset, DOL_HEADER_SIZE)
-        dol_header = DOL.read(BytesIO(header_data))
+        header = DOLHeader.read(BytesIO(header_data))
 
         dol_size = DOL_HEADER_SIZE
         for i in range(DOL_TEXT_SECTIONS):
-            end = dol_header.header.text_offset[i] + dol_header.header.text_length[i]
-            dol_size = max(dol_size, end)
+            dol_size = max(dol_size, header.text_offset[i] + header.text_length[i])
 
         for i in range(DOL_DATA_SECTIONS):
-            end = dol_header.header.data_offset[i] + dol_header.header.data_length[i]
-            dol_size = max(dol_size, end)
+            dol_size = max(dol_size, header.data_offset[i] + header.data_length[i])
 
         dol_data = self.crypto.read_at(dol_offset, dol_size)
         return DOL.read(BytesIO(dol_data))

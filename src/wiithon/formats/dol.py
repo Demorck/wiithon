@@ -34,7 +34,7 @@ class DOL:
             if obj.header.text_length[i] == 0:
                 obj.text_sections[i] = b''
             else:
-                stream.seek(start + obj.header.text_offset[i])
+                reader.seek(start + obj.header.text_offset[i])
                 obj.text_sections[i] = reader.bytes(obj.header.text_length[i])
 
         for i in range(DOL_DATA_SECTIONS):
