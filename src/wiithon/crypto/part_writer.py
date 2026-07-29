@@ -22,12 +22,12 @@ class CryptPartWriter:
 
         self.is_dirty = False
         self.group_cache = bytearray(GROUP_SIZE)
-        self.current_group = None  # cached group
+        self.current_group: int | None = None  # cached group
         self.current_position: int = 0
 
         self.h3_table = bytearray(H3_TABLE_SIZE)
 
-    def write(self, data: bytes, directly = False) -> int:
+    def write(self, data: bytes, directly: bool = False) -> int:
         bytes_to_write = len(data)
         offset_in_data = 0
 

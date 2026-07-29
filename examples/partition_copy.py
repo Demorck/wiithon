@@ -24,7 +24,7 @@ def partition_copy(src_path: str, dst_path: str) -> None:
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         src_path = "../assets/smg.iso"
-        dest_path = f"../assets/copied.iso"
+        dest_path = "../assets/copied.iso"
     else:
         src_path = sys.argv[1]
         dest_path = sys.argv[2]

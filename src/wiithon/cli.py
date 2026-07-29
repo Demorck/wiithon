@@ -238,7 +238,7 @@ def rarc_infos(
     console.print(Panel(table, title=f"[bold]{rarc.name}[/bold]", expand=False))
 
 @rarc_app.command("extract")
-def rarc_infos(
+def rarc_extract(
     rarc: Annotated[Path, typer.Argument(help="Path to the RARC archive.")],
     dest: Annotated[Path, typer.Argument(help="Output directory.")],
 ) -> None:

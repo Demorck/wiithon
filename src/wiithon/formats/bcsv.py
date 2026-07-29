@@ -45,7 +45,7 @@ class BCSVKey(ABC):
         else:
             raise TypeError(
                 f"Unsupported key type: '{type(key).__name__}'.\n"
-                f"Please use one of the following: {', '.join(["str", "int", "BCSVField"])}"
+                f"Please use one of the following: {', '.join(['str', 'int', 'BCSVField'])}"
             )
 
 
@@ -478,7 +478,6 @@ class BCSV:
 
         # Read everything after the calculated data size until the end of the BCSV byte data.
         reader.seek(calc_data_size)
-        string_table_bytes: BytesIO = BytesIO(reader.raw())
 
         offset = entry_data_offset
         for _ in range(entry_count):

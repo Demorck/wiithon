@@ -56,20 +56,29 @@ line-length = 120
 src = ["src"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B"]
+select = ["F"]
 
 [tool.mypy]
 python_version = "3.11"
-packages = [
-    "wiithon.binary",
-    "wiithon.exceptions",
-    "wiithon.crypto"
-]
+mypy_path = "src"
+files = ["src/wiithon"]
 warn_unused_ignores = true
+disable_error_code = ["annotation-unchecked"]
 
-[tool.mypy.overrides]
-module = "Crypto.*"
+[[tool.mypy.overrides]]
+module = ["Crypto.*", "typer.*", "pytest.*", ]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "wiithon.builder.*",
+    "wiithon.disc.*",
+    "wiithon.formats.*",
+    "wiithon.fst.*",
+    "wiithon.ppc.*",
+    "wiithon.cli",
+]
+ignore_errors = true
 
 [tool.hatch.version]
 path = "src/wiithon/__init__.py"

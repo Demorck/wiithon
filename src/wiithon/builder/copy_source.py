@@ -8,7 +8,6 @@ from wiithon.disc.structs.disc_header import DiscHeader
 from wiithon.disc.structs.tmd import TMD
 from wiithon.disc.structs.ticket import Ticket
 from wiithon.disc.structs.partition_entry import WiiPartitionEntry
-from wiithon.disc.enums import WiiPartType
 from wiithon.exceptions import FstFileNotFoundError
 from wiithon.formats.dol import DOL
 

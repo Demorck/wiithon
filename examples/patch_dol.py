@@ -38,7 +38,7 @@ def apply_patches(dol: DOL) -> None:
 
 # A .dol file
 def patch_standalone_dol(src: str, dst: str) -> None:
-    print(f"\n--- Patching standalone DOL ---")
+    print("\n--- Patching standalone DOL ---")
     print(f"  Source : {src}")
     print(f"  Output : {dst}")
 

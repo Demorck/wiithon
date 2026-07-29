@@ -32,7 +32,7 @@ def main():
         builder.add_partition(dest, dir_builder, None)
         builder.finish(dest)
         
-        print(f"Done")
+        print("Done")
 
 if __name__ == "__main__":
     main()

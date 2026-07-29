@@ -209,7 +209,7 @@ class DOL:
                 if all(data[off + o:off + o + 2] == e for o, e in checks):
                     return base + off
 
-        raise DolError(f"No arenaLo is found. Consider passing through the argument and manual searching.")
+        raise DolError("No arenaLo is found. Consider passing through the argument and manual searching.")
 
     def read_arena_lo(self, lis_vaddr: int) -> int:
         """Decodes the arenaLo value from a lis+addi/ori pair at lis_vaddr."""

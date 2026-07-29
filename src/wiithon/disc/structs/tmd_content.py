@@ -1,4 +1,3 @@
-import struct
 from typing import BinaryIO
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
