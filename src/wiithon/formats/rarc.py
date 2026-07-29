@@ -53,6 +53,39 @@ class Rarc:
         self.entries: List[RarcFileEntry] = []
         self.string_table: bytes = b""
 
+    @staticmethod
+    def compute_hash(name: str) -> int:
+        h = 0
+        for c in name:
+            h = (h * 3) + ord(c)
+            h &= 0xFFFF
+        return h
+
+    @classmethod
+    def create_empty(cls) -> "Rarc":
+        obj = cls()
+        root = RarcNode()
+        root.type = "ROOT"
+        root.first_entry_index = 0
+        root.entry_count = 2
+        obj.nodes.append(root)
+
+        dot = RarcFileEntry()
+        dot.file_id = 0xFFFF
+        dot.type = 0x02
+        dot.name = "."
+        dot.data_offset_or_idx = 0
+
+        dotdot = RarcFileEntry()
+        dotdot.file_id = 0xFFFF
+        dotdot.type = 0x02
+        dotdot.name = ".."
+        dotdot.data_offset_or_idx = 0
+
+        obj.entries.append(dot)
+        obj.entries.append(dotdot)
+        return obj
+
     @classmethod
     def read(cls, stream: BinaryIO) -> "Rarc":
         obj = cls()
@@ -168,23 +201,25 @@ class Rarc:
             string_table_bytes.extend(name.encode('utf-8') + b'\x00')
             return offset
             
-        def compute_hash(name: str) -> int:
-            h = 0
-            for c in name:
-                h = (h * 3) + ord(c)
-                h &= 0xFFFF
-            return h
-
         # Pack nodes
         for node in self.nodes:
             node_name = node.type.strip('\x00')
             node.name_offset = add_string(node_name)
-            node.name_hash = compute_hash(node_name)
+            node.name_hash = self.compute_hash(node_name)
 
         # Pack entries
         for entry in self.entries:
             entry.name_offset = add_string(entry.name)
-            entry.name_hash = compute_hash(entry.name)
+            entry.name_hash = self.compute_hash(entry.name)
+
+        # Assign sequential file ids to real files, 0xFFFF for directories
+        file_id_counter = 0
+        for entry in self.entries:
+            if entry.type == 0x02:
+                entry.file_id = 0xFFFF
+            else:
+                entry.file_id = file_id_counter
+                file_id_counter += 1
 
         # align string table to 0x20
         while len(string_table_bytes) % 0x20 != 0:
@@ -238,11 +273,6 @@ class Rarc:
         writer.u32(self.offset_first_directory)
         writer.u32(self.string_table_length)
         writer.u32(self.string_table_offset)
-        
-        file_id_counter = 0
-        for entry in self.entries:
-            if entry.file_id != 0xFFFF:
-                file_id_counter += 1
 
         writer.u16(file_id_counter)
         writer.pad(0x06)
@@ -299,6 +329,69 @@ class Rarc:
             if not found:
                 raise ArchiveFileNotFoundError(f"Directory not found in RARC: {part}")
         return node
+
+    def _insert_entry(self, node: RarcNode, entry: RarcFileEntry) -> None:
+        pos = node.first_entry_index + node.entry_count
+        self.entries.insert(pos, entry)
+        node.entry_count += 1
+        for other in self.nodes:
+            if other is not node and other.first_entry_index >= pos:
+                other.first_entry_index += 1
+
+    def add_node(self, path: str, node_type: str = None) -> RarcNode:
+        parts = [p for p in path.split("/") if p]
+        if not parts:
+            raise ValueError(f"Path must contain a directory name: {path}")
+
+        parent_node = self._find_node_for_path(parts[:-1])
+        name = parts[-1]
+        parent_index = self.nodes.index(parent_node)
+
+        new_node = RarcNode()
+        new_node.type = (node_type or name)[:4].upper().ljust(4)
+        new_node_index = len(self.nodes)
+        new_node.first_entry_index = len(self.entries)
+
+        dot_entry = RarcFileEntry()
+        dot_entry.file_id = 0xFFFF
+        dot_entry.type = 0x02
+        dot_entry.name = "."
+        dot_entry.data_offset_or_idx = new_node_index
+
+        dotdot_entry = RarcFileEntry()
+        dotdot_entry.file_id = 0xFFFF
+        dotdot_entry.type = 0x02
+        dotdot_entry.name = ".."
+        dotdot_entry.data_offset_or_idx = parent_index
+
+        self.entries.append(dot_entry)
+        self.entries.append(dotdot_entry)
+        new_node.entry_count = 2
+        self.nodes.append(new_node)
+
+        dir_entry = RarcFileEntry()
+        dir_entry.file_id = 0xFFFF
+        dir_entry.type = 0x02
+        dir_entry.name = name
+        dir_entry.data_offset_or_idx = new_node_index
+        self._insert_entry(parent_node, dir_entry)
+
+        return new_node
+
+    def add_file(self, path: str, data: bytes) -> RarcFileEntry:
+        parts = [p for p in path.split("/") if p]
+        if not parts:
+            raise ValueError("Path must contain a file name")
+
+        node = self._find_node_for_path(parts[:-1])
+
+        entry = RarcFileEntry()
+        entry.type = 0x01
+        entry.name = parts[-1]
+        entry.data = data
+        self._insert_entry(node, entry)
+
+        return entry
 
     def get_file_by_path(self, path: str) -> bytes:
         parts = [p for p in path.split("/") if p]
