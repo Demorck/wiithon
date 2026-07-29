@@ -4,12 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "wiithon"
-version = "0.1.0"
 description = "Wii ISO reading, patching and rebuilding library"
 requires-python = ">=3.11"
 dependencies = [
     "pycryptodome>=3.0",
 ]
+dynamic = ["version"]
 
 [project.optional-dependencies]
 cli = ["typer>=0.9", "rich>=13.0"]
@@ -19,3 +19,6 @@ wiithon = "wiithon.cli:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/wiithon"]
+
+[tool.hatch.version]
+path = "src/wiithon/__init__.py"
