@@ -1,6 +1,7 @@
 from typing import List, BinaryIO
 
-from wiithon.binary.reader import read_string_until_null
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
 from wiithon.fst.node import FSTNode, FSTDirectory, FSTFile
 from wiithon.fst.raw_node import RawFSTNode
 
@@ -12,16 +13,17 @@ class FST:
     @classmethod
     def read(cls, stream: BinaryIO, offset: int) -> "FST":
         obj = cls()
+        reader = BinaryReader(stream)
+        reader.seek(offset)
 
-        stream.seek(offset)
         root = RawFSTNode.read(stream)
         total_nodes = root.length
         nodes: List[RawFSTNode] = [root]
         for _ in range(total_nodes - 1):
             nodes.append(RawFSTNode.read(stream))
 
-        string_offset = stream.tell()
-        obj.entries, _ = _build_tree(stream, string_offset, nodes,
+        string_offset = reader.tell()
+        obj.entries, _ = _build_tree(reader, string_offset, nodes,
                                      start=1, end=total_nodes)
 
         return obj
@@ -31,6 +33,7 @@ class FST:
         Converts the tree back to flat raw nodes + string table.
         :param stream: Binary stream to write to.
         """
+        writer = BinaryWriter(stream)
         raw_nodes: list[RawFSTNode] = []
         strings: bytearray = bytearray()
 
@@ -47,7 +50,7 @@ class FST:
         for node in raw_nodes:
             node.write(stream)
 
-        stream.write(strings)
+        writer.bytes(strings)
 
     def count_files(self) -> int:
         return sum(e.count_files() for e in self.entries)
@@ -78,7 +81,7 @@ class FST:
         return target
 
 
-def _build_tree(stream: BinaryIO, string_offset: int,
+def _build_tree(reader: BinaryReader, string_offset: int,
                 nodes: List[RawFSTNode],
                 start: int, end: int) -> tuple[List[FSTNode], int]:
     """Recursively convert flat raw nodes into a tree.
@@ -96,10 +99,11 @@ def _build_tree(stream: BinaryIO, string_offset: int,
 
     while i < end:
         raw = nodes[i]
-        name = read_string_until_null(stream, string_offset + raw.name_offset, "shift_jis")
+        reader.seek(string_offset + raw.name_offset)
+        name = reader.string_until_null(encoding="shift_jis")
 
         if raw.is_directory:
-            children, _ = _build_tree(stream, string_offset, nodes,
+            children, _ = _build_tree(reader, string_offset, nodes,
                                       start=i + 1, end=raw.length)
             directory = FSTDirectory(name)
             directory.children = children
