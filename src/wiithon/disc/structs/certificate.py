@@ -59,23 +59,23 @@ class Certificate:
         elif obj.signature_type == SignatureType.ELLIPSIS:
             length = 64
 
-        obj.signature = reader.bytes(length)
+        obj.signature = reader.raw(length)
         reader.skip(0x3C)
-        obj.issuer = reader.bytes(0x40)
+        obj.issuer = reader.raw(0x40)
         obj.key_type = KeyType(reader.u32())
-        obj.child_identity = reader.bytes(0x40)
+        obj.child_identity = reader.raw(0x40)
         obj.key_id = reader.u32()
         if obj.key_type == KeyType.RSA_2048:
-            obj.key = reader.bytes(0x100)
+            obj.key = reader.raw(0x100)
             obj.public_exponent = reader.u32()
-            reader.bytes(0x34)
+            reader.raw(0x34)
         elif obj.key_type == KeyType.RSA_4096:
-            obj.key = reader.bytes(0x200)
+            obj.key = reader.raw(0x200)
             obj.public_exponent = reader.u32()
-            reader.bytes(0x34)
+            reader.raw(0x34)
         elif obj.key_type == KeyType.ECC_B233:
-            obj.key = reader.bytes(0x3C)
-            reader.bytes(0x60)
+            obj.key = reader.raw(0x3C)
+            reader.raw(0x60)
 
         return obj
 
@@ -88,13 +88,13 @@ class Certificate:
         writer = BinaryWriter(stream)
 
         writer.u32(self.signature_type)
-        writer.bytes(self.signature)
+        writer.raw(self.signature)
         writer.pad(0x3C)
-        writer.bytes(self.issuer)
+        writer.raw(self.issuer)
         writer.u32(self.key_type)
-        writer.bytes(self.child_identity)
+        writer.raw(self.child_identity)
         writer.u32(self.key_id)
-        writer.bytes(self.key)
+        writer.raw(self.key)
 
         if self.key_type in (KeyType.RSA_4096, KeyType.RSA_2048):
             writer.u32(self.public_exponent)

@@ -25,7 +25,7 @@ class RawFSTNode:
         """
         obj = cls()
         reader = BinaryReader(stream)
-        data = reader.bytes(0x04)
+        data = reader.raw(0x04)
 
         # Byte 0: is_directory flag
         obj.is_directory = data[0] != 0

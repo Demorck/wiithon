@@ -52,7 +52,7 @@ class TMDContent:
         obj.index           = reader.u16()
         obj.content_type    = reader.u16()
         obj.size            = reader.u64()
-        obj.hash            = reader.bytes(0x14)
+        obj.hash            = reader.raw(0x14)
 
         return obj
 
@@ -69,4 +69,4 @@ class TMDContent:
         writer.u16(self.index)
         writer.u16(self.content_type)
         writer.u64(self.size)
-        writer.bytes(self.hash)
+        writer.raw(self.hash)

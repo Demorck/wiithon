@@ -30,7 +30,7 @@ class Lz77:
         obj.compression_method = header & 0xFF
         obj.size = header >> 8
 
-        compressed_data: bytes = reader.bytes()
+        compressed_data: bytes = reader.raw()
         obj.data = Lz77.uncompress(compressed_data, obj.size)
 
         return obj
@@ -73,7 +73,7 @@ class Lz77:
         writer.string(self.magic_word, encoding='ascii')
         header = (self.size << 8) | self.compression_method
         writer.u32_le(header)
-        writer.bytes(Lz77.compress(self.data))
+        writer.raw(Lz77.compress(self.data))
 
     def get_bytes(self) -> bytes:
         buffer = BytesIO()

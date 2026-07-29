@@ -78,17 +78,17 @@ class Ticket:
         reader = BinaryReader(stream)
 
         obj.signature_type          = SignatureType(reader.u32())
-        obj.signature               = reader.bytes(0x100)
+        obj.signature               = reader.raw(0x100)
         reader.skip(0x3C) # Padding 0x3C
-        obj.signature_issuer        = reader.bytes(0x40)
-        obj.ecdh                    = reader.bytes(0x3C)
+        obj.signature_issuer        = reader.raw(0x40)
+        obj.ecdh                    = reader.raw(0x3C)
         reader.skip(0x03) # Reserved - padding 3 bytes
 
-        obj.encrypted_key           = reader.bytes(0x10)
+        obj.encrypted_key           = reader.raw(0x10)
         reader.skip(0x01)
-        obj.ticket_id               = reader.bytes(0x08)
-        obj.console_id              = reader.bytes(0x04)
-        obj.title_id                = reader.bytes(0x08)
+        obj.ticket_id               = reader.raw(0x08)
+        obj.console_id              = reader.raw(0x04)
+        obj.title_id                = reader.raw(0x08)
         obj.unkown                  = reader.u16()
         obj.ticket_version          = reader.u16()
         obj.permitted_title_mask    = reader.u32()
@@ -96,7 +96,7 @@ class Ticket:
         obj.title_export_allowed    = reader.u8()
         obj.common_key_index        = reader.u8()
         reader.skip(0x30)
-        obj.content_access_permission = reader.bytes(0x40)
+        obj.content_access_permission = reader.raw(0x40)
         obj.unknown2 = reader.u16()
         obj.time_limit = [TicketTimeLimit.read(stream) for _ in range(0x08)]
 
@@ -122,16 +122,16 @@ class Ticket:
         )
 
         writer.u32(self.signature_type)
-        writer.bytes(self.signature)
+        writer.raw(self.signature)
         writer.pad(0x3C)  # padding
-        writer.bytes(self.signature_issuer)
-        writer.bytes(self.ecdh)
+        writer.raw(self.signature_issuer)
+        writer.raw(self.ecdh)
         writer.pad(0x03)  # padding
-        writer.bytes(encrypted)
+        writer.raw(encrypted)
         writer.pad(0x01)  # padding
-        writer.bytes(self.ticket_id)
-        writer.bytes(self.console_id)
-        writer.bytes(self.title_id)
+        writer.raw(self.ticket_id)
+        writer.raw(self.console_id)
+        writer.raw(self.title_id)
         writer.u16(self.unkown)
         writer.u16(self.ticket_version)
         writer.u32(self.permitted_title_mask)
@@ -139,7 +139,7 @@ class Ticket:
         writer.u8(self.title_export_allowed)
         writer.u8(self.common_key_index)
         writer.pad(0x30)  # padding
-        writer.bytes(self.content_access_permission)
+        writer.raw(self.content_access_permission)
         writer.u16(self.unknown2)
         for tl in self.time_limit:
             tl.write(stream)

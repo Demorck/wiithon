@@ -26,9 +26,9 @@ class IMD5:
         for _ in range(8):
             reader.u8()
 
-        md5 = reader.bytes(0x10)
+        md5 = reader.raw(0x10)
 
-        payload = reader.bytes(filesize)
+        payload = reader.raw(filesize)
         payload_hash = hashlib.md5(payload)
 
         if payload_hash.digest() != md5:
@@ -41,13 +41,13 @@ class IMD5:
         dest = BytesIO()
         writer = BinaryWriter(dest)
 
-        writer.bytes(b"IMD5")
+        writer.raw(b"IMD5")
         writer.u8(len(data))
         writer.pad(8)
 
         payload_hash = hashlib.md5(data)
-        writer.bytes(payload_hash.digest())
-        writer.bytes(data)
+        writer.raw(payload_hash.digest())
+        writer.raw(data)
 
         return dest.getvalue()
 

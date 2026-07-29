@@ -33,7 +33,7 @@ class U8:
         reader = BinaryReader(stream)
         base = reader.tell()
 
-        magic = reader.bytes(4)
+        magic = reader.raw(4)
         if magic != U8_MAGIC_WORD:
             raise InvalidFormatError(f"Invalid magic word for U8 {magic:!r} instead of {U8_MAGIC_WORD}")
 
@@ -45,14 +45,14 @@ class U8:
 
         reader.seek(base + rootnode_offset)
 
-        raw_root_node = reader.bytes(NODE_SIZE)
+        raw_root_node = reader.raw(NODE_SIZE)
         total_nodes = struct.unpack_from(">I", raw_root_node, 8)[0] # Maybe change this one to a new writer ? Maybe overkill though
         raw_nodes = [raw_root_node]
 
         for _ in range(total_nodes - 1):
-            raw_nodes.append(reader.bytes(NODE_SIZE))
+            raw_nodes.append(reader.raw(NODE_SIZE))
 
-        string_table = reader.bytes(header_size - total_nodes * NODE_SIZE)
+        string_table = reader.raw(header_size - total_nodes * NODE_SIZE)
 
         def _find_in_table(offset: int) -> str:
             end = string_table.find(b"\x00", offset)
@@ -153,7 +153,7 @@ class U8:
                 cursor = align(cursor + node.size, 0x20)
 
         # Header
-        writer.bytes(U8_MAGIC_WORD)
+        writer.raw(U8_MAGIC_WORD)
         writer.u32(ROOTNODE_OFFSET)
         writer.u32(header_size)
         writer.u32(data_section)
@@ -167,7 +167,7 @@ class U8:
             writer.u32(node.size)
 
         # String table
-        writer.bytes(string_table)
+        writer.raw(string_table)
 
         # Padding
         writer.pad(data_section - ROOTNODE_OFFSET - header_size)
@@ -176,7 +176,7 @@ class U8:
         written = data_section
         for node in self.nodes:
             if not node.is_dir:
-                writer.bytes(node.data)
+                writer.raw(node.data)
                 next_aligned = align(written + len(node.data), 0x20)
                 writer.pad(next_aligned - written - len(node.data))
                 written = next_aligned

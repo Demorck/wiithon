@@ -99,9 +99,9 @@ class TMD:
         reader = BinaryReader(stream)
 
         obj.signature_type         = SignatureType(reader.u32())
-        obj.signature              = reader.bytes(0x100)
+        obj.signature              = reader.raw(0x100)
         reader.skip(0x3C)
-        obj.signature_issuer       = reader.bytes(0x40)
+        obj.signature_issuer       = reader.raw(0x40)
         obj.version                = reader.u8()
         obj.ca_crl_version         = reader.u8()
         obj.signer_crl_version     = reader.u8()
@@ -110,7 +110,7 @@ class TMD:
         obj.title_id               = reader.u64()
         obj.title_type             = reader.u32()
         obj.group_id               = reader.u16()
-        obj.fake_signature_padding = reader.bytes(0x38)  # 7 x u64 = 8*7 = 56
+        obj.fake_signature_padding = reader.raw(0x38)  # 7 x u64 = 8*7 = 56
         reader.skip(0x06)
         obj.access_flags           = reader.u32()
         obj.title_version          = reader.u16()
@@ -132,9 +132,9 @@ class TMD:
         writer = BinaryWriter(stream)
 
         writer.u32(self.signature_type)
-        writer.bytes(self.signature)
+        writer.raw(self.signature)
         writer.pad(0x3C)
-        writer.bytes(self.signature_issuer)
+        writer.raw(self.signature_issuer)
         writer.u8(self.version)
         writer.u8(self.ca_crl_version)
         writer.u8(self.signer_crl_version)
@@ -143,7 +143,7 @@ class TMD:
         writer.u64(self.title_id)
         writer.u32(self.title_type)
         writer.u16(self.group_id)
-        writer.bytes(self.fake_signature_padding)
+        writer.raw(self.fake_signature_padding)
         writer.pad(0x06)
         writer.u32(self.access_flags)
         writer.u16(self.title_version)

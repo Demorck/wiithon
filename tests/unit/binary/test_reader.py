@@ -141,26 +141,26 @@ class TestPositioning(unittest.TestCase):
 
 class TestBytes(unittest.TestCase):
     def test_exact_size(self):
-        self.assertEqual(reader(b"\x01\x02\x03").bytes(2), b"\x01\x02")
+        self.assertEqual(reader(b"\x01\x02\x03").raw(2), b"\x01\x02")
 
     def test_zero_size(self):
         binary_reader = reader(b"\x01\x02")
-        self.assertEqual(binary_reader.bytes(0), b"")
+        self.assertEqual(binary_reader.raw(0), b"")
         self.assertEqual(binary_reader.tell(), 0)
 
     def test_default_reads_until_the_end(self):
         binary_reader = reader(b"\x01\x02\x03")
         binary_reader.skip(1)
-        self.assertEqual(binary_reader.bytes(), b"\x02\x03")
+        self.assertEqual(binary_reader.raw(), b"\x02\x03")
 
     def test_default_at_the_end_returns_empty(self):
         binary_reader = reader(b"\x01")
         binary_reader.skip(1)
-        self.assertEqual(binary_reader.bytes(), b"")
+        self.assertEqual(binary_reader.raw(), b"")
 
     def test_reading_more_than_available_fails(self):
         with self.assertRaises(BinaryError):
-            reader(b"\x01\x02").bytes(3)
+            reader(b"\x01\x02").raw(3)
 
 
 class TestListU32(unittest.TestCase):
@@ -311,7 +311,7 @@ class TestSequentialRead(unittest.TestCase):
         count = binary_reader.u32()
         self.assertEqual(binary_reader.list_u32(count), [10, 11])
         self.assertEqual(binary_reader.tell(), len(raw))
-        self.assertEqual(binary_reader.bytes(), b"")
+        self.assertEqual(binary_reader.raw(), b"")
 
     def test_two_readers_share_one_stream_position(self):
         stream = BytesIO(b"\x01\x02")

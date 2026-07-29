@@ -67,7 +67,7 @@ Disc Header:
         obj = cls()
         reader = BinaryReader(stream, encoding='ascii')
 
-        obj.game_id = reader.bytes(0x06)
+        obj.game_id = reader.raw(0x06)
 
         obj.disc_num = reader.u8()
         obj.disc_version = reader.u8()
@@ -102,7 +102,7 @@ Disc Header:
         """
         writer = BinaryWriter(stream, encoding='ascii')
         
-        writer.bytes(self.game_id)
+        writer.raw(self.game_id)
         writer.u8(self.disc_num)
         writer.u8(self.disc_version)
         writer.u8(self.audio_streaming)

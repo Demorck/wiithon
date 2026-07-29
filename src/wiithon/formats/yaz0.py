@@ -25,7 +25,7 @@ class Yaz0:
         obj.size = reader.u32()
         reader.skip(0x08)
 
-        compressed_data: bytes = reader.bytes()
+        compressed_data: bytes = reader.raw()
         obj.data = Yaz0.uncompress(compressed_data, obj.size)
 
         return obj
@@ -43,7 +43,7 @@ class Yaz0:
         writer.string(self.magic_word, encoding='ascii')
         writer.u32(self.size)
         writer.pad(0x08)
-        writer.bytes(Yaz0.compress(self.data))
+        writer.raw(Yaz0.compress(self.data))
 
     def get_bytes(self) -> bytes:
         buffer = BytesIO()

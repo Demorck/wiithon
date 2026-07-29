@@ -124,10 +124,10 @@ class TestEndianVariants(unittest.TestCase):
 
 class TestBytesAndPad(unittest.TestCase):
     def test_bytes(self):
-        self.assertEqual(written("bytes", b"\x01\x02\x03"), b"\x01\x02\x03")
+        self.assertEqual(written("raw", b"\x01\x02\x03"), b"\x01\x02\x03")
 
     def test_empty_bytes(self):
-        self.assertEqual(written("bytes", b""), b"")
+        self.assertEqual(written("raw", b""), b"")
 
     def test_pad_defaults_to_null_bytes(self):
         self.assertEqual(written("pad", 4), b"\x00\x00\x00\x00")
@@ -171,7 +171,7 @@ class TestPositioning(unittest.TestCase):
 
     def test_patch_in_the_middle(self):
         binary_writer, stream = writer()
-        binary_writer.bytes(b"\x00" * 8)
+        binary_writer.raw(b"\x00" * 8)
         binary_writer.seek(4)
         binary_writer.u16(0xABCD)
 
@@ -190,12 +190,12 @@ class TestPositioning(unittest.TestCase):
 
     def test_size_reports_the_whole_stream(self):
         binary_writer, _ = writer()
-        binary_writer.bytes(b"\x00" * 10)
+        binary_writer.raw(b"\x00" * 10)
         self.assertEqual(binary_writer.size(), 10)
 
     def test_size_does_not_move_the_position(self):
         binary_writer, _ = writer()
-        binary_writer.bytes(b"\x00" * 10)
+        binary_writer.raw(b"\x00" * 10)
         binary_writer.seek(3)
 
         self.assertEqual(binary_writer.size(), 10)
