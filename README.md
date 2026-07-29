@@ -28,7 +28,7 @@ To read an ISO, initialize the `WiiIsoReader` with a binary stream. You can iter
 (currently just copied/paste the examples in the above directory)
 
 ```python
-from wiithon.WiiIsoReader import WiiIsoReader
+from wiithon.disc.WiiIsoReader import WiiIsoReader
 
 # Opening the ISO
 with WiiIsoReader("your_iso_file.iso") as reader:
@@ -49,7 +49,7 @@ Currently, only the copy one exists.
 
 ```python
 from wiithon.builder.CopyBuilder import CopyBuilder
-from wiithon.WiiIsoReader import WiiIsoReader
+from wiithon.disc.WiiIsoReader import WiiIsoReader
 from wiithon.builder.WiiDiscBuilder import WiiDiscBuilder
 
 SOURCE_PATH = "your_iso_file.iso"

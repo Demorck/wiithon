@@ -1,4 +1,4 @@
-from wiithon.file_helper.yaz0 import Yaz0
+from wiithon.formats.yaz0 import Yaz0
 
 def main():
     src_path = "../assets/AstroDomeScenario.szs"
