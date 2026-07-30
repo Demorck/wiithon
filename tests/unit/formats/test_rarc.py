@@ -5,7 +5,7 @@ from io import BytesIO
 import struct
 import tempfile
 
-from wiithon.formats.rarc import Rarc
+from wiithon.formats.rarc import Rarc, RarcFileEntry
 from wiithon.exceptions import ArchiveFileNotFoundError, ArchiveEntryExistsError
 
 class TestRarc(unittest.TestCase):
@@ -115,14 +115,18 @@ class TestRarc(unittest.TestCase):
 
     def test_add_file_to_root(self):
         rarc = Rarc.create_empty()
-        rarc.add_file("hello.txt", b"Hello World!")
+        entry = rarc.add_file("hello.txt", b"Hello World!")
+
+        self.assertIsInstance(entry, RarcFileEntry)
+        self.assertEqual(entry.name, "hello.txt")
+        self.assertEqual(entry.data, b"Hello World!")
 
         out_stream = BytesIO()
         rarc.write(out_stream)
         out_stream.seek(0)
         reloaded = Rarc.read(out_stream)
 
-        self.assertEqual(reloaded.get_file_by_path("hello.txt"), b"Hello World!")
+        self.assertEqual(reloaded.get_file_by_path("hello.txt").data, b"Hello World!")
         self.assertEqual(reloaded.nodes[0].entry_count, 3)
 
     def test_add_node_creates_subdirectory(self):
@@ -153,7 +157,7 @@ class TestRarc(unittest.TestCase):
         out_stream.seek(0)
         reloaded = Rarc.read(out_stream)
 
-        self.assertEqual(reloaded.get_file_by_path("sub/inner.txt"), b"Inner data")
+        self.assertEqual(reloaded.get_file_by_path("sub/inner.txt").data, b"Inner data")
 
     def test_add_file_after_node(self):
         # Regression check: inserting a file into the root's entry block after a
@@ -168,8 +172,8 @@ class TestRarc(unittest.TestCase):
         out_stream.seek(0)
         reloaded = Rarc.read(out_stream)
 
-        self.assertEqual(reloaded.get_file_by_path("second.txt"), b"second")
-        self.assertEqual(reloaded.get_file_by_path("sub/inner.txt"), b"Inner data")
+        self.assertEqual(reloaded.get_file_by_path("second.txt").data, b"second")
+        self.assertEqual(reloaded.get_file_by_path("sub/inner.txt").data, b"Inner data")
 
     def test_add_node_unknown_parent(self):
         rarc = Rarc.create_empty()
@@ -213,8 +217,8 @@ class TestRarc(unittest.TestCase):
         out_stream.seek(0)
         reloaded = Rarc.read(out_stream)
 
-        self.assertEqual(reloaded.get_file_by_path("hello.txt"), b"root version")
-        self.assertEqual(reloaded.get_file_by_path("sub/hello.txt"), b"sub version")
+        self.assertEqual(reloaded.get_file_by_path("hello.txt").data, b"root version")
+        self.assertEqual(reloaded.get_file_by_path("sub/hello.txt").data, b"sub version")
 
     def test_add_file_name_clashing_with_node(self):
         rarc = Rarc.create_empty()

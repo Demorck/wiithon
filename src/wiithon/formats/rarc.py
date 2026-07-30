@@ -311,10 +311,10 @@ class Rarc:
         # Data payload
         writer.raw(payload)
 
-    def get_file(self, name: str) -> bytes:
+    def get_file(self, name: str) -> RarcFileEntry:
         for entry in self.entries:
             if entry.name == name and entry.file_id != 0xFFFF and not entry.attributes & NodeAttribute.DIRECTORY:
-                return entry.data
+                return entry
 
         raise ArchiveFileNotFoundError(f"File not found in RARC: {name}")
 
@@ -396,7 +396,7 @@ class Rarc:
 
         return new_node
 
-    def add_file(self, path: str, data: bytes) -> None:
+    def add_file(self, path: str, data: bytes) -> RarcFileEntry:
         parts = [p for p in path.split("/") if p]
         if not parts:
             raise ValueError("Path must contain a file name")
@@ -413,8 +413,9 @@ class Rarc:
         entry.data = data
         self._insert_entry(node, entry)
 
+        return entry
 
-    def get_file_by_path(self, path: str) -> bytes:
+    def get_file_by_path(self, path: str) -> RarcFileEntry:
         parts = [p for p in path.split("/") if p]
         node = self._find_node_for_path(parts[:-1])
         filename = parts[-1]
@@ -424,7 +425,7 @@ class Rarc:
             if entry.name != filename:
                 continue
             if not entry.attributes & NodeAttribute.DIRECTORY:
-                return entry.data
+                return entry
 
             sub_node = self.nodes[entry.data_offset_or_idx]
             files = [
@@ -434,7 +435,7 @@ class Rarc:
                 and not self.entries[sub_node.first_entry_index + j].attributes & NodeAttribute.DIRECTORY
             ]
             if len(files) == 1:
-                return files[0].data
+                return files[0]
             names = ", ".join(e.name for e in files)
             raise ValueError(
                 f"'{filename}' is a directory with {len(files)} files called : {names}"

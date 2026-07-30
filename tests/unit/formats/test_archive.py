@@ -165,7 +165,7 @@ class TestResolveWrite(unittest.TestCase):
 
         self.assertIn("Mario.arc", p.file_replacements)
         updated = Rarc.read(BytesIO(p.file_replacements["Mario.arc"]))
-        self.assertEqual(updated.get_file("myfile.bin"), b"modified")
+        self.assertEqual(updated.get_file("myfile.bin").data, b"modified")
 
     def test_yaz0_rarc_roundtrip(self):
         rarc_bytes = build_yaz0_rarc({"data.bin": b"original"})
@@ -177,7 +177,7 @@ class TestResolveWrite(unittest.TestCase):
         self.assertEqual(result[:4], b"Yaz0", "Le résultat doit rester compressé en Yaz0")
         yaz0 = Yaz0.read(BytesIO(result))
         rarc = Rarc.read(BytesIO(yaz0.data))
-        self.assertEqual(rarc.get_file("data.bin"), b"new_content")
+        self.assertEqual(rarc.get_file("data.bin").data, b"new_content")
 
     def test_nested_subdir_roundtrip(self):
         rarc_bytes = build_nested_rarc("layera", {"objinfo": b"\x00\x00"})
@@ -186,7 +186,7 @@ class TestResolveWrite(unittest.TestCase):
         resolve_write(p, "AstroGalaxy.arc/layera/objinfo", b"\xFF\xFF")
 
         rarc = Rarc.read(BytesIO(p.file_replacements["AstroGalaxy.arc"]))
-        self.assertEqual(rarc.get_file_by_path("layera/objinfo"), b"\xFF\xFF")
+        self.assertEqual(rarc.get_file_by_path("layera/objinfo").data, b"\xFF\xFF")
 
     def test_does_not_touch_other_files_in_rarc(self):
         rarc_bytes = build_flat_rarc({"a.bin": b"AAA", "b.bin": b"BBB"})
@@ -195,7 +195,7 @@ class TestResolveWrite(unittest.TestCase):
         resolve_write(p, "Mario.arc/a.bin", b"ZZZ")
 
         rarc = Rarc.read(BytesIO(p.file_replacements["Mario.arc"]))
-        self.assertEqual(rarc.get_file("b.bin"), b"BBB")
+        self.assertEqual(rarc.get_file("b.bin").data, b"BBB")
 
 
 class TestEditAs(unittest.TestCase):
@@ -219,7 +219,7 @@ class TestEditAs(unittest.TestCase):
             obj.value = 200
 
         rarc = Rarc.read(BytesIO(p.file_replacements["Stage.arc"]))
-        self.assertEqual(int.from_bytes(rarc.get_file("table.bin"), "big"), 200)
+        self.assertEqual(int.from_bytes(rarc.get_file("table.bin").data, "big"), 200)
 
     def test_no_modification_still_replaces(self):
         initial = (5).to_bytes(4, "big")
@@ -261,8 +261,8 @@ class TestEditAs(unittest.TestCase):
             obj.value = 20
 
         rarc = Rarc.read(BytesIO(p.file_replacements["Stage.arc"]))
-        self.assertEqual(int.from_bytes(rarc.get_file("a.bin"), "big"), 10)
-        self.assertEqual(int.from_bytes(rarc.get_file("b.bin"), "big"), 20)
+        self.assertEqual(int.from_bytes(rarc.get_file("a.bin").data, "big"), 10)
+        self.assertEqual(int.from_bytes(rarc.get_file("b.bin").data, "big"), 20)
 
     def test_yaz0_archive_edit_as(self):
         initial = (77).to_bytes(4, "big")
@@ -276,14 +276,14 @@ class TestEditAs(unittest.TestCase):
         self.assertEqual(result[:4], b"Yaz0")
         yaz0 = Yaz0.read(BytesIO(result))
         rarc = Rarc.read(BytesIO(yaz0.data))
-        self.assertEqual(int.from_bytes(rarc.get_file("config.bin"), "big"), 88)
+        self.assertEqual(int.from_bytes(rarc.get_file("config.bin").data, "big"), 88)
 
 
 class TestAutoDetectLastFile(unittest.TestCase):
     def test_single_file_in_dir_auto_selected(self):
         rarc_bytes = build_nested_rarc("layera", {"objinfo": b"unique"})
         rarc = Rarc.read(BytesIO(rarc_bytes))
-        self.assertEqual(rarc.get_file_by_path("layera"), b"unique")
+        self.assertEqual(rarc.get_file_by_path("layera").data, b"unique")
 
     def test_multiple_files_in_dir_raises(self):
         rarc_bytes = build_nested_rarc("layera", {"file1.bin": b"A", "file2.bin": b"B"})
@@ -294,7 +294,7 @@ class TestAutoDetectLastFile(unittest.TestCase):
     def test_explicit_file_path_unchanged(self):
         rarc_bytes = build_nested_rarc("layera", {"objinfo": b"data"})
         rarc = Rarc.read(BytesIO(rarc_bytes))
-        self.assertEqual(rarc.get_file_by_path("layera/objinfo"), b"data")
+        self.assertEqual(rarc.get_file_by_path("layera/objinfo").data, b"data")
 
 
 if __name__ == "__main__":
