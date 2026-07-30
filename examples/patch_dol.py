@@ -1,12 +1,11 @@
 import sys
-from random import Random
 
-from wiithon.WiiIsoPatcher import WiiIsoPatcher
+from wiithon.disc.patcher import WiiIsoPatcher
 
 sys.path.insert(0, "../src")
 
-from wiithon.file_helper.dol import DOL
-from wiithon.helpers import PowerPC as ppc
+from wiithon.formats.dol import DOL
+from wiithon.ppc import instructions as ppc
 
 # Patch addresses
 PATCH_ADDR_NOP   = 0x80258a0c
@@ -39,7 +38,7 @@ def apply_patches(dol: DOL) -> None:
 
 # A .dol file
 def patch_standalone_dol(src: str, dst: str) -> None:
-    print(f"\n--- Patching standalone DOL ---")
+    print("\n--- Patching standalone DOL ---")
     print(f"  Source : {src}")
     print(f"  Output : {dst}")
 

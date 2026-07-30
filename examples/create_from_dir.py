@@ -1,8 +1,8 @@
 import os
-from wiithon.builder.DirectoryPartitionBuilder import DirectoryPartitionBuilder
-from wiithon.builder.WiiDiscBuilder import WiiDiscBuilder
-from wiithon.helpers.Enums import WiiPartType
-from wiithon.structs.DiscHeader import DiscHeader
+from wiithon.builder.directory_source import DirectoryPartitionSource
+from wiithon.builder.disc_builder import WiiDiscBuilder
+from wiithon.disc.enums import WiiPartType
+from wiithon.disc.structs.disc_header import DiscHeader
 
 # May adding all this logic into one file maybe ?
 def main():
@@ -21,7 +21,7 @@ def main():
         region = f.read(32)
 
     # Partition builder with the correct part type
-    dir_builder = DirectoryPartitionBuilder(src_dir, WiiPartType.DATA)
+    dir_builder = DirectoryPartitionSource(src_dir, WiiPartType.DATA)
     
     # Writing Iso
     output_iso = "../assets/copied_dir.iso"
@@ -32,7 +32,7 @@ def main():
         builder.add_partition(dest, dir_builder, None)
         builder.finish(dest)
         
-        print(f"Done")
+        print("Done")
 
 if __name__ == "__main__":
     main()
