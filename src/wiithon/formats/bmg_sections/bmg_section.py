@@ -1,6 +1,7 @@
+from abc import ABC, abstractmethod
 from io import BytesIO
 
-class BMGSection:
+class BMGSection(ABC):
     """
     Base class for BMG file sections.
     Provides the interface for importing and exporting binary section data.
@@ -14,20 +15,20 @@ class BMGSection:
         self.magic = magic
 
     @classmethod
+    @abstractmethod
     def import_section(cls, raw_bytes: BytesIO) -> "BMGSection":
         """
         Import a section from raw bytes.
         This method must be overridden in subclasses to provide proper implementation.
-        Raises AttributeError: If not properly overridden in a subclass.
+        Raises NotImplementedError: If not properly overridden in a subclass.
         """
-        raise AttributeError("Import section is not properly overwritten")
-        return cls()
-    
+        raise NotImplementedError("Import section is not implemented")
+
+    @abstractmethod
     def export_section(self) -> BytesIO:
         """
         Export a section from raw bytes.
         This method must be overridden in subclasses to provide proper implementation.
-        Raises AttributeError: If not properly overridden in a subclass.
+        Raises NotImplementedError: If not properly overridden in a subclass.
         """
-        raise AttributeError("Export section is not properly overwritten")
-        return BytesIO()
+        raise NotImplementedError("Export section is not implemented")
