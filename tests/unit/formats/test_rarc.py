@@ -6,7 +6,7 @@ import struct
 import tempfile
 
 from wiithon.formats.rarc import Rarc
-from wiithon.exceptions import ArchiveFileNotFoundError
+from wiithon.exceptions import ArchiveFileNotFoundError, ArchiveEntryExistsError
 
 class TestRarc(unittest.TestCase):
     def build_mock_rarc(self) -> bytes:
@@ -155,7 +155,7 @@ class TestRarc(unittest.TestCase):
 
         self.assertEqual(reloaded.get_file_by_path("sub/inner.txt"), b"Inner data")
 
-    def test_add_file_after_node_shifts_indices_correctly(self):
+    def test_add_file_after_node(self):
         # Regression check: inserting a file into the root's entry block after a
         # subdirectory's block has been appended must not corrupt either block.
         rarc = Rarc.create_empty()
@@ -171,10 +171,56 @@ class TestRarc(unittest.TestCase):
         self.assertEqual(reloaded.get_file_by_path("second.txt"), b"second")
         self.assertEqual(reloaded.get_file_by_path("sub/inner.txt"), b"Inner data")
 
-    def test_add_node_unknown_parent_raises(self):
+    def test_add_node_unknown_parent(self):
         rarc = Rarc.create_empty()
         with self.assertRaises(ArchiveFileNotFoundError):
             rarc.add_node("missing/sub")
+
+    def test_add_node_duplicate_name_same_parent(self):
+        rarc = Rarc.create_empty()
+        rarc.add_node("Jake")
+        with self.assertRaises(ArchiveEntryExistsError):
+            rarc.add_node("Jake")
+
+    def test_add_node_same_name_different_parent(self):
+        rarc = Rarc.create_empty()
+        rarc.add_node("Jake")
+        rarc.add_node("other")
+        # A folder named "Jake" nested under "other" is fine: different parent.
+        nested = rarc.add_node("other/Jake")
+        self.assertEqual(nested.type, "JAKE")
+
+    def test_add_node_different_name_same_parent(self):
+        rarc = Rarc.create_empty()
+        rarc.add_node("Jake")
+        rarc.add_node("Ekaj")
+        self.assertEqual(len(rarc.nodes), 3)
+
+    def test_add_file_duplicate_name_same_parent(self):
+        rarc = Rarc.create_empty()
+        rarc.add_file("hello.txt", b"one")
+        with self.assertRaises(ArchiveEntryExistsError):
+            rarc.add_file("hello.txt", b"two")
+
+    def test_add_file_same_name_different_parent(self):
+        rarc = Rarc.create_empty()
+        rarc.add_node("sub")
+        rarc.add_file("hello.txt", b"root version")
+        rarc.add_file("sub/hello.txt", b"sub version")
+
+        out_stream = BytesIO()
+        rarc.write(out_stream)
+        out_stream.seek(0)
+        reloaded = Rarc.read(out_stream)
+
+        self.assertEqual(reloaded.get_file_by_path("hello.txt"), b"root version")
+        self.assertEqual(reloaded.get_file_by_path("sub/hello.txt"), b"sub version")
+
+    def test_add_file_name_clashing_with_node(self):
+        rarc = Rarc.create_empty()
+        rarc.add_node("data")
+        with self.assertRaises(ArchiveEntryExistsError):
+            rarc.add_file("data", b"oops")
 
 if __name__ == '__main__':
     unittest.main()

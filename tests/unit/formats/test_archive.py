@@ -3,7 +3,7 @@ from io import BytesIO
 from unittest.mock import MagicMock
 
 from wiithon.disc.patcher import WiiIsoPatcher
-from wiithon.formats.rarc import Rarc, RarcNode, RarcFileEntry
+from wiithon.formats.rarc import Rarc, RarcNode, RarcFileEntry, NodeAttribute
 from wiithon.formats.yaz0 import Yaz0
 from wiithon.formats.archive import resolve_read, resolve_write
 
@@ -13,7 +13,7 @@ def _rarc_entry(name: str, file_id: int, is_dir: bool,
     e = RarcFileEntry()
     e.name = name
     e.file_id = 0xFFFF if is_dir else file_id
-    e.type = 0x02 if is_dir else 0x11
+    e.attributes = NodeAttribute.DIRECTORY if is_dir else (NodeAttribute.FILE | NodeAttribute.PRELOAD_TO_MRAM)
     e.data_offset_or_idx = node_idx
     e.data = data
     e.data_size = len(data)

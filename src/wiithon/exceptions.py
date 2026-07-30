@@ -57,6 +57,10 @@ class ArchiveIsADirectoryError(ArchiveError, IsADirectoryError):
     """The archive path points at a directory, a file was expected"""
 
 
+class ArchiveEntryExistsError(ArchiveError, FileExistsError):
+    """An entry with this name already exists in the target directory"""
+
+
 class BCSVFileError(InvalidFormatError):
     """Thrown when an error occurs while parsing/writing BCSV data."""
     pass
@@ -84,7 +88,7 @@ __all__ = [
     "BinaryError",
     "InvalidFormatError", "InvalidDiscError", "CorruptedDataError", "NoDataPartitionError",
     "FstError", "FstFileNotFoundError", "FstIsADirectoryError",
-    "ArchiveError", "ArchiveFileNotFoundError", "ArchiveIsADirectoryError",
+    "ArchiveError", "ArchiveFileNotFoundError", "ArchiveIsADirectoryError", "ArchiveEntryExistsError",
     "BCSVFileError",
     "DolError", "DolSectionNotFoundError", "DolSectionOverlapError", "DolNoFreeSectionError",
 ]

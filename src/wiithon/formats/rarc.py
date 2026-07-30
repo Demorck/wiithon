@@ -5,7 +5,7 @@ from enum import IntFlag
 
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
-from wiithon.exceptions import InvalidFormatError, ArchiveFileNotFoundError
+from wiithon.exceptions import InvalidFormatError, ArchiveFileNotFoundError, ArchiveEntryExistsError
 
 RARC_MAGIC_WORD: bytes = b'RARC'
 
@@ -340,6 +340,12 @@ class Rarc:
                 raise ArchiveFileNotFoundError(f"Directory not found in RARC: {part}")
         return node
 
+    def _has_sibling_named(self, node: RarcNode, name: str) -> bool:
+        return any(
+            self.entries[node.first_entry_index + i].name == name
+            for i in range(node.entry_count)
+        )
+
     def _insert_entry(self, node: RarcNode, entry: RarcFileEntry) -> None:
         pos = node.first_entry_index + node.entry_count
         self.entries.insert(pos, entry)
@@ -355,6 +361,8 @@ class Rarc:
 
         parent_node = self._find_node_for_path(parts[:-1])
         name = parts[-1]
+        if self._has_sibling_named(parent_node, name):
+            raise ArchiveEntryExistsError(f"'{name}' already exists in this directory")
         parent_index = self.nodes.index(parent_node)
 
         new_node = RarcNode()
@@ -394,11 +402,14 @@ class Rarc:
             raise ValueError("Path must contain a file name")
 
         node = self._find_node_for_path(parts[:-1])
+        name = parts[-1]
+        if self._has_sibling_named(node, name):
+            raise ArchiveEntryExistsError(f"'{name}' already exists in this directory")
 
         entry = RarcFileEntry()
          # TODO Test whether both attributes are required or simply having FILE is sufficient
         entry.attributes |= NodeAttribute.FILE | NodeAttribute.PRELOAD_TO_MRAM
-        entry.name = parts[-1]
+        entry.name = name
         entry.data = data
         self._insert_entry(node, entry)
 
