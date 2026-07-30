@@ -348,7 +348,7 @@ class Rarc:
             if other is not node and other.first_entry_index >= pos:
                 other.first_entry_index += 1
 
-    def add_node(self, path: str, node_type: str = None) -> RarcNode:
+    def add_node(self, path: str) -> RarcNode:
         parts = [p for p in path.split("/") if p]
         if not parts:
             raise ValueError(f"Path must contain a directory name: {path}")
@@ -358,7 +358,7 @@ class Rarc:
         parent_index = self.nodes.index(parent_node)
 
         new_node = RarcNode()
-        new_node.type = (node_type or name)[:4].upper().ljust(4)
+        new_node.type = name[:4].upper().ljust(4)
         new_node_index = len(self.nodes)
         new_node.first_entry_index = len(self.entries)
 
@@ -388,7 +388,7 @@ class Rarc:
 
         return new_node
 
-    def add_file(self, path: str, data: bytes) -> RarcFileEntry:
+    def add_file(self, path: str, data: bytes) -> None:
         parts = [p for p in path.split("/") if p]
         if not parts:
             raise ValueError("Path must contain a file name")
@@ -402,7 +402,6 @@ class Rarc:
         entry.data = data
         self._insert_entry(node, entry)
 
-        return entry
 
     def get_file_by_path(self, path: str) -> bytes:
         parts = [p for p in path.split("/") if p]
