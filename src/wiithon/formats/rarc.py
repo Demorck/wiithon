@@ -1,12 +1,22 @@
 from io import BytesIO
 from typing import BinaryIO, List
 import os
+from enum import IntFlag
 
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
 from wiithon.exceptions import InvalidFormatError, ArchiveFileNotFoundError
 
 RARC_MAGIC_WORD: bytes = b'RARC'
+
+class NodeAttribute(IntFlag):
+    FILE = 0x01
+    DIRECTORY = 0x02
+    COMPRESSED = 0x04
+    PRELOAD_TO_MRAM = 0x10
+    PRELOAD_TO_ARAM = 0x20
+    LOAD_FROM_DVD = 0x40
+    YAZO_COMPRESSED = 0x80
 
 class RarcNode:
     def __init__(self):
@@ -22,7 +32,6 @@ class RarcFileEntry:
         self.file_id: int = 0
         self.name_hash: int = 0
         self.attributes: int = 0
-        self.type: int = 0
         self.name_offset: int = 0
         self.data_offset_or_idx: int = 0
         self.data_size: int = 0
@@ -72,13 +81,13 @@ class Rarc:
 
         dot = RarcFileEntry()
         dot.file_id = 0xFFFF
-        dot.type = 0x02
+        dot.attributes |= NodeAttribute.DIRECTORY
         dot.name = "."
         dot.data_offset_or_idx = 0
 
         dotdot = RarcFileEntry()
-        dotdot.file_id = 0xFFFF
-        dotdot.type = 0x02
+        dotdot.file_id = 0xFFFFFFFF # Top most directory
+        dotdot.attributes |= NodeAttribute.DIRECTORY
         dotdot.name = ".."
         dotdot.data_offset_or_idx = 0
 
@@ -132,9 +141,9 @@ class Rarc:
             entry = RarcFileEntry()
             entry.file_id = reader.u16()
             entry.name_hash = reader.u16()
-            entry.attributes = reader.u32()
-            entry.type = entry.attributes >> 24
-            entry.name_offset = entry.attributes & 0x00FFFFFF
+            entry.attributes = reader.u8()
+            reader.skip(0x01)
+            entry.name_offset = reader.u16()
             entry.data_offset_or_idx = reader.u32()
             entry.data_size = reader.u32()
             entry.padding = reader.u32()
@@ -152,7 +161,7 @@ class Rarc:
             else:
                 entry.name = obj.string_table[entry.name_offset:].decode('utf-8', errors='ignore')
 
-            if entry.file_id != 0xFFFF and entry.type != 0x02:
+            if entry.file_id != 0xFFFF and not entry.attributes & NodeAttribute.DIRECTORY:
                 abs_data_offset = obj.base_offset + 0x20 + obj.data_offset + entry.data_offset_or_idx
                 current_pos = reader.tell()
                 reader.seek(abs_data_offset)
@@ -179,7 +188,7 @@ class Rarc:
 
             path = os.path.join(current_dir, entry.name)
 
-            if entry.file_id == 0xFFFF or entry.type == 0x02:
+            if entry.file_id == 0xFFFF or entry.attributes & NodeAttribute.DIRECTORY:
                 # Subdirectory
                 child_node = self.nodes[entry.data_offset_or_idx]
                 self._extract_node(child_node, path)
@@ -215,7 +224,7 @@ class Rarc:
         # Assign sequential file ids to real files, 0xFFFF for directories
         file_id_counter = 0
         for entry in self.entries:
-            if entry.type == 0x02:
+            if entry.attributes & NodeAttribute.DIRECTORY:
                 entry.file_id = 0xFFFF
             else:
                 entry.file_id = file_id_counter
@@ -242,7 +251,7 @@ class Rarc:
         # Calculate data offsets and payloads
         payload = bytearray()
         for entry in self.entries:
-            if entry.file_id != 0xFFFF and entry.type != 0x02:
+            if entry.file_id != 0xFFFF and not entry.attributes & NodeAttribute.DIRECTORY:
                 # Align payload to 0x20
                 while len(payload) % 0x20 != 0:
                     payload.append(0x00)
@@ -289,8 +298,9 @@ class Rarc:
         for entry in self.entries:
             writer.u16(entry.file_id)
             writer.u16(entry.name_hash)
-            attr = (entry.type << 24) | (entry.name_offset & 0x00FFFFFF)
-            writer.u32(attr)
+            writer.u8(entry.attributes)
+            writer.u8(0)
+            writer.u16(entry.name_offset)
             writer.u32(entry.data_offset_or_idx)
             writer.u32(entry.data_size)
             writer.u32(0)
@@ -303,14 +313,14 @@ class Rarc:
 
     def get_file(self, name: str) -> bytes:
         for entry in self.entries:
-            if entry.name == name and entry.file_id != 0xFFFF and entry.type != 0x02:
+            if entry.name == name and entry.file_id != 0xFFFF and not entry.attributes & NodeAttribute.DIRECTORY:
                 return entry.data
 
         raise ArchiveFileNotFoundError(f"File not found in RARC: {name}")
 
     def replace_file(self, name: str, data: bytes) -> None:
         for entry in self.entries:
-            if entry.name == name and entry.file_id != 0xFFFF and entry.type != 0x02:
+            if entry.name == name and entry.file_id != 0xFFFF and not entry.attributes & NodeAttribute.DIRECTORY:
                 entry.data = data
                 return
 
@@ -322,7 +332,7 @@ class Rarc:
             found = False
             for i in range(node.entry_count):
                 entry = self.entries[node.first_entry_index + i]
-                if entry.name == part and entry.type == 0x02:  # répertoire
+                if entry.name == part and entry.attributes & NodeAttribute.DIRECTORY:  # répertoire
                     node = self.nodes[entry.data_offset_or_idx]
                     found = True
                     break
@@ -354,13 +364,13 @@ class Rarc:
 
         dot_entry = RarcFileEntry()
         dot_entry.file_id = 0xFFFF
-        dot_entry.type = 0x02
+        dot_entry.attributes |= NodeAttribute.DIRECTORY
         dot_entry.name = "."
         dot_entry.data_offset_or_idx = new_node_index
 
         dotdot_entry = RarcFileEntry()
         dotdot_entry.file_id = 0xFFFF
-        dotdot_entry.type = 0x02
+        dotdot_entry.attributes |= NodeAttribute.DIRECTORY
         dotdot_entry.name = ".."
         dotdot_entry.data_offset_or_idx = parent_index
 
@@ -371,7 +381,7 @@ class Rarc:
 
         dir_entry = RarcFileEntry()
         dir_entry.file_id = 0xFFFF
-        dir_entry.type = 0x02
+        dir_entry.attributes |= NodeAttribute.DIRECTORY
         dir_entry.name = name
         dir_entry.data_offset_or_idx = new_node_index
         self._insert_entry(parent_node, dir_entry)
@@ -386,7 +396,8 @@ class Rarc:
         node = self._find_node_for_path(parts[:-1])
 
         entry = RarcFileEntry()
-        entry.type = 0x01
+         # TODO Test whether both attributes are required or simply having FILE is sufficient
+        entry.attributes |= NodeAttribute.FILE | NodeAttribute.PRELOAD_TO_MRAM
         entry.name = parts[-1]
         entry.data = data
         self._insert_entry(node, entry)
@@ -402,7 +413,7 @@ class Rarc:
             entry = self.entries[node.first_entry_index + i]
             if entry.name != filename:
                 continue
-            if entry.type != 0x02:
+            if not entry.attributes & NodeAttribute.DIRECTORY:
                 return entry.data
 
             sub_node = self.nodes[entry.data_offset_or_idx]
@@ -410,7 +421,7 @@ class Rarc:
                 self.entries[sub_node.first_entry_index + j]
                 for j in range(sub_node.entry_count)
                 if self.entries[sub_node.first_entry_index + j].name not in (".", "..")
-                and self.entries[sub_node.first_entry_index + j].type != 0x02
+                and not self.entries[sub_node.first_entry_index + j].attributes & NodeAttribute.DIRECTORY
             ]
             if len(files) == 1:
                 return files[0].data
@@ -427,7 +438,7 @@ class Rarc:
         filename = parts[-1]
         for i in range(node.entry_count):
             entry = self.entries[node.first_entry_index + i]
-            if entry.name == filename and entry.type != 0x02:
+            if entry.name == filename and not entry.attributes & NodeAttribute.DIRECTORY:
                 entry.data = data
                 return
         raise ArchiveFileNotFoundError(f"File not found: {path}")
