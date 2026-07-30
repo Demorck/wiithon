@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from io import BytesIO
+from typing import BinaryIO
 
 class BMGSection(ABC):
     """
@@ -16,7 +16,7 @@ class BMGSection(ABC):
 
     @classmethod
     @abstractmethod
-    def import_section(cls, raw_bytes: BytesIO) -> "BMGSection":
+    def import_section(cls, raw_data: BinaryIO) -> "BMGSection":
         """
         Import a section from raw bytes.
         This method must be overridden in subclasses to provide proper implementation.
@@ -25,7 +25,7 @@ class BMGSection(ABC):
         raise NotImplementedError("Import section is not implemented")
 
     @abstractmethod
-    def export_section(self) -> BytesIO:
+    def export_section(self) -> BinaryIO:
         """
         Export a section from raw bytes.
         This method must be overridden in subclasses to provide proper implementation.

@@ -1,6 +1,9 @@
 from io import BytesIO
-import wiithon.helpers.Utils as fh
-from wiithon.file_helper.bmg_sections.bmg_section import BMGSection
+from typing import BinaryIO
+
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
+from wiithon.formats.bmg_sections.bmg_section import BMGSection
 
 FLI1_MAGIC: str = "FLI1"
 
@@ -9,15 +12,16 @@ class FLI1Entry:
         self.unknown1 = unknown1
         self.unknown2 = unknown2
 
-    def export_entry(self) -> BytesIO:
-        data = BytesIO()
+    def export_entry(self) -> BinaryIO:
+        entry_bytes = BytesIO()
+        writer = BinaryWriter(entry_bytes)
 
-        fh.write_u16(data, self.unknown1, 0x0)
-        fh.write_u16(data, 0, 0x2)
-        fh.write_u16(data, self.unknown2, 0x4)
-        fh.write_u16(data, 0, 0x6)
+        writer.u16(self.unknown1)
+        writer.u16(0)
+        writer.u16(self.unknown2)
+        writer.u16(0)
 
-        return data
+        return entry_bytes
 
 class FLI1Section(BMGSection):
     """
@@ -50,38 +54,38 @@ class FLI1Section(BMGSection):
         self.entry_count = len(self.entries)
 
     @classmethod
-    def import_section(cls, raw_bytes: BytesIO):
-        entry_count = fh.read_u16(raw_bytes, 0x0)
-        entry_size = fh.read_u8(raw_bytes, 0x2)
+    def import_section(cls, raw_bytes: BinaryIO):
+        reader = BinaryReader(raw_bytes)
+
+        entry_count = reader.u16()
+        entry_size = reader.u16()
+
         assert entry_size == cls.entry_size
 
         section = cls()
 
-        offset = 0x8
         for entry_index in range(entry_count):
-            unknown1 = fh.read_u16(raw_bytes, offset)
-            unknown2 = fh.read_u16(raw_bytes, offset + 0x4)
+            unknown1 = reader.u16()
+            reader.skip(0x2)
+            unknown2 = reader.u16()
+            reader.skip()
 
             entry = FLI1Entry(unknown1, unknown2)
             section.add_entry(entry)
-            
-            offset += entry_size
         
         return section
     
-    def export_section(self) -> BytesIO:
-        data = BytesIO()
+    def export_section(self) -> BinaryIO:
+        section_bytes = BytesIO()
+        writer = BinaryWriter(section_bytes)
 
         self.entry_count = len(self.entries)
-        fh.write_u16(data, self.entry_count, 0x0)
-        fh.write_u8(data, self.entry_size, 0x2)
-        fh.write_bytes(data, b'\x00' * 5, 0x3)
+        writer.u16(self.entry_count)
+        writer.u8(self.entry_size)
+        writer.seek(0x8)
 
-        offset = 0x8
         for entry in self.entries:
             entry_data = entry.export_entry()
-            fh.write_bytes(data, entry_data.getvalue(), offset)
+            writer.raw(entry_data.read)
 
-            offset += 0x8
-
-        return data
+        return section_bytes

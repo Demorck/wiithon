@@ -1,11 +1,16 @@
 from io import BytesIO
+from typing import BinaryIO
 
-import wiithon.helpers.Utils as fh
-from wiithon.file_helper.bmg_sections.bmg_section import BMGSection
-from wiithon.file_helper.bmg_sections.inf1 import INF1Section
-from wiithon.file_helper.bmg_sections.dat1 import DAT1Section
-from wiithon.file_helper.bmg_sections.flw1 import FLW1Section
-from wiithon.file_helper.bmg_sections.fli1 import FLI1Section
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
+from wiithon.formats.bmg_sections.bmg_section import BMGSection
+from wiithon.formats.bmg_sections.inf1 import INF1Section
+from wiithon.formats.bmg_sections.dat1 import DAT1Section
+from wiithon.formats.bmg_sections.flw1 import FLW1Section
+from wiithon.formats.bmg_sections.fli1 import FLI1Section
+
+DATA_MAGIC = "MESG"
+FILE_MAGIC = "bmg1"
 
 class BMG:
     """
@@ -21,7 +26,7 @@ class BMG:
         __init__(raw_bytes: BytesIO) -> None:
             Parses a BMG file from raw bytes. Validates magic numbers and reads
             all sections from the file.
-        add_header_to_section(section: bmg_section) -> BytesIO:
+        add_header(section: bmg_section) -> BytesIO:
             Wraps a section with its BMG header (magic and size) and applies
             32-byte alignment padding. Returns the complete section data.
         export_bmg() -> BytesIO:
@@ -32,28 +37,26 @@ class BMG:
     section_count: int
     sections: list[BMGSection]
 
-    def __init__(self, raw_bytes: BytesIO):
-        data_magic = fh.read_string(raw_bytes, 4, 0x0)
-        assert data_magic == "MESG"
+    def __init__(self, raw_bytes: BinaryIO):
+        reader = BinaryReader(raw_bytes)
+        data_magic = reader.string(0x4)
+        assert data_magic == DATA_MAGIC
 
-        file_magic = fh.read_string(raw_bytes, 4, 0x4)
-        assert file_magic == "bmg1"
+        file_magic = reader.string(0x4)
+        assert file_magic == FILE_MAGIC
 
-        self.flw1_section_offset = fh.read_u32(raw_bytes, 0x8)
-        self.section_count = fh.read_u32(raw_bytes, 0xC)
-        self.unknown = fh.read_u8(raw_bytes, 0x10)
-        # 15 bytes of padding
+        self.flw1_section_offset = reader.u32()
+        self.section_count = reader.u32()
+        self.unknown = reader.u8()
+        reader.seek(0x20)
 
         self.sections = []
 
-        offset = 0x20
         for section in range(self.section_count):
-            section_magic = fh.read_string(raw_bytes, 4, offset)
-            section_size = fh.read_u32(raw_bytes, offset + 0x4) - 0x8
-            offset += 8
-            
-            raw_bytes.seek(offset, 0)
-            section_bytes = raw_bytes.read(section_size)
+            section_magic = reader.string(0x4)
+            section_size = reader.u32() - 0x8
+
+            section_bytes = reader.raw(section_size)
             section_bytes = BytesIO(section_bytes)
             
             match section_magic:
@@ -67,10 +70,10 @@ class BMG:
                     section = FLI1Section.import_section(section_bytes)
             
             self.sections.append(section)
-            offset += section_size
 
-    def add_header_to_section(self, section: BMGSection) -> BytesIO:
-        data = BytesIO()
+    def add_header(self, section: BMGSection) -> BinaryIO:
+        total_bytes = BytesIO()
+        writer = BinaryWriter(total_bytes)
 
         section_bytes = section.export_section()
         section_size = section_bytes.seek(0, 2) + 0x8
@@ -79,13 +82,13 @@ class BMG:
         if section_size % 32:
             padding = 32 - section_size % 32
             section_size += padding
-        
-        fh.write_str(data, section.magic, 4, offset=0x0)
-        fh.write_u32(data, section_size, 0x4)
-        fh.write_bytes(data, section_bytes.getvalue(), 0x8)
-        fh.write_bytes(data, b'\x00' * padding, section_size - padding)
 
-        return data
+        writer.string(section.magic, 0x4)
+        writer.u32(section_size)
+        writer.raw(section_bytes.read)
+        writer.pad(padding) # should be align(0x20)
+
+        return total_bytes
     
     def get_section(self, section_magic: str) -> list[BMGSection]:
         out: list[BMGSection] = []
@@ -96,23 +99,26 @@ class BMG:
         
         return out
 
-    def export_bmg(self) -> BytesIO:
-        data = BytesIO()
+    def export_bmg(self) -> BinaryIO:
+        bmg_bytes = BytesIO()
+        writer = BinaryWriter(bmg_bytes)
 
-        fh.write_str(data, "MESG", 4, offset=0x0)
-        fh.write_str(data, "bmg1", 4, offset=0x4)
-        fh.write_u32(data, 0, 0x8) # Write the flw1_section_offset later
-        fh.write_u32(data, len(self.sections), 0xC)
-        fh.write_u8(data, self.unknown, 0x10)
-        fh.write_bytes(data, b'\x00' * 15, 0x11)
+        writer.string(DATA_MAGIC)
+        writer.string(FILE_MAGIC)
+        writer.u32(0) # Write the flw1_section_offset later
+        writer.u32(len(self.sections))
+        writer.u8(self.unknown)
+        writer.seek(0x20)
 
         offset = 0x20
         for section in self.sections:
             if section.magic == "FLW1":
-                fh.write_u32(data ,offset, 0x8)
+                position = writer.tell()
+                writer.seek(0x8)
+                writer.u32(position)
+                writer.seek(position)
             
-            section_bytes = self.add_header_to_section(section)
-            fh.write_bytes(data, section_bytes.getvalue(), offset)
-            offset += len(section_bytes.getvalue())
+            section_bytes = self.add_header(section)
+            writer.raw(section_bytes.read())
 
-        return data
+        return bmg_bytes

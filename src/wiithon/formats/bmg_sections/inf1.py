@@ -1,7 +1,10 @@
-from io import BytesIO
 from enum import IntEnum
-import wiithon.helpers.Utils as fh
-from wiithon.file_helper.bmg_sections.bmg_section import BMGSection
+from io import BytesIO
+from typing import BinaryIO
+
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
+from wiithon.formats.bmg_sections.bmg_section import BMGSection
 
 INF1_MAGIC: str = "INF1"
 
@@ -57,21 +60,18 @@ class INF1Entry:
         self.gameeventvalue_index: int = gameeventvalue_index
 
     @classmethod
-    def import_entry(cls, raw_bytes: BytesIO | bytes) -> "INF1Entry":
-        if isinstance(raw_bytes, bytes):
-            raw_bytes = BytesIO(raw_bytes)
-        
-        data_length = raw_bytes.seek(0,2)
-        assert data_length == cls.entry_size
-        
-        message_data_offset = fh.read_u32(raw_bytes, 0x0)
-        camera_ID = fh.read_u16(raw_bytes, 0x4)
-        sound_ID = fh.read_u8(raw_bytes, 0x6)
-        camera_type = fh.read_u8(raw_bytes, 0x7)
-        talk_type = fh.read_u8(raw_bytes, 0x8)
-        balloon_type = fh.read_u8(raw_bytes, 0x9)
-        area_ID = fh.read_u8(raw_bytes, 0xA)
-        gameeventvalue_index = fh.read_u8(raw_bytes, 0xB)
+    def import_entry(cls, raw_bytes: BinaryIO) -> "INF1Entry":
+        reader = BinaryReader(raw_bytes)
+        assert reader.size() == cls.entry_size
+
+        message_data_offset = reader.u32()
+        camera_ID = reader.u16()
+        sound_ID = reader.u8()
+        camera_type = reader.u8()
+        talk_type = reader.u8()
+        balloon_type = reader.u8()
+        area_ID = reader.u8()
+        gameeventvalue_index = reader.u8()
 
         return cls(message_data_offset,
                    camera_ID,
@@ -82,19 +82,20 @@ class INF1Entry:
                    area_ID,
                    gameeventvalue_index)
 
-    def export_entry(self) -> BytesIO:
-        data = BytesIO()
+    def export_entry(self) -> BinaryIO:
+        entry_bytes = BytesIO()
+        writer = BinaryWriter(entry_bytes)
 
-        fh.write_u32(data, self.message_data_offset, 0x0)
-        fh.write_u16(data, self.camera_ID, 0x4)
-        fh.write_u8(data, self.sound_ID, 0x6)
-        fh.write_u8(data, self.camera_type, 0x7)
-        fh.write_u8(data, self.talk_type, 0x8)
-        fh.write_u8(data, self.balloon_type, 0x9)
-        fh.write_u8(data, self.area_ID, 0xA)
-        fh.write_u8(data, self.gameeventvalue_index, 0xB)
+        writer.u32(self.message_data_offset)
+        writer.u16(self.camera_ID)
+        writer.u8(self.sound_ID)
+        writer.u8(self.camera_type)
+        writer.u8(self.talk_type)
+        writer.u8(self.balloon_type)
+        writer.u8(self.area_ID)
+        writer.u8(self.gameeventvalue_index)
 
-        return data
+        return entry_bytes
 
 class INF1Section(BMGSection):
     """
@@ -134,13 +135,14 @@ class INF1Section(BMGSection):
         self.entry_count = len(self.entries)
 
     @classmethod
-    def import_section(cls, raw_bytes: BytesIO) -> "INF1Section":
+    def import_section(cls, raw_bytes: BinaryIO) -> "INF1Section":
         """
         Imports a BMG section from raw bytes into an INF1 section object.
         raw_bytes (BytesIO): A BytesIO object containing the section data to import.
         """
-        entry_count = fh.read_u16(raw_bytes, 0x0)
-        entry_size = fh.read_u16(raw_bytes, 0x2)
+        reader = BinaryReader(raw_bytes)
+        entry_count = reader.u16()
+        entry_size = reader.u16()
         assert entry_size == cls.entry_size
 
         section = cls()
@@ -148,23 +150,22 @@ class INF1Section(BMGSection):
         for entry_index in range(entry_count):
             raw_bytes.seek(cls.data_offset + entry_index * entry_size)
             entry_bytes: bytes = raw_bytes.read(entry_size)
-            entry: INF1Entry = INF1Entry.import_entry(entry_bytes)
+            entry: INF1Entry = INF1Entry.import_entry(BytesIO(entry_bytes))
             section.add_entry(entry)
 
         return section
 
-    def export_section(self) -> BytesIO:
-        data = BytesIO()
+    def export_section(self) -> BinaryIO:
+        section_bytes = BytesIO()
+        writer = BinaryWriter(section_bytes)
 
         entry_count = len(self.entries)
-        fh.write_u16(data, entry_count, 0x0)
-        fh.write_u16(data, self.entry_size, 0x2)
-        fh.write_u32(data, 0, 0x4)
-
-        offset = 0x8
+        writer.u16(entry_count)
+        writer.u16(self.entry_size)
+        writer.seek(0x8)
+        
         for entry in self.entries:
             entry_data = entry.export_entry()
-            fh.write_bytes(data, entry_data.getvalue(), offset)
-            offset += self.entry_size
+            writer.raw(entry_data.read)
         
-        return data
+        return section_bytes

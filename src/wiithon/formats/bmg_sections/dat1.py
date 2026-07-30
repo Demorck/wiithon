@@ -1,9 +1,10 @@
 from io import BytesIO
 from enum import IntEnum
-from typing import NamedTuple
+from typing import BinaryIO, NamedTuple
 
-import wiithon.helpers.Utils as fh
-from wiithon.file_helper.bmg_sections.bmg_section import BMGSection
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
+from wiithon.formats.bmg_sections.bmg_section import BMGSection
 
 DAT1_MAGIC: str = "DAT1"
 TAG_IDENTIFIER = b"\x00\x1A"
@@ -33,7 +34,7 @@ class Tag:
                  offset: int,
                  size: int,
                  identifier: TagIdentifier,
-                 data = None):
+                 data: bytes = None):
         
         if not isinstance(identifier, int) and not isinstance(identifier, TagIdentifier):
             raise Exception("Bad Input")
@@ -44,23 +45,25 @@ class Tag:
         self.data = data
 
     @classmethod
-    def import_tag(cls, raw_bytes: BytesIO, offset: int) -> "Tag":
-        size = int.from_bytes(raw_bytes.read(1), "big")
-        identifier = int.from_bytes(raw_bytes.read(1), "big")
-        data = raw_bytes.read(size - 4)
+    def import_tag(cls, raw_bytes: BinaryIO, offset: int) -> "Tag":
+        reader = BinaryReader(raw_bytes)
+        size = reader.u8()
+        identifier = reader.raw(1)
+        data = reader.raw(size - 4)
 
         return cls(offset, size, identifier, data)
 
-    def export_tag(self) -> BytesIO:
+    def export_tag(self) -> BinaryIO:
         assert isinstance(self.data, bytes)
-        data = BytesIO()
+        tag_bytes: BytesIO = BytesIO()
+        writer = BinaryWriter(tag_bytes)
 
-        fh.write_bytes(data, TAG_IDENTIFIER, 0x0)
-        fh.write_u8(data, self.size, 0x2)
-        fh.write_u8(data, self.identifier, 0x3)
-        fh.write_bytes(data, self.data, 0x4)
+        writer.raw(TAG_IDENTIFIER)
+        writer.u8(self.size)
+        writer.u8(self.identifier)
+        writer.raw(self.data)
 
-        return data
+        return tag_bytes
 
 class Message(NamedTuple):
     """
@@ -90,16 +93,15 @@ class DAT1Section(BMGSection):
         self.messages.append(message)
     
     @classmethod
-    def import_section(cls, raw_bytes: BytesIO):
-        data_length = raw_bytes.seek(0, 2)
+    def import_section(cls, raw_bytes: BinaryIO):
+        reader = BinaryReader(raw_bytes)
         section = cls()
 
         string = ''
         tags: list[Tag] = []
         
-        raw_bytes.seek(0)
-        while raw_bytes.tell() < data_length:
-            char_bytes = raw_bytes.read(2)
+        while reader.tell() < reader.size():
+            char_bytes = reader.raw(2)
             if char_bytes == TAG_IDENTIFIER: # Found a tag
                 offset = len(string)
                 tag = Tag.import_tag(raw_bytes, offset)
@@ -117,13 +119,14 @@ class DAT1Section(BMGSection):
         
         return section
         
-    def export_section(self) -> BytesIO:
+    def export_section(self) -> BinaryIO:
         """
         Export message section by serializing messages with their tags and characters into binary data.
         Iterates through each message's characters and associated tags, writing tag data before each character
         and any closing tags at the end of the string, encoding characters in Shift-JIS format.
         """
         data = BytesIO()
+        writer = BinaryWriter(data)
 
         for message in self.messages:
             string = message.string
@@ -134,19 +137,17 @@ class DAT1Section(BMGSection):
                 current_tags = [tag for tag in tags if tag.offset == offset]
                 for tag in current_tags:
                     tag_data = tag.export_tag()
-                    data.write(tag_data.getvalue())
-                
-                int_value = ord(char)
-                char_bytes = int.to_bytes(int_value, 2, 'big')
-                data.write(char_bytes)
+                    writer.raw(tag_data.read())
+
+                writer.string(char, 2)
             
             if not string:
-                data.write(NULL_BYTE)
+                writer.raw(NULL_BYTE)
 
             # Since message.string does not contains the tags themselves, we must also check to see if there are tags at the end of the string
             closing_tags = [tag for tag in tags if tag.offset == offset + 1]
             for tag in closing_tags:
                 tag_data = tag.export_tag()
-                data.write(tag_data.getvalue())
+                writer.raw(tag_data.read)
                 
         return data

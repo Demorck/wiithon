@@ -1,7 +1,10 @@
 from enum import IntEnum
 from io import BytesIO
-import wiithon.helpers.Utils as fh
-from wiithon.file_helper.bmg_sections.bmg_section import BMGSection
+from typing import BinaryIO
+
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
+from wiithon.formats.bmg_sections.bmg_section import BMGSection
 
 NODE_SIZE: int = 0x8
 FLW1_MAGIC: str = "FLW1"
@@ -29,31 +32,35 @@ class FLWTextNode:
         self.unknown2: int = unknown2
     
     @classmethod
-    def import_node(cls, raw_bytes: BytesIO) -> "FLWTextNode":
-        assert raw_bytes.seek(0, 2) == NODE_SIZE
+    def import_node(cls, raw_bytes: BinaryIO) -> "FLWTextNode":
+        reader = BinaryReader(raw_bytes)
+        assert reader.size() == NODE_SIZE
+        assert reader.u8() == NodeType.text
 
-        unknown1 = fh.read_u8(raw_bytes, 0x1)
-        message_ID = fh.read_u16(raw_bytes, 0x2)
-        next_flow_ID = fh.read_u16(raw_bytes, 0x4)
-        validity = fh.read_u8(raw_bytes, 0x6)
-        unknown2 = fh.read_u8(raw_bytes, 0x7)
+        reader.skip(0x1)
+        unknown1 = reader.u8()
+        message_ID = reader.u16()
+        next_flow_ID = reader.u16()
+        validity = reader.u8()
+        unknown2 = reader.u8()
 
         return cls(unknown1, message_ID, next_flow_ID, validity, unknown2)
     
-    def export_node(self) -> BytesIO:
-        data = BytesIO()
+    def export_node(self) -> BinaryIO:
+        node_bytes = BytesIO()
+        writer = BinaryWriter(node_bytes)
 
-        fh.write_u8(data, self.node_type, 0x0)
-        fh.write_u8(data, self.unknown1, 0x1)
-        fh.write_u16(data, self.message_ID, 0x2)
-        fh.write_u16(data, self.next_flow_ID, 0x4)
-        fh.write_u8(data, self.validity, 0x6)
-        fh.write_u8(data, self.unknown2, 0x7)
+        writer.u8(self.node_type)
+        writer.u8(self.unknown1)
+        writer.u16(self.message_ID)
+        writer.u16(self.next_flow_ID)
+        writer.u8(self.validity)
+        writer.u8(self.unknown2)
 
-        return data
+        return node_bytes
 
 class FLWConditionNode:
-    node_type: int = 2
+    node_type: int = NodeType.condition
 
     def __init__(self,
                  unknown1: int,
@@ -67,26 +74,29 @@ class FLWConditionNode:
         self.branch_node_ID: int = branch_node_ID
     
     @classmethod
-    def import_node(cls, raw_bytes: BytesIO) -> "FLWConditionNode":
-        assert raw_bytes.seek(0, 2) == NODE_SIZE
+    def import_node(cls, raw_bytes: BinaryIO) -> "FLWConditionNode":
+        reader = BinaryReader(raw_bytes)
+        assert reader.size() == NODE_SIZE
+        assert reader.u8() == NodeType.condition
 
-        unknown1 = fh.read_u8(raw_bytes, 0x1)
-        condition_type = fh.read_u16(raw_bytes, 0x2)
-        condition_argument = fh.read_u16(raw_bytes, 0x4)
-        branch_node_ID = fh.read_u16(raw_bytes, 0x6)
+        unknown1 = reader.u8()
+        condition_type = reader.u16()
+        condition_argument = reader.u16()
+        branch_node_ID = reader.u16()
 
         return cls(unknown1, condition_type, condition_argument, branch_node_ID)
     
-    def export_node(self) -> BytesIO:
-        data = BytesIO()
+    def export_node(self) -> BinaryIO:
+        node_bytes = BytesIO()
+        writer = BinaryWriter(node_bytes)
 
-        fh.write_u8(data, self.node_type, 0x0)
-        fh.write_u8(data, self.unknown1, 0x1)
-        fh.write_u16(data, self.condition_type, 0x2)
-        fh.write_u16(data, self.condition_argument, 0x4)
-        fh.write_u16(data, self.branch_node_ID, 0x6)
+        writer.u8(self.node_type)
+        writer.u8(self.unknown1)
+        writer.u16(self.condition_type)
+        writer.u16(self.condition_argument)
+        writer.u16(self.branch_node_ID)
 
-        return data
+        return node_bytes
 
 class FLWEventNode:
     node_type: int = NodeType.event
@@ -101,24 +111,27 @@ class FLWEventNode:
         self.event_argument: int = event_argument
     
     @classmethod
-    def import_node(cls, raw_bytes: BytesIO) -> "FLWEventNode":
-        assert raw_bytes.seek(0, 2) == NODE_SIZE
+    def import_node(cls, raw_bytes: BinaryIO) -> "FLWEventNode":
+        reader = BinaryReader(raw_bytes)
+        assert reader.size() == NODE_SIZE
+        assert reader.u8() == NodeType.event
 
-        event_type = fh.read_u8(raw_bytes, 0x1)
-        branch_node_ID = fh.read_u16(raw_bytes, 0x2)
-        event_argument = fh.read_u32(raw_bytes, 0x4)
+        event_type = reader.u8()
+        branch_node_ID = reader.u16()
+        event_argument = reader.u32()
 
         return cls(event_type, branch_node_ID, event_argument)
     
-    def export_node(self) -> BytesIO:
-        data = BytesIO()
+    def export_node(self) -> BinaryIO:
+        node_bytes = BytesIO()
+        writer = BinaryWriter(node_bytes)
 
-        fh.write_u8(data, self.node_type, 0x0)
-        fh.write_u8(data, self.event_type, 0x1)
-        fh.write_u16(data, self.branch_node_ID, 0x2)
-        fh.write_u32(data, self.event_argument, 0x4)
+        writer.u8(self.node_type)
+        writer.u8(self.event_type)
+        writer.u16(self.branch_node_ID)
+        writer.u32(self.event_argument)
 
-        return data
+        return node_bytes
 
 class FLW1Section(BMGSection):
     """
@@ -158,55 +171,52 @@ class FLW1Section(BMGSection):
         self.branch_nodes = branch_nodes
 
     @classmethod
-    def import_section(cls, raw_bytes: BytesIO) -> "FLW1Section":
+    def import_section(cls, raw_bytes: BinaryIO) -> "FLW1Section":
+        reader = BinaryReader(raw_bytes)
         section = cls()
-        
-        flow_node_count = fh.read_u16(raw_bytes, 0x0)
-        branch_node_count = fh.read_u16(raw_bytes, 0x2)
-        
-        offset = 0x8
+
+        flow_node_count = reader.u16()
+        branch_node_count = reader.u16()
+        reader.seek(0x8)
+
         for flow_node_index in range(flow_node_count):
-            node_type = fh.read_u8(raw_bytes, offset)
-            node_bytes = fh.read_bytes(raw_bytes, 0x8, offset)
+            node_type = reader.u8()
+            reader.back(0x1)
+            node_bytes = reader.raw(NODE_SIZE)
             node_bytes = BytesIO(node_bytes)
 
-            if node_type == NodeType.text:
-                node = FLWTextNode.import_node(node_bytes)
-            elif node_type == NodeType.condition:
-                node = FLWConditionNode.import_node(node_bytes)
-            elif node_type == NodeType.event:
-                node = FLWEventNode.import_node(node_bytes)
+            match node_type:
+                case NodeType.text:
+                    node = FLWTextNode.import_node(node_bytes)
+                case NodeType.condition:
+                    node = FLWConditionNode.import_node(node_bytes)
+                case NodeType.event:
+                    node = FLWEventNode.import_node(node_bytes)
             
             section.flow_nodes.append(node)
-            offset += 0x8
         
-        for _ in range(branch_node_count):
-            branch_node_id = fh.read_u16(raw_bytes, offset)
+        for branch_node_index in range(branch_node_count):
+            branch_node_id = reader.u16()
             section.branch_nodes.append(branch_node_id)
-            offset += 0x2
         
         return section
     
-    def export_section(self) -> BytesIO:
-        data = BytesIO()
+    def export_section(self) -> BinaryIO:
+        section_bytes = BytesIO()
+        writer = BinaryWriter(section_bytes)
 
         self.flow_node_count = len(self.flow_nodes)
         self.branch_node_count = len(self.branch_nodes)
 
-        fh.write_u16(data, self.flow_node_count, 0x0)
-        fh.write_u16(data, self.branch_node_count, 0x2)
-        fh.write_u32(data, 0, 0x4)
+        writer.u16(self.flow_node_count)
+        writer.u16(self.branch_node_count)
+        writer.seek(0x8)
 
-        offset = 0x8
         for flow_node in self.flow_nodes:
             flow_data = flow_node.export_node()
-            fh.write_bytes(data, flow_data.getvalue(), offset)
-
-            offset += 0x8
+            writer.raw(flow_data.read)
 
         for branch_node in self.branch_nodes:
-            fh.write_u16(data, branch_node, offset)
-            
-            offset += 0x2
+            writer.u16(branch_node)
         
-        return data
+        return section_bytes
