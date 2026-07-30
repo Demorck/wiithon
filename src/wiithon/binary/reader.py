@@ -27,10 +27,12 @@ class BinaryReader:
     def tell(self) -> int:
         return self.stream.tell()
 
-    def skip(self, count: int) -> int:
-        return self.stream.seek(count, 1)
+    def skip(self, count: int) -> None:
+        self.stream.read(count)
 
     def back(self, count: int) -> int:
+        if count > self.stream.tell():
+            return self.stream.seek(0)
         return self.stream.seek(-count, 1)
 
     def _read_number(self, size: int, unpack_fmt: str) -> int:
