@@ -1,5 +1,5 @@
-from wiithon.WiiIsoPatcher import WiiIsoPatcher
-from wiithon.file_helper.bcsv import BCSV, calculate_field_hash
+from wiithon.disc.patcher import WiiIsoPatcher
+from wiithon.formats.bcsv import BCSV, calculate_field_hash
 
 ISO_PATH = "../assets/smg.iso"
 OUTPUT_PATH = "../assets/smg_patch.iso"
@@ -40,5 +40,5 @@ if __name__ == "__main__":
             print("\n=== AFTER ===")
             display_bcsv(bcsv)
 
-        patcher.build(OUTPUT_PATH)
-        print(f"\nPatched : {OUTPUT_PATH}")
+        # patcher.build(OUTPUT_PATH)
+        # print(f"\nPatched : {OUTPUT_PATH}")
