@@ -58,7 +58,8 @@ class FLI1Section(BMGSection):
         reader = BinaryReader(raw_bytes)
 
         entry_count = reader.u16()
-        entry_size = reader.u16()
+        entry_size = reader.u8()
+        reader.skip(0x1)
 
         assert entry_size == cls.entry_size
 
@@ -68,7 +69,7 @@ class FLI1Section(BMGSection):
             unknown1 = reader.u16()
             reader.skip(0x2)
             unknown2 = reader.u16()
-            reader.skip()
+            reader.skip(0x2)
 
             entry = FLI1Entry(unknown1, unknown2)
             section.add_entry(entry)

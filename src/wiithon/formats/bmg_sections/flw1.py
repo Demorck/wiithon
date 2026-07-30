@@ -37,7 +37,6 @@ class FLWTextNode:
         assert reader.size() == NODE_SIZE
         assert reader.u8() == NodeType.text
 
-        reader.skip(0x1)
         unknown1 = reader.u8()
         message_ID = reader.u16()
         next_flow_ID = reader.u16()
@@ -184,7 +183,7 @@ class FLW1Section(BMGSection):
             reader.back(0x1)
             node_bytes = reader.raw(NODE_SIZE)
             node_bytes = BytesIO(node_bytes)
-
+            
             match node_type:
                 case NodeType.text:
                     node = FLWTextNode.import_node(node_bytes)

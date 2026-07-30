@@ -56,6 +56,10 @@ class BMG:
             section_magic = reader.string(0x4)
             section_size = reader.u32() - 0x8
 
+            # Take into account the removed padding at the end of the file
+            if section_size > reader.size() - reader.tell():
+                section_size = reader.size() - reader.tell()
+
             section_bytes = reader.raw(section_size)
             section_bytes = BytesIO(section_bytes)
             
@@ -110,7 +114,6 @@ class BMG:
         writer.u8(self.unknown)
         writer.seek(0x20)
 
-        offset = 0x20
         for section in self.sections:
             if section.magic == "FLW1":
                 position = writer.tell()

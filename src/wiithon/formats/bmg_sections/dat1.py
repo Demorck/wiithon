@@ -35,7 +35,7 @@ class Tag:
                  size: int,
                  identifier: TagIdentifier,
                  data: bytes = None):
-        
+
         if not isinstance(identifier, int) and not isinstance(identifier, TagIdentifier):
             raise Exception("Bad Input")
         
@@ -48,7 +48,7 @@ class Tag:
     def import_tag(cls, raw_bytes: BinaryIO, offset: int) -> "Tag":
         reader = BinaryReader(raw_bytes)
         size = reader.u8()
-        identifier = reader.raw(1)
+        identifier = reader.u8()
         data = reader.raw(size - 4)
 
         return cls(offset, size, identifier, data)
