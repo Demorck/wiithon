@@ -38,7 +38,11 @@ class RarcFileEntry:
         self.data_size: int = 0
         self.padding: int = 0
         self.name: str = ""
-        self.data: bytes = b""
+        self._data: bytes = b""
+
+    @property
+    def data(self) -> bytes:
+        return self._data
 
 
 class Rarc:
