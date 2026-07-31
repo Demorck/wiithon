@@ -222,7 +222,7 @@ def rarc_infos(
     _require_file(rarc)
 
     from io import BytesIO
-    from wiithon.formats.rarc import Rarc
+    from wiithon.formats.rarc import Rarc, NodeAttribute
     from wiithon.formats.yaz0 import Yaz0
 
     data = rarc.read_bytes()
@@ -232,7 +232,7 @@ def rarc_infos(
     arc = Rarc.read(BytesIO(data))
     table = Table("Name", "Size (in bytes)", "ID")
     for entry in arc.entries:
-        if entry.file_id != 0xFFFF and entry.type != 0x02:
+        if entry.file_id != 0xFFFF and not entry.attributes & NodeAttribute.DIRECTORY:
             table.add_row(entry.name, f"{str(len(entry.data))}", str(entry.file_id))
 
     console.print(Panel(table, title=f"[bold]{rarc.name}[/bold]", expand=False))
@@ -247,7 +247,7 @@ def rarc_extract(
     dest.mkdir(parents=True, exist_ok=True)
 
     from io import BytesIO
-    from wiithon.formats.rarc import Rarc
+    from wiithon.formats.rarc import Rarc, NodeAttribute
     from wiithon.formats.yaz0 import Yaz0
 
     data = rarc.read_bytes()
@@ -257,7 +257,7 @@ def rarc_extract(
     arc = Rarc.read(BytesIO(data))
     arc.extract_to(str(dest))
 
-    count = sum(1 for e in arc.entries if e.file_id != 0xFFFF and e.type != 0x02)
+    count = sum(1 for e in arc.entries if e.file_id != 0xFFFF and not e.attributes & NodeAttribute.DIRECTORY)
     console.print(f"[green](★‿★)[/green] Extracted {count} file(s) to [bold]{dest}[/bold]")
 
 @rarc_app.command("pack")

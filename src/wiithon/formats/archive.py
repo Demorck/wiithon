@@ -3,7 +3,7 @@ from typing import runtime_checkable, Protocol, BinaryIO, Callable
 
 from wiithon.exceptions import InvalidFormatError, FstFileNotFoundError
 from wiithon.formats.lz77 import Lz77
-from wiithon.formats.rarc import Rarc, RARC_MAGIC_WORD
+from wiithon.formats.rarc import Rarc, RarcFileEntry, RARC_MAGIC_WORD
 from wiithon.formats.u8 import U8, U8_MAGIC_WORD
 from wiithon.formats.yaz0 import Yaz0
 
@@ -84,7 +84,8 @@ def resolve_read(patcher, path: str) -> bytes:
     if not archive_parts:
         return data
     arc, _ = _open_archive(data)
-    return arc.get_file_by_path("/".join(archive_parts))
+    result = arc.get_file_by_path("/".join(archive_parts))
+    return result.data if isinstance(result, RarcFileEntry) else result
 
 def resolve_write(patcher, path: str, new_data: bytes) -> None:
     fst_path, archive_parts = _split_path(patcher.data_partition.fst, path)
