@@ -86,12 +86,11 @@ class BinaryReader:
 
     def string_until_null(self, encoding: str | None = None) -> str:
         encoding = encoding or self.encoding
-        null_byte = '\0'.encode(encoding)
         chars = bytearray()
+
         while True:
-            byte = self.stream.read(len(null_byte))
-            if byte == null_byte or not byte:
+            chars += self.stream.read(1)
+            if chars[-1] == 0:
                 break
-            chars += byte
 
         return chars.decode(encoding)
