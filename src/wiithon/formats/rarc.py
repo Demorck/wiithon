@@ -44,6 +44,11 @@ class RarcFileEntry:
     def data(self) -> bytes:
         return self._data
 
+    @data.setter
+    def data(self, value: bytes) -> None:
+        self._data = value
+        self.data_size = len(self._data)
+
 
 class Rarc:
     def __init__(self):
