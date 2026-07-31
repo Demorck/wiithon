@@ -25,6 +25,7 @@ class RarcNode:
         self.name_hash: int = 0
         self.entry_count: int = 0
         self.first_entry_index: int = 0
+        self.name: str = ""
 
 
 class RarcFileEntry:
@@ -63,6 +64,12 @@ class Rarc:
         self.string_table: bytes = b""
 
     @staticmethod
+    def _decode_cstring(table: bytes, offset: int) -> str:
+        end = table.find(b'\x00', offset)
+        raw = table[offset:end] if end != -1 else table[offset:]
+        return raw.decode('utf-8', errors='ignore')
+
+    @staticmethod
     def compute_hash(name: str) -> int:
         h = 0
         for c in name:
@@ -75,6 +82,7 @@ class Rarc:
         obj = cls()
         root = RarcNode()
         root.type = "ROOT"
+        root.name = "ROOT"
         root.first_entry_index = 0
         root.entry_count = 2
         obj.nodes.append(root)
@@ -154,12 +162,11 @@ class Rarc:
         obj.string_table = reader.raw(obj.string_table_length)
 
         # Resolve names and read data
+        for node in obj.nodes:
+            node.name = cls._decode_cstring(obj.string_table, node.name_offset)
+
         for entry in obj.entries:
-            end = obj.string_table.find(b'\x00', entry.name_offset)
-            if end != -1:
-                entry.name = obj.string_table[entry.name_offset:end].decode('utf-8', errors='ignore')
-            else:
-                entry.name = obj.string_table[entry.name_offset:].decode('utf-8', errors='ignore')
+            entry.name = cls._decode_cstring(obj.string_table, entry.name_offset)
 
             if entry.file_id != 0xFFFF and not entry.attributes & NodeAttribute.DIRECTORY:
                 abs_data_offset = obj.base_offset + 0x20 + obj.data_offset + entry.data_offset_or_idx
@@ -212,7 +219,7 @@ class Rarc:
             
         # Pack nodes
         for node in self.nodes:
-            node_name = node.type.strip('\x00')
+            node_name = node.name or node.type.strip('\x00')
             node.name_offset = add_string(node_name)
             node.name_hash = self.compute_hash(node_name)
 
@@ -328,6 +335,8 @@ class Rarc:
 
     def _find_node_for_path(self, parts: list[str]) -> RarcNode:
         node = self.nodes[0]  # root
+        if parts and parts[0] == node.name:
+            parts = parts[1:]
         for part in parts:
             found = False
             for i in range(node.entry_count):
@@ -367,6 +376,7 @@ class Rarc:
 
         new_node = RarcNode()
         new_node.type = name[:4].upper().ljust(4)
+        new_node.name = name
         new_node_index = len(self.nodes)
         new_node.first_entry_index = len(self.entries)
 

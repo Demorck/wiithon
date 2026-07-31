@@ -50,6 +50,70 @@ class TestRarc(unittest.TestCase):
         rarc_data = rarc_data[:4] + struct.pack(">I", len(rarc_data)) + rarc_data[8:]
         return rarc_data
 
+    def build_mock_rarc_with_named_root(self) -> bytes:
+        strings = b"stage\0.\0..\0files\0example.txt\0"
+        while len(strings) % 0x20 != 0:
+            strings += b"\0"
+        string_table_length = len(strings)
+
+        stage_off, dot_off, dotdot_off, files_off, example_off = 0, 6, 8, 11, 17
+
+        number_nodes = 2
+        offset_first_node = 0x20
+        total_directory = 6
+        offset_first_directory = offset_first_node + number_nodes * 0x10
+        string_table_offset = offset_first_directory + total_directory * 0x14
+        data_offset = string_table_offset + string_table_length
+        data = b"hi"
+        data_length = len(data)
+
+        info_block = struct.pack(">IIIIIIHHI", number_nodes, offset_first_node, total_directory,
+                                 offset_first_directory, string_table_length, string_table_offset, 1, 0, 0)
+
+        node_root = struct.pack(">4sIHHI", b'ROOT', stage_off, 0, 3, 0)
+        node_files = struct.pack(">4sIHHI", b'FILE', files_off, 0, 3, 3)
+
+        def entry(file_id, entry_type, name_off, data_off, size):
+            attr = (entry_type << 24) | name_off
+            return struct.pack(">HHIIII", file_id, 0, attr, data_off, size, 0)
+
+        entries = b""
+        entries += entry(0xFFFF, 0x02, dot_off, 0, 0)
+        entries += entry(0xFFFF, 0x02, dotdot_off, 0, 0)
+        entries += entry(0xFFFF, 0x02, files_off, 1, 0)
+        entries += entry(0xFFFF, 0x02, dot_off, 1, 0)
+        entries += entry(0xFFFF, 0x02, dotdot_off, 0, 0)
+        entries += entry(0, 0x11, example_off, 0, data_length) 
+
+        body = info_block + node_root + node_files + entries + strings + data
+        file_length = 0x20 + len(body)
+        header = struct.pack(">4sIIIIIII", b'RARC', file_length, 0x20, data_offset, data_length, 0, 0, 0)
+        return header + body
+
+    def test_root_name_resolved_from_string_table(self):
+        rarc = Rarc.read(BytesIO(self.build_mock_rarc_with_named_root()))
+
+        self.assertEqual(rarc.nodes[0].type, "ROOT")
+        self.assertEqual(rarc.nodes[0].name, "stage")
+
+    def test_get_file_by_path_with_leading_root_name(self):
+        rarc = Rarc.read(BytesIO(self.build_mock_rarc_with_named_root()))
+
+        self.assertEqual(rarc.get_file_by_path("stage/files/example.txt").data, b"hi")
+        self.assertEqual(rarc.get_file_by_path("files/example.txt").data, b"hi")
+
+    def test_write_preserves_root_name_distinct_from_type(self):
+        rarc = Rarc.read(BytesIO(self.build_mock_rarc_with_named_root()))
+
+        out_stream = BytesIO()
+        rarc.write(out_stream)
+        out_stream.seek(0)
+        reloaded = Rarc.read(out_stream)
+
+        self.assertEqual(reloaded.nodes[0].type, "ROOT")
+        self.assertEqual(reloaded.nodes[0].name, "stage")
+        self.assertEqual(reloaded.get_file_by_path("stage/files/example.txt").data, b"hi")
+
     def test_read_rarc(self):
         data = self.build_mock_rarc()
         stream = BytesIO(data)
