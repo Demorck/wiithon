@@ -4,35 +4,37 @@ Quickstart
 
 Reading a Wii ISO
 -----------------
-Minimal example: Open an ISO, read the header and list all files in it.
+
+Open an ISO, read its header and list every file it contains.
 
 ..  code-block:: python
 
     from wiithon import WiiIsoReader
 
-    with WiiIsoReader("path/to/iso") as reader:
-       info = reader.disc_header
-       print(info.game_id)
-       print(info.game_title)
+    with WiiIsoReader("path/to/game.iso") as reader:
+        header = reader.disc_header
+        print(header.game_id)      # b'RMGE01'
+        print(header.game_title)   # 'SUPER MARIO GALAXY'
 
-        data_partition = reader.get_data_partition()
-        partition = reader.open_partition(data_partition)
-        for f in partition.list_files():
-           print(f)
+        partition = reader.open_partition(reader.get_data_partition())
+        for path in partition.list_files():
+            print(path)
 
-More information :doc:`on the dedicated page for reading an ISO <reading>`
+See :doc:`reading` for the full reading API.
 
 Patching a Wii ISO
 ------------------
-Replacing a file and rebuilding the ISO
+
+Replace a file and rebuild the ISO.
 
 ..  code-block:: python
 
     from wiithon import WiiIsoPatcher
 
-    with WiiIsoPatcher("path/to/iso") as patcher:
-       with open("new_file.arc", "rb") as f:
-           patcher.replace_file("path/to/file.arc", f.read())
-       patcher.build("dest/output.iso")
+    with WiiIsoPatcher("path/to/game.iso") as patcher:
+        with open("new_file.arc", "rb") as f:
+            patcher.replace_file("path/to/file.arc", f.read())
 
-More information :doc:`on the dedicated page for patching an ISO <reading>`
+        patcher.build("output.iso")
+
+See :doc:`patching` for the full patching API.

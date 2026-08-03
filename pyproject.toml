@@ -49,7 +49,8 @@ Documentation = "https://github.com/Demorck/wiithon/tree/master/docs"
 wiithon = "wiithon.cli:app"
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11", "build"]
+dev  = ["pytest>=8", "ruff>=0.6", "mypy>=1.11", "build"]
+docs = ["sphinx>=7", "sphinx-rtd-theme", "sphinx-autodoc-typehints"]
 
 [tool.ruff]
 line-length = 120

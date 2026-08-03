@@ -8,8 +8,8 @@ Wiithon
 
     user_guide/introduction
     user_guide/quickstart
-    user_guide/patching
     user_guide/reading
+    user_guide/patching
     user_guide/file_formats
     user_guide/cli
 

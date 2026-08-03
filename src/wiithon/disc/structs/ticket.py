@@ -14,7 +14,8 @@ class Ticket:
     Contains the encrypted title key and metadata needed to decrypt
     partition data. See here: https://wiibrew.org/wiki/Ticket
 
-    STRUCT (size for v0: 0x2A4. for v1: 0x2B7) :
+    STRUCT (size for v0: 0x2A4. for v1: 0x2B7) ::
+
     ----------------------------------------- Signed Blob Header
     Offset  Taille          Field
     0x000   4               Signature Type
