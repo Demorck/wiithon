@@ -96,11 +96,49 @@ class TestRarc(unittest.TestCase):
         self.assertEqual(rarc.nodes[0].type, "ROOT")
         self.assertEqual(rarc.nodes[0].name, "stage")
 
-    def test_get_file_by_path_with_leading_root_name(self):
+    def test_get_file_with_leading_root_name(self):
         rarc = Rarc.read(BytesIO(self.build_mock_rarc_with_named_root()))
 
-        self.assertEqual(rarc.get_file_by_path("stage/files/example.txt").data, b"hi")
-        self.assertEqual(rarc.get_file_by_path("files/example.txt").data, b"hi")
+        self.assertEqual(rarc.get_file("stage/files/example.txt").data, b"hi")
+        self.assertEqual(rarc.get_file("files/example.txt").data, b"hi")
+
+    def test_get_node_none_path_raises(self):
+        rarc = Rarc.create_empty()
+        with self.assertRaises(ValueError):
+            rarc.get_node(None)
+
+    def test_get_node_empty_path_returns_root(self):
+        rarc = Rarc.create_empty()
+        self.assertIs(rarc.get_node(""), rarc.nodes[0])
+
+    def test_get_node_no_slash_matching_root_name(self):
+        rarc = Rarc.read(BytesIO(self.build_mock_rarc_with_named_root()))
+        self.assertIs(rarc.get_node("stage"), rarc.nodes[0])
+
+    def test_get_node_no_slash_not_matching_root_name_raises(self):
+        rarc = Rarc.read(BytesIO(self.build_mock_rarc_with_named_root()))
+        with self.assertRaises(ArchiveFileNotFoundError):
+            rarc.get_node("bogus")
+
+    def test_get_node_multi_segment_traversal(self):
+        rarc = Rarc.read(BytesIO(self.build_mock_rarc_with_named_root()))
+        node = rarc.get_node("stage/files")
+        self.assertEqual(node.name, "files")
+
+    def test_get_node_unknown_directory_raises(self):
+        rarc = Rarc.create_empty()
+        rarc.add_node("sub")
+        with self.assertRaises(ArchiveFileNotFoundError):
+            rarc.get_node("sub/missing")
+
+    def test_get_node_leading_slash_resolves_top_level_dir(self):
+        rarc = Rarc.create_empty()
+        sub_node = rarc.add_node("sub")
+        self.assertIs(rarc.get_node("/sub"), sub_node)
+
+    def test_get_node_bare_slash_returns_root(self):
+        rarc = Rarc.create_empty()
+        self.assertIs(rarc.get_node("/"), rarc.nodes[0])
 
     def test_write_preserves_root_name_distinct_from_type(self):
         rarc = Rarc.read(BytesIO(self.build_mock_rarc_with_named_root()))
@@ -112,7 +150,7 @@ class TestRarc(unittest.TestCase):
 
         self.assertEqual(reloaded.nodes[0].type, "ROOT")
         self.assertEqual(reloaded.nodes[0].name, "stage")
-        self.assertEqual(reloaded.get_file_by_path("stage/files/example.txt").data, b"hi")
+        self.assertEqual(reloaded.get_file("stage/files/example.txt").data, b"hi")
 
     def test_read_rarc(self):
         data = self.build_mock_rarc()
@@ -190,7 +228,7 @@ class TestRarc(unittest.TestCase):
         out_stream.seek(0)
         reloaded = Rarc.read(out_stream)
 
-        self.assertEqual(reloaded.get_file_by_path("hello.txt").data, b"Hello World!")
+        self.assertEqual(reloaded.get_file("hello.txt").data, b"Hello World!")
         self.assertEqual(reloaded.nodes[0].entry_count, 3)
 
     def test_add_node_creates_subdirectory(self):
@@ -221,7 +259,7 @@ class TestRarc(unittest.TestCase):
         out_stream.seek(0)
         reloaded = Rarc.read(out_stream)
 
-        self.assertEqual(reloaded.get_file_by_path("sub/inner.txt").data, b"Inner data")
+        self.assertEqual(reloaded.get_file("sub/inner.txt").data, b"Inner data")
 
     def test_add_file_after_node(self):
         # Regression check: inserting a file into the root's entry block after a
@@ -236,8 +274,8 @@ class TestRarc(unittest.TestCase):
         out_stream.seek(0)
         reloaded = Rarc.read(out_stream)
 
-        self.assertEqual(reloaded.get_file_by_path("second.txt").data, b"second")
-        self.assertEqual(reloaded.get_file_by_path("sub/inner.txt").data, b"Inner data")
+        self.assertEqual(reloaded.get_file("second.txt").data, b"second")
+        self.assertEqual(reloaded.get_file("sub/inner.txt").data, b"Inner data")
 
     def test_add_node_unknown_parent(self):
         rarc = Rarc.create_empty()
@@ -281,8 +319,8 @@ class TestRarc(unittest.TestCase):
         out_stream.seek(0)
         reloaded = Rarc.read(out_stream)
 
-        self.assertEqual(reloaded.get_file_by_path("hello.txt").data, b"root version")
-        self.assertEqual(reloaded.get_file_by_path("sub/hello.txt").data, b"sub version")
+        self.assertEqual(reloaded.get_file("hello.txt").data, b"root version")
+        self.assertEqual(reloaded.get_file("sub/hello.txt").data, b"sub version")
 
     def test_add_file_name_clashing_with_node(self):
         rarc = Rarc.create_empty()
@@ -290,64 +328,198 @@ class TestRarc(unittest.TestCase):
         with self.assertRaises(ArchiveEntryExistsError):
             rarc.add_file("data", b"oops")
 
-    def test_rename_file_keeps_data(self):
+    def test_replace_file_updates_data_only(self):
+        rarc = Rarc.create_empty()
+        rarc.add_file("hello.txt", b"old data")
+
+        rarc.replace_file("hello.txt", b"new data")
+
+        self.assertEqual(rarc.get_file("hello.txt").data, b"new data")
+
+    def test_replace_file_with_new_name_renames_and_updates_data(self):
         rarc = Rarc.create_empty()
         rarc.add_file("hello.txt", b"Hello World!")
 
-        entry = rarc.rename_file("hello.txt", "greeting.txt")
+        rarc.replace_file("hello.txt", b"new data", new_name="greeting.txt")
 
-        self.assertEqual(entry.name, "greeting.txt")
-        self.assertEqual(entry.data, b"Hello World!")
+        self.assertEqual(rarc.get_file("greeting.txt").data, b"new data")
+        with self.assertRaises(ArchiveFileNotFoundError):
+            rarc.get_file("hello.txt")
 
         out_stream = BytesIO()
         rarc.write(out_stream)
         out_stream.seek(0)
         reloaded = Rarc.read(out_stream)
 
-        self.assertEqual(reloaded.get_file_by_path("greeting.txt").data, b"Hello World!")
-        with self.assertRaises(ArchiveFileNotFoundError):
-            reloaded.get_file_by_path("hello.txt")
+        self.assertEqual(reloaded.get_file("greeting.txt").data, b"new data")
 
-    def test_rename_file_with_new_data(self):
-        rarc = Rarc.create_empty()
-        rarc.add_file("hello.txt", b"old data")
-
-        entry = rarc.rename_file("hello.txt", "renamed.txt", data=b"new data")
-
-        self.assertEqual(entry.name, "renamed.txt")
-        self.assertEqual(entry.data, b"new data")
-
-    def test_rename_file_inside_subdirectory(self):
+    def test_replace_file_inside_subdirectory_with_rename(self):
         rarc = Rarc.create_empty()
         rarc.add_node("sub")
         rarc.add_file("sub/inner.txt", b"data")
 
-        rarc.rename_file("sub/inner.txt", "renamed.txt")
+        rarc.replace_file("sub/inner.txt", b"new data", new_name="renamed.txt")
 
         out_stream = BytesIO()
         rarc.write(out_stream)
         out_stream.seek(0)
         reloaded = Rarc.read(out_stream)
 
-        self.assertEqual(reloaded.get_file_by_path("sub/renamed.txt").data, b"data")
+        self.assertEqual(reloaded.get_file("sub/renamed.txt").data, b"new data")
 
-    def test_rename_file_not_found(self):
+    def test_replace_file_not_found(self):
         rarc = Rarc.create_empty()
         with self.assertRaises(ArchiveFileNotFoundError):
-            rarc.rename_file("missing.txt", "new.txt")
+            rarc.replace_file("missing.txt", b"data")
 
-    def test_rename_file_duplicate_name_same_parent(self):
+    def test_replace_file_rename_duplicate_name_same_parent(self):
         rarc = Rarc.create_empty()
         rarc.add_file("a.txt", b"a")
         rarc.add_file("b.txt", b"b")
         with self.assertRaises(ArchiveEntryExistsError):
-            rarc.rename_file("a.txt", "b.txt")
+            rarc.replace_file("a.txt", b"aa", new_name="b.txt")
 
-    def test_rename_file_same_name_is_noop_allowed(self):
+    def test_replace_file_rename_same_name_is_noop_allowed(self):
         rarc = Rarc.create_empty()
         rarc.add_file("a.txt", b"a")
-        entry = rarc.rename_file("a.txt", "a.txt")
-        self.assertEqual(entry.name, "a.txt")
+        rarc.replace_file("a.txt", b"aa", new_name="a.txt")
+        self.assertEqual(rarc.get_file("a.txt").data, b"aa")
+
+    def test_replace_file_rename_rejects_separator(self):
+        rarc = Rarc.create_empty()
+        rarc.add_file("hello.txt", b"data")
+        with self.assertRaises(ValueError):
+            rarc.replace_file("hello.txt", b"data", new_name="sub/renamed.txt")
+
+    def test_replace_file_empty_new_name_does_not_rename(self):
+        rarc = Rarc.create_empty()
+        rarc.add_file("hello.txt", b"old data")
+        rarc.replace_file("hello.txt", b"new data", new_name="")
+        self.assertEqual(rarc.get_file("hello.txt").data, b"new data")
+
+    def test_is_node_empty_true_for_fresh_root(self):
+        rarc = Rarc.create_empty()
+        self.assertTrue(rarc.is_node_empty(""))
+
+    def test_is_node_empty_false_after_add_file(self):
+        rarc = Rarc.create_empty()
+        rarc.add_file("hello.txt", b"data")
+        self.assertFalse(rarc.is_node_empty(""))
+
+    def test_is_node_empty_false_after_add_node(self):
+        rarc = Rarc.create_empty()
+        rarc.add_node("sub")
+        self.assertFalse(rarc.is_node_empty(""))
+
+    def test_is_node_empty_true_for_freshly_created_subdirectory(self):
+        rarc = Rarc.create_empty()
+        rarc.add_node("sub")
+        self.assertTrue(rarc.is_node_empty("/sub"))
+
+    def test_is_node_empty_false_for_subdirectory_with_file(self):
+        rarc = Rarc.create_empty()
+        rarc.add_node("sub")
+        rarc.add_file("sub/inner.txt", b"data")
+        self.assertFalse(rarc.is_node_empty("/sub"))
+
+    def test_remove_file_removes_root_level_file(self):
+        rarc = Rarc.create_empty()
+        rarc.add_file("hello.txt", b"data")
+
+        rarc.remove_file("hello.txt")
+
+        with self.assertRaises(ArchiveFileNotFoundError):
+            rarc.get_file("hello.txt")
+        self.assertEqual(rarc.nodes[0].entry_count, 2)
+
+    def test_remove_file_not_found_raises(self):
+        rarc = Rarc.create_empty()
+        with self.assertRaises(ArchiveFileNotFoundError):
+            rarc.remove_file("missing.txt")
+
+    def test_remove_file_on_directory_raises_value_error(self):
+        rarc = Rarc.create_empty()
+        rarc.add_node("sub")
+        with self.assertRaises(ValueError):
+            rarc.remove_file("sub")
+
+    def test_remove_file_inside_subdirectory_leaves_siblings_intact(self):
+        rarc = Rarc.create_empty()
+        rarc.add_node("sub")
+        rarc.add_file("sub/a.txt", b"a")
+        rarc.add_file("sub/b.txt", b"b")
+
+        rarc.remove_file("sub/a.txt")
+
+        out_stream = BytesIO()
+        rarc.write(out_stream)
+        out_stream.seek(0)
+        reloaded = Rarc.read(out_stream)
+
+        self.assertEqual(reloaded.get_file("sub/b.txt").data, b"b")
+        with self.assertRaises(ArchiveFileNotFoundError):
+            reloaded.get_file("sub/a.txt")
+
+    def test_remove_node_deletes_empty_subdirectory(self):
+        rarc = Rarc.create_empty()
+        rarc.add_node("sub")
+
+        rarc.remove_node("/sub")
+
+        self.assertEqual(len(rarc.nodes), 1)
+        self.assertTrue(rarc.is_node_empty(""))
+
+        out_stream = BytesIO()
+        rarc.write(out_stream)
+        out_stream.seek(0)
+        reloaded = Rarc.read(out_stream)
+        self.assertEqual(len(reloaded.nodes), 1)
+
+    def test_remove_node_deletes_nested_subdirectories_without_orphaning(self):
+        rarc = Rarc.create_empty()
+        rarc.add_node("sub")
+        rarc.add_node("sub/nested")
+        rarc.add_file("sub/nested/deep.txt", b"deep")
+        rarc.add_file("root.txt", b"root")
+
+        rarc.remove_node("/sub")
+
+        self.assertEqual(len(rarc.nodes), 1)
+        self.assertEqual(rarc.nodes[0].entry_count, 3)  # ".", "..", "root.txt"
+
+        out_stream = BytesIO()
+        rarc.write(out_stream)
+        out_stream.seek(0)
+        reloaded = Rarc.read(out_stream)
+
+        self.assertEqual(len(reloaded.nodes), 1)
+        self.assertEqual(reloaded.get_file("root.txt").data, b"root")
+        with self.assertRaises(ArchiveFileNotFoundError):
+            reloaded.get_node("/sub")
+
+    def test_remove_node_rejects_root(self):
+        rarc = Rarc.create_empty()
+        with self.assertRaises(ValueError):
+            rarc.remove_node("")
+
+    def test_remove_node_unknown_directory_raises(self):
+        rarc = Rarc.create_empty()
+        with self.assertRaises(ArchiveFileNotFoundError):
+            rarc.remove_node("/missing")
+
+    def test_remove_node_then_add_node_reuses_structure_correctly(self):
+        rarc = Rarc.create_empty()
+        rarc.add_node("sub")
+        rarc.remove_node("/sub")
+        new_sub = rarc.add_node("sub2")
+
+        out_stream = BytesIO()
+        rarc.write(out_stream)
+        out_stream.seek(0)
+        reloaded = Rarc.read(out_stream)
+
+        self.assertEqual(len(reloaded.nodes), 2)
+        self.assertEqual(reloaded.nodes[1].type, "SUB2")
 
 if __name__ == '__main__':
     unittest.main()

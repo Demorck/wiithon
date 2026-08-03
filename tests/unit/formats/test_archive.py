@@ -186,7 +186,7 @@ class TestResolveWrite(unittest.TestCase):
         resolve_write(p, "AstroGalaxy.arc/layera/objinfo", b"\xFF\xFF")
 
         rarc = Rarc.read(BytesIO(p.file_replacements["AstroGalaxy.arc"]))
-        self.assertEqual(rarc.get_file_by_path("layera/objinfo").data, b"\xFF\xFF")
+        self.assertEqual(rarc.get_file("layera/objinfo").data, b"\xFF\xFF")
 
     def test_does_not_touch_other_files_in_rarc(self):
         rarc_bytes = build_flat_rarc({"a.bin": b"AAA", "b.bin": b"BBB"})
@@ -280,21 +280,22 @@ class TestEditAs(unittest.TestCase):
 
 
 class TestAutoDetectLastFile(unittest.TestCase):
-    def test_single_file_in_dir_auto_selected(self):
+    def test_directory_name_raises_even_with_single_file(self):
         rarc_bytes = build_nested_rarc("layera", {"objinfo": b"unique"})
         rarc = Rarc.read(BytesIO(rarc_bytes))
-        self.assertEqual(rarc.get_file_by_path("layera").data, b"unique")
+        with self.assertRaisesRegex(ValueError, "objinfo"):
+            rarc.get_file("layera")
 
     def test_multiple_files_in_dir_raises(self):
         rarc_bytes = build_nested_rarc("layera", {"file1.bin": b"A", "file2.bin": b"B"})
         rarc = Rarc.read(BytesIO(rarc_bytes))
         with self.assertRaisesRegex(ValueError, "file1.bin|file2.bin"):
-            rarc.get_file_by_path("layera")
+            rarc.get_file("layera")
 
     def test_explicit_file_path_unchanged(self):
         rarc_bytes = build_nested_rarc("layera", {"objinfo": b"data"})
         rarc = Rarc.read(BytesIO(rarc_bytes))
-        self.assertEqual(rarc.get_file_by_path("layera/objinfo").data, b"data")
+        self.assertEqual(rarc.get_file("layera/objinfo").data, b"data")
 
 
 if __name__ == "__main__":
