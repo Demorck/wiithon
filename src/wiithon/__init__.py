@@ -3,7 +3,7 @@ from wiithon.exceptions import (
     BinaryError,
     InvalidFormatError, InvalidDiscError, CorruptedDataError, NoDataPartitionError,
     FstError, FstFileNotFoundError, FstIsADirectoryError,
-    ArchiveError, ArchiveFileNotFoundError, ArchiveIsADirectoryError,
+    ArchiveError, ArchiveFileNotFoundError, ArchiveIsADirectoryError, ArchiveEntryExistsError,
     BCSVFileError,
     DolError, DolSectionNotFoundError, DolSectionOverlapError, DolNoFreeSectionError,
 )
@@ -39,7 +39,7 @@ __all__ = [
     "WiithonError", "BinaryError",
     "InvalidFormatError", "InvalidDiscError", "CorruptedDataError", "NoDataPartitionError",
     "FstError", "FstFileNotFoundError", "FstIsADirectoryError",
-    "ArchiveError", "ArchiveFileNotFoundError", "ArchiveIsADirectoryError",
+    "ArchiveError", "ArchiveFileNotFoundError", "ArchiveIsADirectoryError", "ArchiveEntryExistsError"
     "DolError", "DolSectionNotFoundError", "DolSectionOverlapError", "DolNoFreeSectionError",
     "BCSVFileError",
 

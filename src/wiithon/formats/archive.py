@@ -3,17 +3,17 @@ from typing import runtime_checkable, Protocol, BinaryIO, Callable
 
 from wiithon.exceptions import InvalidFormatError, FstFileNotFoundError
 from wiithon.formats.lz77 import Lz77
-from wiithon.formats.rarc import Rarc, RARC_MAGIC_WORD
+from wiithon.formats.rarc import Rarc, RarcFileEntry, RARC_MAGIC_WORD
 from wiithon.formats.u8 import U8, U8_MAGIC_WORD
 from wiithon.formats.yaz0 import Yaz0
 
 @runtime_checkable
 class Archive(Protocol):
 
-    def get_file_by_path(self, path: str) -> bytes:
+    def get_file(self, path: str) -> bytes:
         pass
 
-    def replace_file_by_path(self, path: str, data: bytes) -> None:
+    def replace_file(self, path: str, data: bytes) -> None:
         pass
 
     def get_bytes(self) -> bytes:
@@ -84,7 +84,8 @@ def resolve_read(patcher, path: str) -> bytes:
     if not archive_parts:
         return data
     arc, _ = _open_archive(data)
-    return arc.get_file_by_path("/".join(archive_parts))
+    result = arc.get_file("/".join(archive_parts))
+    return result.data if isinstance(result, RarcFileEntry) else result
 
 def resolve_write(patcher, path: str, new_data: bytes) -> None:
     fst_path, archive_parts = _split_path(patcher.data_partition.fst, path)
@@ -93,5 +94,5 @@ def resolve_write(patcher, path: str, new_data: bytes) -> None:
         return
     data = patcher.read_file(fst_path)
     arc, containers = _open_archive(data)
-    arc.replace_file_by_path("/".join(archive_parts), new_data)
+    arc.replace_file("/".join(archive_parts), new_data)
     patcher.replace_file(fst_path, _serialize_archive(arc, containers))
