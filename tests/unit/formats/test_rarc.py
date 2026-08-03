@@ -497,6 +497,16 @@ class TestRarc(unittest.TestCase):
         with self.assertRaises(ArchiveFileNotFoundError):
             reloaded.get_node("/sub")
 
+    def test_remove_node_survives_root_dotdot_sentinel(self):
+        rarc = Rarc.create_empty()
+        rarc.entries[1].data_offset_or_idx = 0xFFFFFFFF
+        rarc.add_node("sub")
+
+        rarc.remove_node("/sub")
+
+        self.assertEqual(len(rarc.nodes), 1)
+        self.assertEqual(rarc.entries[1].data_offset_or_idx, 0xFFFFFFFF)
+
     def test_remove_node_rejects_root(self):
         rarc = Rarc.create_empty()
         with self.assertRaises(ValueError):

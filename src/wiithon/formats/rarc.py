@@ -513,7 +513,7 @@ class Rarc:
 
         for e in new_entries:
             if e.attributes & NodeAttribute.DIRECTORY:
-                e.data_offset_or_idx = old_to_new_node_index[e.data_offset_or_idx]
+                e.data_offset_or_idx = old_to_new_node_index.get(e.data_offset_or_idx, e.data_offset_or_idx)
 
         self.nodes = new_nodes
         self.entries = new_entries
