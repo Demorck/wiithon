@@ -106,7 +106,7 @@ class Rarc:
         dotdot.file_id = 0xFFFFFFFF # Top most directory
         dotdot.attributes |= NodeAttribute.DIRECTORY
         dotdot.name = ".."
-        dotdot.data_offset_or_idx = 0
+        dotdot.data_offset_or_idx = 0xFFFFFFFF
 
         obj.entries.append(dot)
         obj.entries.append(dotdot)
@@ -327,25 +327,80 @@ class Rarc:
         # Data payload
         writer.raw(payload)
 
-    def get_file(self, name: str) -> RarcFileEntry:
-        for entry in self.entries:
-            if entry.name == name and entry.file_id != 0xFFFF and not entry.attributes & NodeAttribute.DIRECTORY:
-                return entry
+    def get_file(self, path: str) -> RarcFileEntry:
+        parts = [p for p in path.split("/") if p]
+        if not parts:
+            raise ValueError("Path must contain a file name")
 
-        raise ArchiveFileNotFoundError(f"File not found in RARC: {name}")
+        node = self.get_node(self._dir_path(parts[:-1]))
+        filename = parts[-1]
 
-    def replace_file(self, name: str, data: bytes) -> None:
-        for entry in self.entries:
-            if entry.name == name and entry.file_id != 0xFFFF and not entry.attributes & NodeAttribute.DIRECTORY:
-                entry.data = data
-                return
+        matches = [
+            self.entries[node.first_entry_index + i]
+            for i in range(node.entry_count)
+            if self.entries[node.first_entry_index + i].name == filename
+        ]
+        files = [e for e in matches if not e.attributes & NodeAttribute.DIRECTORY]
+        dirs = [e for e in matches if e.attributes & NodeAttribute.DIRECTORY]
 
-        raise ArchiveFileNotFoundError(f"File not found in RARC: {name}")
+        if len(files) > 1:
+            raise ValueError(f"'{filename}' matches multiple files in this directory")
 
-    def _find_node_for_path(self, parts: list[str]) -> RarcNode:
-        node = self.nodes[0]  # root
-        if parts and parts[0] == node.name:
+        if files:
+            return files[0]
+
+        if dirs:
+            sub_node = self.nodes[dirs[0].data_offset_or_idx]
+            sub_files = [
+                self.entries[sub_node.first_entry_index + j]
+                for j in range(sub_node.entry_count)
+                if self.entries[sub_node.first_entry_index + j].name not in (".", "..")
+                and not self.entries[sub_node.first_entry_index + j].attributes & NodeAttribute.DIRECTORY
+            ]
+            names = ", ".join(e.name for e in sub_files)
+            raise ValueError(
+                f"'{filename}' is a directory with {len(sub_files)} files called : {names}"
+            )
+
+        raise ArchiveFileNotFoundError(f"File not found: {path}")
+
+    def replace_file(self, path: str, data: bytes, new_name: str = "") -> None:
+        entry = self.get_file(path)
+
+        if new_name:
+            if "/" in new_name:
+                raise ValueError("new_name cannot contain a path separator")
+
+            parts = [p for p in path.split("/") if p]
+            node = self.get_node(self._dir_path(parts[:-1]))
+            if new_name != entry.name and self._has_sibling_named(node, new_name):
+                raise ArchiveEntryExistsError(f"'{new_name}' already exists in this directory")
+            entry.name = new_name
+
+        entry.data = data
+
+    def is_node_empty(self, path: str) -> bool:
+        node = self.get_node(path)
+        for i in range(node.entry_count):
+            entry = self.entries[node.first_entry_index + i]
+            if entry.name not in (".", ".."):
+                return False
+        return True
+
+    def get_node(self, path: str) -> RarcNode:
+        if path is None:
+            raise ValueError("path must not be None")
+
+        root = self.nodes[0]
+        parts = [p for p in path.split("/") if p]
+
+        if not parts:
+            return root
+
+        node = root
+        if parts[0] == root.name:
             parts = parts[1:]
+
         for part in parts:
             found = False
             for i in range(node.entry_count):
@@ -357,6 +412,13 @@ class Rarc:
             if not found:
                 raise ArchiveFileNotFoundError(f"Directory not found in RARC: {part}")
         return node
+
+    def _dir_path(self, parts: list[str]) -> str:
+        if not parts:
+            return ""
+        if len(parts) == 1 and parts[0] != self.nodes[0].name:
+            return f"{self.nodes[0].name}/{parts[0]}"
+        return "/".join(parts)
 
     def _has_sibling_named(self, node: RarcNode, name: str) -> bool:
         return any(
@@ -372,12 +434,91 @@ class Rarc:
             if other is not node and other.first_entry_index >= pos:
                 other.first_entry_index += 1
 
+    def _remove_entry(self, node: RarcNode, entry: RarcFileEntry) -> None:
+        pos = self.entries.index(entry)
+        self.entries.pop(pos)
+        node.entry_count -= 1
+        for other in self.nodes:
+            if other is not node and other.first_entry_index > pos:
+                other.first_entry_index -= 1
+
+    def _collect_subtree_nodes(self, node: RarcNode, out: set) -> None:
+        idx = self.nodes.index(node)
+        if idx in out:
+            return
+        out.add(idx)
+        for i in range(node.entry_count):
+            entry = self.entries[node.first_entry_index + i]
+            if entry.name in (".", ".."):
+                continue
+            if entry.attributes & NodeAttribute.DIRECTORY:
+                child = self.nodes[entry.data_offset_or_idx]
+                self._collect_subtree_nodes(child, out)
+
+    def remove_node(self, path: str) -> None:
+        node = self.get_node(path)
+        if node is self.nodes[0]:
+            raise ValueError("Cannot delete the root node")
+
+        node_index = self.nodes.index(node)
+
+        parent = None
+        link_entry = None
+        for n in self.nodes:
+            for i in range(n.entry_count):
+                candidate = self.entries[n.first_entry_index + i]
+                if (candidate.attributes & NodeAttribute.DIRECTORY
+                        and candidate.name not in (".", "..")
+                        and candidate.data_offset_or_idx == node_index):
+                    parent = n
+                    link_entry = candidate
+                    break
+            if link_entry is not None:
+                break
+
+        if link_entry is not None:
+            self._remove_entry(parent, link_entry)
+
+        sub_node_indices: set = set()
+        self._collect_subtree_nodes(node, sub_node_indices)
+
+        sub_file_positions: set = set()
+        for idx in sub_node_indices:
+            doomed = self.nodes[idx]
+            sub_file_positions.update(range(doomed.first_entry_index, doomed.first_entry_index + doomed.entry_count))
+
+        old_to_new_node_index = {}
+        new_nodes = []
+        for i, n in enumerate(self.nodes):
+            if i in sub_node_indices:
+                continue
+            old_to_new_node_index[i] = len(new_nodes)
+            new_nodes.append(n)
+
+        old_to_new_entry_index = {}
+        new_entries = []
+        for i, e in enumerate(self.entries):
+            if i in sub_file_positions:
+                continue
+            old_to_new_entry_index[i] = len(new_entries)
+            new_entries.append(e)
+
+        for n in new_nodes:
+            n.first_entry_index = old_to_new_entry_index[n.first_entry_index]
+
+        for e in new_entries:
+            if e.attributes & NodeAttribute.DIRECTORY:
+                e.data_offset_or_idx = old_to_new_node_index.get(e.data_offset_or_idx, e.data_offset_or_idx)
+
+        self.nodes = new_nodes
+        self.entries = new_entries
+
     def add_node(self, path: str) -> RarcNode:
         parts = [p for p in path.split("/") if p]
         if not parts:
             raise ValueError(f"Path must contain a directory name: {path}")
 
-        parent_node = self._find_node_for_path(parts[:-1])
+        parent_node = self.get_node(self._dir_path(parts[:-1]))
         name = parts[-1]
         if self._has_sibling_named(parent_node, name):
             raise ArchiveEntryExistsError(f"'{name}' already exists in this directory")
@@ -420,7 +561,7 @@ class Rarc:
         if not parts:
             raise ValueError("Path must contain a file name")
 
-        node = self._find_node_for_path(parts[:-1])
+        node = self.get_node(self._dir_path(parts[:-1]))
         name = parts[-1]
         if self._has_sibling_named(node, name):
             raise ArchiveEntryExistsError(f"'{name}' already exists in this directory")
@@ -434,44 +575,12 @@ class Rarc:
 
         return entry
 
-    def get_file_by_path(self, path: str) -> RarcFileEntry:
+    def remove_file(self, path: str) -> None:
+        entry = self.get_file(path)
+
         parts = [p for p in path.split("/") if p]
-        node = self._find_node_for_path(parts[:-1])
-        filename = parts[-1]
-
-        for i in range(node.entry_count):
-            entry = self.entries[node.first_entry_index + i]
-            if entry.name != filename:
-                continue
-            if not entry.attributes & NodeAttribute.DIRECTORY:
-                return entry
-
-            sub_node = self.nodes[entry.data_offset_or_idx]
-            files = [
-                self.entries[sub_node.first_entry_index + j]
-                for j in range(sub_node.entry_count)
-                if self.entries[sub_node.first_entry_index + j].name not in (".", "..")
-                and not self.entries[sub_node.first_entry_index + j].attributes & NodeAttribute.DIRECTORY
-            ]
-            if len(files) == 1:
-                return files[0]
-            names = ", ".join(e.name for e in files)
-            raise ValueError(
-                f"'{filename}' is a directory with {len(files)} files called : {names}"
-            )
-
-        raise ArchiveFileNotFoundError(f"File not found: {path}")
-
-    def replace_file_by_path(self, path: str, data: bytes) -> None:
-        parts = [p for p in path.split("/") if p]
-        node = self._find_node_for_path(parts[:-1])
-        filename = parts[-1]
-        for i in range(node.entry_count):
-            entry = self.entries[node.first_entry_index + i]
-            if entry.name == filename and not entry.attributes & NodeAttribute.DIRECTORY:
-                entry.data = data
-                return
-        raise ArchiveFileNotFoundError(f"File not found: {path}")
+        node = self.get_node(self._dir_path(parts[:-1]))
+        self._remove_entry(node, entry)
 
     def get_bytes(self) -> bytes:
         buffer = BytesIO()
