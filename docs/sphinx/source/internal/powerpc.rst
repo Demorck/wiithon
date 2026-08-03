@@ -91,13 +91,13 @@ Sometimes:
     * /// L
 * RA is:
     * / SR
-    * /////
+    * ``/////``
     * /// L
     * FRA
     * BFA //
 * RB is:
     * NB
-    * /////
+    * ``/////``
     * FRB
     * U /
 * The last bit is:
@@ -111,7 +111,7 @@ XO-Form
 ===== ====== ======= ======= == ===== ==
 OPCD  RT     RA      RB      OE XO    RC
 OPCD  RT     RA      RB      /  XO    RC
-OPCD  RT     RA      /////   OE XO    RC
+OPCD  RT     RA      \/////  OE XO    RC
 ===== ====== ======= ======= == ===== ==
 
 M-Format

@@ -1,34 +1,32 @@
 wiithon package
 ===============
 
+.. automodule:: wiithon
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Subpackages
 -----------
 
 .. toctree::
    :maxdepth: 4
 
+   wiithon.binary
    wiithon.builder
    wiithon.crypto
-   wiithon.file_helper
-   wiithon.file_system_table
-   wiithon.helpers
-   wiithon.structs
+   wiithon.disc
+   wiithon.formats
+   wiithon.fst
+   wiithon.ppc
 
 Submodules
 ----------
 
-.. toctree::
-   :maxdepth: 4
+wiithon.exceptions module
+-------------------------
 
-   wiithon.WiiIsoPatcher
-   wiithon.WiiIsoReader
-   wiithon.WiiPartitionInfo
-   wiithon.cli
-
-Module contents
----------------
-
-.. automodule:: wiithon
+.. automodule:: wiithon.exceptions
    :members:
    :show-inheritance:
    :undoc-members:

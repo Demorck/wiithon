@@ -1,6 +1,6 @@
-=================
+==================
 Patching a Wii ISO
-=================
+==================
 
 ``WiiIsoPatcher`` lets you modify a Wii ISO and rebuild it.
 All modifications are collected first, then applied when ``build()`` is called.

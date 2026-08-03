@@ -17,7 +17,7 @@ Wiithon
     :maxdepth: 2
     :caption: API Reference
 
-    api/modules
+    api/wiithon
 
 ..  toctree::
     :maxdepth: 2

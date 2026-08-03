@@ -19,9 +19,11 @@ How Data block works ?
 ----------------------
 
 The compressed data is divided into blocks. Every block starts with a Code Byte.
+
 * This byte contains 8 bits.
 * We read these bits from left to right (MSB to LSB).
 * Each bit tells the decoder how to read the next chunk of data.
+
     * If the bit is 1: The next chunk is a single uncompressed byte. Copy it directly to the output.
     * If the bit is 0: The next chunk is a 2-byte or 3-byte pointer that tells the decoder to go back in the output and copy a sequence of bytes.
 
@@ -29,6 +31,7 @@ Decompression
 -------------
 When the bit is ``0``, you read a 2-byte pointer: ``Byte1`` and ``Byte2``.
 Let ``N`` be the first 4 bits of ``Byte1``:
+
 * **The Offset:** Combine the lower 4 bits of ``Byte1`` with the 8 bits of ``Byte2`` to get a 12-bit number.
 Add 1 to this number. This is how many bytes you go backwards in your output buffer to start copying
 
