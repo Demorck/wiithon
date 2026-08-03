@@ -290,5 +290,64 @@ class TestRarc(unittest.TestCase):
         with self.assertRaises(ArchiveEntryExistsError):
             rarc.add_file("data", b"oops")
 
+    def test_rename_file_keeps_data(self):
+        rarc = Rarc.create_empty()
+        rarc.add_file("hello.txt", b"Hello World!")
+
+        entry = rarc.rename_file("hello.txt", "greeting.txt")
+
+        self.assertEqual(entry.name, "greeting.txt")
+        self.assertEqual(entry.data, b"Hello World!")
+
+        out_stream = BytesIO()
+        rarc.write(out_stream)
+        out_stream.seek(0)
+        reloaded = Rarc.read(out_stream)
+
+        self.assertEqual(reloaded.get_file_by_path("greeting.txt").data, b"Hello World!")
+        with self.assertRaises(ArchiveFileNotFoundError):
+            reloaded.get_file_by_path("hello.txt")
+
+    def test_rename_file_with_new_data(self):
+        rarc = Rarc.create_empty()
+        rarc.add_file("hello.txt", b"old data")
+
+        entry = rarc.rename_file("hello.txt", "renamed.txt", data=b"new data")
+
+        self.assertEqual(entry.name, "renamed.txt")
+        self.assertEqual(entry.data, b"new data")
+
+    def test_rename_file_inside_subdirectory(self):
+        rarc = Rarc.create_empty()
+        rarc.add_node("sub")
+        rarc.add_file("sub/inner.txt", b"data")
+
+        rarc.rename_file("sub/inner.txt", "renamed.txt")
+
+        out_stream = BytesIO()
+        rarc.write(out_stream)
+        out_stream.seek(0)
+        reloaded = Rarc.read(out_stream)
+
+        self.assertEqual(reloaded.get_file_by_path("sub/renamed.txt").data, b"data")
+
+    def test_rename_file_not_found(self):
+        rarc = Rarc.create_empty()
+        with self.assertRaises(ArchiveFileNotFoundError):
+            rarc.rename_file("missing.txt", "new.txt")
+
+    def test_rename_file_duplicate_name_same_parent(self):
+        rarc = Rarc.create_empty()
+        rarc.add_file("a.txt", b"a")
+        rarc.add_file("b.txt", b"b")
+        with self.assertRaises(ArchiveEntryExistsError):
+            rarc.rename_file("a.txt", "b.txt")
+
+    def test_rename_file_same_name_is_noop_allowed(self):
+        rarc = Rarc.create_empty()
+        rarc.add_file("a.txt", b"a")
+        entry = rarc.rename_file("a.txt", "a.txt")
+        self.assertEqual(entry.name, "a.txt")
+
 if __name__ == '__main__':
     unittest.main()

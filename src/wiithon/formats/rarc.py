@@ -434,6 +434,32 @@ class Rarc:
 
         return entry
 
+    def rename_file(self, path: str, new_name: str, data: bytes = None) -> RarcFileEntry:
+        parts = [p for p in path.split("/") if p]
+        if not parts:
+            raise ValueError("Path must contain a file name")
+
+        node = self._find_node_for_path(parts[:-1])
+        old_name = parts[-1]
+
+        entry = None
+        for i in range(node.entry_count):
+            candidate = self.entries[node.first_entry_index + i]
+            if candidate.name == old_name and candidate.file_id != 0xFFFF and not candidate.attributes & NodeAttribute.DIRECTORY:
+                entry = candidate
+                break
+        if entry is None:
+            raise ArchiveFileNotFoundError(f"File not found in RARC: {path}")
+
+        if new_name != old_name and self._has_sibling_named(node, new_name):
+            raise ArchiveEntryExistsError(f"'{new_name}' already exists in this directory")
+
+        entry.name = new_name
+        if data is not None:
+            entry.data = data
+
+        return entry
+
     def get_file_by_path(self, path: str) -> RarcFileEntry:
         parts = [p for p in path.split("/") if p]
         node = self._find_node_for_path(parts[:-1])
