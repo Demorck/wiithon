@@ -106,7 +106,7 @@ class Rarc:
         dotdot.file_id = 0xFFFFFFFF # Top most directory
         dotdot.attributes |= NodeAttribute.DIRECTORY
         dotdot.name = ".."
-        dotdot.data_offset_or_idx = 0
+        dotdot.data_offset_or_idx = 0xFFFFFFFF
 
         obj.entries.append(dot)
         obj.entries.append(dotdot)
@@ -395,11 +395,6 @@ class Rarc:
         parts = [p for p in path.split("/") if p]
 
         if not parts:
-            return root
-
-        if "/" not in path:
-            if parts[0] != root.name:
-                raise ArchiveFileNotFoundError(f"Directory not found in RARC: {path}")
             return root
 
         node = root
