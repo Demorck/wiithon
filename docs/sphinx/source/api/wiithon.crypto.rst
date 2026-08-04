@@ -1,50 +1,46 @@
-wiithon.crypto package
-======================
+==============
+wiithon.crypto
+==============
 
-.. automodule:: wiithon.crypto
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Decryption and encryption of partition data.
 
-Submodules
-----------
+Partition data is stored in blocks of ``0x8000`` bytes, each carrying a header of
+hashes and its own AES initialisation vector. Reading is straightforward. Writing
+is not: changing a single byte means recomputing a whole tree of SHA-1 hashes
+before re-encrypting.
 
-wiithon.crypto.blocks module
-----------------------------
+..  toctree::
+    :maxdepth: 1
 
-.. automodule:: wiithon.crypto.blocks
-   :members:
-   :show-inheritance:
-   :undoc-members:
+    wiithon.crypto.part_reader
+    wiithon.crypto.part_writer
+    wiithon.crypto.blocks
+    wiithon.crypto.keys
+    wiithon.crypto.layout
 
-wiithon.crypto.keys module
---------------------------
+..  rubric:: Modules
 
-.. automodule:: wiithon.crypto.keys
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.crypto.part_reader`
+    Random access reads into a partition, decrypting blocks on demand.
 
-wiithon.crypto.layout module
-----------------------------
+:doc:`wiithon.crypto.part_writer`
+    Writes a partition, rebuilding the hash tree as it goes.
 
-.. automodule:: wiithon.crypto.layout
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.crypto.blocks`
+    Block and group level decryption and encryption.
 
-wiithon.crypto.part\_reader module
-----------------------------------
+:doc:`wiithon.crypto.keys`
+    Nintendo common keys, and title key derivation.
 
-.. automodule:: wiithon.crypto.part_reader
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.crypto.layout`
+    Block, subblock and group sizes.
 
-wiithon.crypto.part\_writer module
-----------------------------------
+..  warning::
 
-.. automodule:: wiithon.crypto.part_writer
-   :members:
-   :show-inheritance:
-   :undoc-members:
+    ``COMMON_KEYS`` contains the Nintendo common keys, required to derive the
+    title key of any retail disc.
+
+..  seealso::
+
+    :doc:`/internal/iso` describes the block layout and the hash tree, with
+    sequence diagrams.

@@ -1,90 +1,63 @@
-wiithon.disc.structs package
-============================
+====================
+wiithon.disc.structs
+====================
 
-.. automodule:: wiithon.disc.structs
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Binary structures stored on the disc, each with a ``read`` and a ``write``
+method mapping one to one onto its on-disc layout.
 
-Submodules
-----------
+You rarely build these by hand. They are produced by
+:class:`~wiithon.disc.reader.WiiIsoReader` and exposed as attributes of
+:class:`~wiithon.disc.partition.WiiPartitionInfo`.
 
-wiithon.disc.structs.apploader\_header module
----------------------------------------------
+..  toctree::
+    :maxdepth: 1
 
-.. automodule:: wiithon.disc.structs.apploader_header
-   :members:
-   :show-inheritance:
-   :undoc-members:
+    wiithon.disc.structs.disc_header
+    wiithon.disc.structs.partition_entry
+    wiithon.disc.structs.partition_header
+    wiithon.disc.structs.ticket
+    wiithon.disc.structs.ticket_time_limit
+    wiithon.disc.structs.tmd
+    wiithon.disc.structs.tmd_content
+    wiithon.disc.structs.certificate
+    wiithon.disc.structs.signature
+    wiithon.disc.structs.apploader_header
 
-wiithon.disc.structs.certificate module
----------------------------------------
+..  rubric:: Modules
 
-.. automodule:: wiithon.disc.structs.certificate
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.disc.structs.disc_header`
+    Disc header, both the unencrypted one at offset ``0x000`` and the internal
+    one found in the decrypted data.
 
-wiithon.disc.structs.disc\_header module
-----------------------------------------
+:doc:`wiithon.disc.structs.partition_entry`
+    Entries of the partition table, giving the offset and type of each partition.
 
-.. automodule:: wiithon.disc.structs.disc_header
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.disc.structs.partition_header`
+    Header of a partition, holding the ticket and the offsets to the TMD,
+    certificates, H3 table and data.
 
-wiithon.disc.structs.partition\_entry module
---------------------------------------------
+:doc:`wiithon.disc.structs.ticket`
+    Ticket, holding the encrypted title key.
 
-.. automodule:: wiithon.disc.structs.partition_entry
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.disc.structs.ticket_time_limit`
+    Time limit entries of a ticket.
 
-wiithon.disc.structs.partition\_header module
----------------------------------------------
+:doc:`wiithon.disc.structs.tmd`
+    Title metadata, describing the contents of a title.
 
-.. automodule:: wiithon.disc.structs.partition_header
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.disc.structs.tmd_content`
+    A single content entry of a TMD, with its SHA-1 hash.
 
-wiithon.disc.structs.signature module
--------------------------------------
+:doc:`wiithon.disc.structs.certificate`
+    Certificate of the signing chain.
 
-.. automodule:: wiithon.disc.structs.signature
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.disc.structs.signature`
+    Signature and key type enumerations, which determine the size of a
+    certificate.
 
-wiithon.disc.structs.ticket module
-----------------------------------
+:doc:`wiithon.disc.structs.apploader_header`
+    Header of the apploader, declaring its two payload sizes.
 
-.. automodule:: wiithon.disc.structs.ticket
-   :members:
-   :show-inheritance:
-   :undoc-members:
+..  seealso::
 
-wiithon.disc.structs.ticket\_time\_limit module
------------------------------------------------
-
-.. automodule:: wiithon.disc.structs.ticket_time_limit
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-wiithon.disc.structs.tmd module
--------------------------------
-
-.. automodule:: wiithon.disc.structs.tmd
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-wiithon.disc.structs.tmd\_content module
-----------------------------------------
-
-.. automodule:: wiithon.disc.structs.tmd_content
-   :members:
-   :show-inheritance:
-   :undoc-members:
+    :doc:`/internal/iso` documents every field and offset of these structures.

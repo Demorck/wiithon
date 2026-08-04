@@ -1,42 +1,36 @@
-wiithon.binary package
-======================
+==============
+wiithon.binary
+==============
 
-.. automodule:: wiithon.binary
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Primitives for reading and writing binary data.
 
-Submodules
-----------
+Wii discs are big endian, so :class:`~wiithon.binary.reader.BinaryReader` and
+:class:`~wiithon.binary.writer.BinaryWriter` default to big endian, with explicit
+little endian variants where a format needs them.
 
-wiithon.binary.align module
----------------------------
+..  toctree::
+    :maxdepth: 1
 
-.. automodule:: wiithon.binary.align
-   :members:
-   :show-inheritance:
-   :undoc-members:
+    wiithon.binary.reader
+    wiithon.binary.writer
+    wiithon.binary.align
+    wiithon.binary.common
 
-wiithon.binary.common module
-----------------------------
+..  rubric:: Modules
 
-.. automodule:: wiithon.binary.common
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.binary.reader`
+    Typed reads over a stream: integers, floats, strings, raw blocks.
 
-wiithon.binary.reader module
-----------------------------
+:doc:`wiithon.binary.writer`
+    The writing counterpart, with padding and fixed-size strings.
 
-.. automodule:: wiithon.binary.reader
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.binary.align`
+    Rounding an offset up to a boundary.
 
-wiithon.binary.writer module
-----------------------------
+:doc:`wiithon.binary.common`
+    Shared defaults, such as the string encoding.
 
-.. automodule:: wiithon.binary.writer
-   :members:
-   :show-inheritance:
-   :undoc-members:
+..  note::
+
+    ``u32_shifted`` reads and writes the offsets that Wii discs store
+    right-shifted by two bits. See :doc:`/internal/iso`.

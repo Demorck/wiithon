@@ -1,3 +1,11 @@
+"""
+Access to the contents of a decrypted disc partition
+
+Instances of :class:`WiiPartitionInfo` are produced by
+:meth:`wiithon.disc.reader.WiiIsoReader.open_partition`. They are not meant to be
+built directly
+"""
+
 from collections.abc import Callable
 from io import BytesIO
 from typing import List, Optional
@@ -17,19 +25,66 @@ from wiithon.formats.dol import DOL, DOL_HEADER_SIZE, DOL_TEXT_SECTIONS, DOL_DAT
 
 
 class WiiPartitionInfo:
+    """
+    A decrypted partition and everything it contains
+
+    All reads go through a :class:`~wiithon.crypto.part_reader.CryptPartReader`,
+    which decrypts blocks on demand. Nothing is held in memory beyond the file
+    system table, so reading a large file costs a disc read, not a full partition
+    decryption
+
+    Attributes:
+        header: Partition header, holding the ticket and the offsets to the TMD,
+            certificates, H3 table and data
+        tmd: Title metadata, describing the contents and their SHA-1 hashes
+        certificates: The partition certificate chain
+        internal_header: Disc header found at offset ``0x000`` of the decrypted
+            data, also known as ``boot.bin``. This is where the DOL and FST
+            offsets live
+        fst: Parsed file system table
+        crypto: Decrypting reader used for every access to partition data
+        partition_offset: Absolute offset of the partition within the ISO
+    """
     def __init__(self,  header: WiiPartitionHeader, tmd: TMD,
-                        certificates: List[Certificate], internal_header: DiscHeader,
-                        fst: FST, crypto: CryptPartReader,
-                        partition_offset: int) -> None:
-        self.header = header
-        self.tmd = tmd
-        self.certificates = certificates
-        self.internal_header = internal_header
-        self.fst = fst
-        self.crypto = crypto
-        self.partition_offset = partition_offset
+		        certificates: List[Certificate], internal_header: DiscHeader,
+		        fst: FST, crypto: CryptPartReader,
+		        partition_offset: int) -> None:
+        #: Partition header, holding the ticket and the offsets to the TMD, certificates, H3 table and data
+        self.header: WiiPartitionHeader = header
+
+        #: Title metadata, describing the contents and their SHA-1 hashes
+        self.tmd: TMD = tmd
+
+        #: The partition certificate chain
+        self.certificates: List[Certificate] = certificates
+
+        #: Disc header found at offset ``0x000`` of the decrypted data, also known as ``boot.bin``. This is where the DOL and FST offsets live
+        self.internal_header: DiscHeader = internal_header
+
+        #: Parsed file system table
+        self.fst: FST = fst
+
+        #: Decrypting reader used for every access to partition data
+        self.crypto: CryptPartReader = crypto
+
+        #: Absolute offset of the partition within the ISO
+        self.partition_offset: int = partition_offset
 
     def read_file(self, path: str) -> bytes:
+        """
+        Read a file from the partition
+
+        Args:
+            path: Path inside the partition, using ``/`` as separator, for example
+		``"StageData/HeavensDoorGalaxy.arc"``
+
+        Returns:
+            The decrypted file contents
+
+        Raises:
+            FstFileNotFoundError: If no node matches ``path``
+            FstIsADirectoryError: If ``path`` resolves to a directory
+        """
         node = self.fst.find_node(path)
 
         if node is None:
@@ -42,6 +97,16 @@ class WiiPartitionInfo:
 
 
     def read_apploader(self) -> bytes:
+        """
+		Read the apploader, the code that boots the game
+
+		The apploader header declares two payload sizes. Both are read along with
+		the header itself
+
+		Returns:
+		    The complete apploader, header included
+		"""
+
         apploader_offset = APPLOADER_OFFSET
         header_data = self.crypto.read_at(apploader_offset, APPLOADER_HEADER_SIZE)
         apploader_header = ApploaderHeader.read(BytesIO(header_data))
@@ -50,6 +115,15 @@ class WiiPartitionInfo:
         return self.crypto.read_at(apploader_offset, total_size)
 
     def read_dol(self) -> DOL:
+        """
+		Read and parse the main executable
+
+		The DOL has no explicit size on disc, so it is computed as the furthest end
+		of any text or data section declared in its header
+
+		Returns:
+		    The parsed :class:`~wiithon.formats.dol.DOL`
+		"""
         dol_offset = self.internal_header.DOL_offset
         header_data = self.crypto.read_at(dol_offset, DOL_HEADER_SIZE)
         header = DOLHeader.read(BytesIO(header_data))
@@ -65,12 +139,35 @@ class WiiPartitionInfo:
         return DOL.read(BytesIO(dol_data))
 
     def read_bi2(self) -> bytes:
+        """
+		Read ``bi2.bin``, the disc configuration block that follows the header
+
+		Returns:
+		    The raw block, read at its fixed offset and size
+		"""
         bi2_offset = BI2_OFFSET
         bi2_size = BI2_SIZE
 
         return self.crypto.read_at(bi2_offset, bi2_size)
 
     def list_files(self, node: Optional[FSTNode] = None, prefix: str = "") -> List[str]:
+        """
+		List every file in the partition, recursively
+
+		Directories are traversed but not listed. Only files appear in the result
+
+		Args:
+		    node: Directory to start from. Defaults to the root of the FST
+		    prefix: Path prefix prepended to each result
+
+		Returns:
+		    Full paths, using ``/`` as separator
+
+		Note:
+		    ``node`` and ``prefix`` drive the recursion and are not meant to be
+		    passed by callers. On a large disc the whole list is built in memory,
+		    so prefer :meth:`callback_all_files` when you only need to walk it
+		"""
         paths: list[str] = []
         entries = self.fst.entries if node is None else (
             node.children if isinstance(node, FSTDirectory) else []
@@ -86,6 +183,19 @@ class WiiPartitionInfo:
         return paths
 
     def callback_all_files(self, callback: Callable[[FSTNode], None], node: Optional[FSTNode] = None) -> None:
+        """
+		Walk every file in the partition and invoke a callback on each
+
+		Directories are traversed but never passed to the callback
+
+		Args:
+		    callback: Called once per file, with the FST node as its only argument
+		    node: Directory to start from. Defaults to the root of the FST
+
+		Note:
+		    The callback receives the node, not the full path. If you need paths,
+		    use :meth:`list_files`
+		"""
         entries = self.fst.entries if node is None else (
             node.children if isinstance(node, FSTDirectory) else []
         )

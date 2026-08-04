@@ -1,58 +1,43 @@
-wiithon.disc package
-====================
+============
+wiithon.disc
+============
 
-.. automodule:: wiithon.disc
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Reading and patching a Wii disc image, and the structures a disc is made of.
 
-Subpackages
------------
+Start with :class:`~wiithon.disc.reader.WiiIsoReader` to inspect a disc, or
+:class:`~wiithon.disc.patcher.WiiIsoPatcher` to modify one.
 
-.. toctree::
-   :maxdepth: 4
+..  toctree::
+    :maxdepth: 1
 
-   wiithon.disc.structs
+    wiithon.disc.reader
+    wiithon.disc.patcher
+    wiithon.disc.partition
+    wiithon.disc.enums
+    wiithon.disc.layout
+    wiithon.disc.structs
 
-Submodules
-----------
+..  rubric:: Modules
 
-wiithon.disc.enums module
--------------------------
+:doc:`wiithon.disc.reader`
+    Read-only access to an ISO. Parses the disc header and the partition table.
 
-.. automodule:: wiithon.disc.enums
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.disc.patcher`
+    Collects modifications and rebuilds an ISO.
 
-wiithon.disc.layout module
---------------------------
+:doc:`wiithon.disc.partition`
+    Contents of a decrypted partition: files, DOL, apploader.
 
-.. automodule:: wiithon.disc.layout
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.disc.enums`
+    Partition types.
 
-wiithon.disc.partition module
------------------------------
+:doc:`wiithon.disc.layout`
+    Fixed offsets and sizes of the disc format.
 
-.. automodule:: wiithon.disc.partition
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.disc.structs`
+    On-disc structures: header, ticket, TMD, certificates.
 
-wiithon.disc.patcher module
----------------------------
+..  seealso::
 
-.. automodule:: wiithon.disc.patcher
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-wiithon.disc.reader module
---------------------------
-
-.. automodule:: wiithon.disc.reader
-   :members:
-   :show-inheritance:
-   :undoc-members:
+    :doc:`/internal/iso` explains what these structures mean and where they sit
+    on the disc.

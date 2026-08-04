@@ -1,42 +1,40 @@
-wiithon.builder package
-=======================
+===============
+wiithon.builder
+===============
 
-.. automodule:: wiithon.builder
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Assembling a Wii ISO, partition by partition.
 
-Submodules
-----------
+:class:`~wiithon.builder.disc_builder.WiiDiscBuilder` writes the disc. It does
+not know where the content comes from: each partition is described by a
+:class:`~wiithon.builder.source.PartitionSource`, and two implementations ship
+with the library.
 
-wiithon.builder.copy\_source module
------------------------------------
+..  toctree::
+    :maxdepth: 1
 
-.. automodule:: wiithon.builder.copy_source
-   :members:
-   :show-inheritance:
-   :undoc-members:
+    wiithon.builder.disc_builder
+    wiithon.builder.source
+    wiithon.builder.copy_source
+    wiithon.builder.directory_source
 
-wiithon.builder.directory\_source module
-----------------------------------------
+..  rubric:: Modules
 
-.. automodule:: wiithon.builder.directory_source
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.builder.disc_builder`
+    Writes partitions to a stream and finalises the disc.
 
-wiithon.builder.disc\_builder module
-------------------------------------
+:doc:`wiithon.builder.source`
+    The ``PartitionSource`` interface. Implement it to build a partition from
+    somewhere else.
 
-.. automodule:: wiithon.builder.disc_builder
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.builder.copy_source`
+    Builds a partition from an existing ISO, with optional overrides of the FST,
+    the DOL and individual files. This is what ``WiiIsoPatcher`` uses.
 
-wiithon.builder.source module
------------------------------
+:doc:`wiithon.builder.directory_source`
+    Builds a partition from a directory tree on disk.
 
-.. automodule:: wiithon.builder.source
-   :members:
-   :show-inheritance:
-   :undoc-members:
+..  note::
+
+    For simple edits you do not need this package.
+    :class:`~wiithon.disc.patcher.WiiIsoPatcher` drives the builder for you.
+    See :doc:`/user_guide/patching`.

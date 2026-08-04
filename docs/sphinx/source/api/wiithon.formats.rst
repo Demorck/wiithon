@@ -1,98 +1,72 @@
-wiithon.formats package
-=======================
+===============
+wiithon.formats
+===============
 
-.. automodule:: wiithon.formats
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Nintendo file formats, readable and writable independently of any ISO.
 
-Submodules
-----------
+Every class follows the same shape: ``read(stream)`` to parse, ``write(stream)``
+or ``get_bytes()`` to serialise back.
 
-wiithon.formats.archive module
-------------------------------
+..  toctree::
+    :maxdepth: 1
 
-.. automodule:: wiithon.formats.archive
-   :members:
-   :show-inheritance:
-   :undoc-members:
+    wiithon.formats.rarc
+    wiithon.formats.u8
+    wiithon.formats.yaz0
+    wiithon.formats.lz77
+    wiithon.formats.dol
+    wiithon.formats.dol_header
+    wiithon.formats.bcsv
+    wiithon.formats.bnr
+    wiithon.formats.imet
+    wiithon.formats.imd5
+    wiithon.formats.archive
 
-wiithon.formats.bcsv module
----------------------------
+..  rubric:: Archives
 
-.. automodule:: wiithon.formats.bcsv
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.formats.rarc`
+    Nintendo archive format, used to bundle game assets.
 
-wiithon.formats.bnr module
---------------------------
+:doc:`wiithon.formats.u8`
+    Archive format used by banners and channel content.
 
-.. automodule:: wiithon.formats.bnr
-   :members:
-   :show-inheritance:
-   :undoc-members:
+..  rubric:: Compression
 
-wiithon.formats.dol module
---------------------------
+:doc:`wiithon.formats.yaz0`
+    Run-length compression, common on RARC archives.
 
-.. automodule:: wiithon.formats.dol
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.formats.lz77`
+    LZ77 compression, used inside banner assets.
 
-wiithon.formats.dol\_header module
-----------------------------------
+..  rubric:: Executable
 
-.. automodule:: wiithon.formats.dol_header
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.formats.dol`
+    The main game executable, with section access and code injection.
 
-wiithon.formats.imd5 module
----------------------------
+:doc:`wiithon.formats.dol_header`
+    Section table of a DOL.
 
-.. automodule:: wiithon.formats.imd5
-   :members:
-   :show-inheritance:
-   :undoc-members:
+..  rubric:: Data
 
-wiithon.formats.imet module
----------------------------
+:doc:`wiithon.formats.bcsv`
+    Typed table format with hashed column names.
 
-.. automodule:: wiithon.formats.imet
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.formats.bnr`
+    ``opening.bnr``, the banner shown in the Wii menu.
 
-wiithon.formats.lz77 module
----------------------------
+:doc:`wiithon.formats.imet`
+    IMET header of a banner, holding the localised titles.
 
-.. automodule:: wiithon.formats.lz77
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.formats.imd5`
+    IMD5 header and checksum, wrapping banner assets.
 
-wiithon.formats.rarc module
----------------------------
+..  rubric:: Protocols
 
-.. automodule:: wiithon.formats.rarc
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.formats.archive`
+    Structural types describing what an archive and a container must provide,
+    used by ``WiiIsoPatcher.edit_as``.
 
-wiithon.formats.u8 module
--------------------------
+..  seealso::
 
-.. automodule:: wiithon.formats.u8
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-wiithon.formats.yaz0 module
----------------------------
-
-.. automodule:: wiithon.formats.yaz0
-   :members:
-   :show-inheritance:
-   :undoc-members:
+    :doc:`/user_guide/file_formats` for task-oriented examples, and
+    :doc:`/internal/rarc` and :doc:`/internal/yaz0` for the on-disc encodings.

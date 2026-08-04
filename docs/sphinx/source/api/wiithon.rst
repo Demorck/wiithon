@@ -1,32 +1,49 @@
-wiithon package
-===============
+=======
+wiithon
+=======
 
-.. automodule:: wiithon
-   :members:
-   :show-inheritance:
-   :undoc-members:
+..  automodule:: wiithon
 
-Subpackages
------------
+..  toctree::
+    :maxdepth: 1
 
-.. toctree::
-   :maxdepth: 4
+    wiithon.disc
+    wiithon.builder
+    wiithon.formats
+    wiithon.fst
+    wiithon.binary
+    wiithon.crypto
+    wiithon.ppc
+    wiithon.exceptions
 
-   wiithon.binary
-   wiithon.builder
-   wiithon.crypto
-   wiithon.disc
-   wiithon.formats
-   wiithon.fst
-   wiithon.ppc
+..  rubric:: Packages
 
-Submodules
-----------
+:doc:`wiithon.disc`
+    Reading and patching a disc image. This is where you start.
 
-wiithon.exceptions module
--------------------------
+:doc:`wiithon.builder`
+    Assembling a new ISO from partitions.
 
-.. automodule:: wiithon.exceptions
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.formats`
+    Nintendo file formats: RARC, U8, Yaz0, DOL, BCSV, BNR.
+
+:doc:`wiithon.fst`
+    The file system table of a partition.
+
+:doc:`wiithon.binary`
+    Endian-aware primitives for reading and writing binary data.
+
+:doc:`wiithon.crypto`
+    AES decryption and the hash tree of partition data.
+
+:doc:`wiithon.ppc`
+    PowerPC instruction encoding, for code injection.
+
+:doc:`wiithon.exceptions`
+    Every exception the library raises.
+
+..  note::
+
+    The names listed in the package docstring above are re-exported for
+    convenience. ``from wiithon import Rarc`` and
+    ``from wiithon.formats.rarc import Rarc`` are equivalent.

@@ -1,50 +1,32 @@
-wiithon.fst package
-===================
+===========
+wiithon.fst
+===========
 
-.. automodule:: wiithon.fst
-   :members:
-   :show-inheritance:
-   :undoc-members:
+The file system table of a partition: the tree of directories and files, and its
+serialisation back to disc.
 
-Submodules
-----------
+..  toctree::
+    :maxdepth: 1
 
-wiithon.fst.node module
------------------------
+    wiithon.fst.tree
+    wiithon.fst.node
+    wiithon.fst.operations
+    wiithon.fst.serializer
+    wiithon.fst.raw_node
 
-.. automodule:: wiithon.fst.node
-   :members:
-   :show-inheritance:
-   :undoc-members:
+..  rubric:: Modules
 
-wiithon.fst.operations module
------------------------------
+:doc:`wiithon.fst.tree`
+    The ``FST`` itself: reading, writing and lookup.
 
-.. automodule:: wiithon.fst.operations
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.fst.node`
+    Nodes of the tree: the abstract node, files and directories.
 
-wiithon.fst.raw\_node module
-----------------------------
+:doc:`wiithon.fst.operations`
+    Finding, adding and removing a node by path.
 
-.. automodule:: wiithon.fst.raw_node
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.fst.serializer`
+    Turns a tree back into the flat node array and string table stored on disc.
 
-wiithon.fst.serializer module
------------------------------
-
-.. automodule:: wiithon.fst.serializer
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-wiithon.fst.tree module
------------------------
-
-.. automodule:: wiithon.fst.tree
-   :members:
-   :show-inheritance:
-   :undoc-members:
+:doc:`wiithon.fst.raw_node`
+    The 12-byte on-disc representation of a node.
