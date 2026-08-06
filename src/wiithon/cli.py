@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import TYPE_CHECKING, Annotated, NoReturn, Optional
 
 import typer
 from rich.console import Console
@@ -10,12 +10,17 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
 from rich.table import Table
 from rich.tree import Tree
+
 from wiithon.disc.structs.partition_entry import WiiPartitionEntry
+
+from io import BytesIO
+from wiithon import Rarc
+from wiithon import Yaz0
 
 from wiithon.disc.reader import WiiIsoReader
 
 
-class WiiPartType(str, Enum):
+class DiscPartType(str, Enum):
     data = "data"
     update = "update"
     channel = "channel"
@@ -33,7 +38,7 @@ console = Console()
 err_console = Console(stderr=True, style="bold red")
 
 # Helpers
-def _abort(msg: str) -> None:
+def _abort(msg: str) -> NoReturn:
     err_console.print(f"Error: {msg}")
     raise typer.Exit(code=1)
 
@@ -45,17 +50,26 @@ def _require_file(path: Path) -> None:
 
 def _select_partitions(
     reader: WiiIsoReader,
-    partition_type: Optional[WiiPartType],
+    partition_type: Optional[DiscPartType],
 ) -> list[WiiPartitionEntry]:
     """Return the partition matching the type or all if none"""
     if partition_type is None:
         return list(reader.partitions)
 
-    candidates = [p for p in reader.partitions if p.get_readable_part_type() == partition_type]
+    wanted = DiscPartType[partition_type.name.upper()]
+    candidates = [p for p in reader.partitions if p.part_type == wanted]
     if not candidates:
         _abort(f"No {partition_type.name} partition found.")
 
     return candidates
+
+def _read_rarc(path: Path) -> Rarc:
+    """Read a RARC archive, transparently decompressing Yaz0 if needed."""
+    data = path.read_bytes()
+    if data[:4] == b"Yaz0":
+        data = Yaz0.read(BytesIO(data)).data
+
+    return Rarc.read(BytesIO(data))
 
 #################################
 ##########   ISO    #############
@@ -82,11 +96,7 @@ def iso_info(
         table.add_row("Disc",       str(h.disc_num))
         table.add_row("Version",    str(h.disc_version))
 
-        type_names = {0: "DATA", 1: "UPDATE", 2: "CHANNEL"}
-        parts = ", ".join(
-            type_names.get(p.part_type, f"#{p.part_type}")
-            for p in reader.partitions
-        )
+        parts = ", ".join(p.get_readable_part_type().upper() for p in reader.partitions)
         table.add_row("Partitions", parts)
 
         console.print(Panel(table, title=f"[bold]{iso.name}[/bold]", expand=False))
@@ -94,7 +104,7 @@ def iso_info(
 @iso_app.command("list")
 def iso_list(
         iso: Annotated[Path, typer.Argument(help="Path to the Wii ISO.")],
-        partition_type: Annotated[Optional[WiiPartType], typer.Option("--partition", "-p", help="Choose the partition type to list")] = None,
+        partition_type: Annotated[Optional[DiscPartType], typer.Option("--partition", "-p", help="Choose the partition type to list")] = None,
         tree: Annotated[bool, typer.Option("--tree", "-t", help="Display as a tree")] = False,
 ) -> None:
     """List all files from a partition"""
@@ -139,7 +149,7 @@ def iso_extract(
         iso: Annotated[Path, typer.Argument(help="Path to the Wii ISO.")],
         dest: Annotated[Path, typer.Argument(help="Output directory.")],
         partition_type: Annotated[
-            Optional[WiiPartType], typer.Option("--partition", "-p", help="Choose the partition type to list")
+            Optional[DiscPartType], typer.Option("--partition", "-p", help="Choose the partition type to list")
         ] = None
 ) -> None:
     """Extract all files from a partition"""
@@ -183,7 +193,7 @@ def dol_caves(
         iso: Annotated[Path, typer.Argument(help="Path to the Wii ISO")],
         min_size: Annotated[int, typer.Option("--min-size", "-m", help="The minimum size of the cave")] = 0x20,
         partition_type: Annotated[
-            Optional[WiiPartType], typer.Option("--partition", "-p", help="Choose the partition type to list")
+            Optional[DiscPartType], typer.Option("--partition", "-p", help="Choose the partition type to list")
         ] = None
 ) -> None:
     """Find all code caves in a dol file"""
@@ -215,16 +225,9 @@ def rarc_infos(
 ) -> None:
     """Print information and list files about a RARC archive"""
     _require_file(rarc)
+    from wiithon.formats.rarc import NodeAttribute
 
-    from io import BytesIO
-    from wiithon.formats.rarc import Rarc, NodeAttribute
-    from wiithon.formats.yaz0 import Yaz0
-
-    data = rarc.read_bytes()
-    if data[:4] == b"Yaz0":
-        data = Yaz0.read(BytesIO(data)).data
-
-    arc = Rarc.read(BytesIO(data))
+    arc = _read_rarc(rarc)
     table = Table("Name", "Size (in bytes)", "ID")
     for entry in arc.entries:
         if entry.file_id != 0xFFFF and not entry.attributes & NodeAttribute.DIRECTORY:
@@ -240,16 +243,8 @@ def rarc_extract(
     """Extract all files from a RARC archive"""
     _require_file(rarc)
     dest.mkdir(parents=True, exist_ok=True)
-
-    from io import BytesIO
-    from wiithon.formats.rarc import Rarc, NodeAttribute
-    from wiithon.formats.yaz0 import Yaz0
-
-    data = rarc.read_bytes()
-    if data[:4] == b"Yaz0":
-        data = Yaz0.read(BytesIO(data)).data
-
-    arc = Rarc.read(BytesIO(data))
+    from wiithon.formats.rarc import NodeAttribute
+    arc = _read_rarc(rarc)
     arc.extract_to(str(dest))
 
     count = sum(1 for e in arc.entries if e.file_id != 0xFFFF and not e.attributes & NodeAttribute.DIRECTORY)
