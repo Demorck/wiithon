@@ -10,6 +10,10 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
 from rich.table import Table
 from rich.tree import Tree
+from wiithon.disc.structs.partition_entry import WiiPartitionEntry
+
+from wiithon.disc.reader import WiiIsoReader
+
 
 class WiiPartType(str, Enum):
     data = "data"
@@ -38,6 +42,20 @@ def _require_file(path: Path) -> None:
         _abort(f"{path} does not exist.")
     if not path.is_file():
         _abort(f"{path} is not a file.")
+
+def _select_partitions(
+    reader: WiiIsoReader,
+    partition_type: Optional[WiiPartType],
+) -> list[WiiPartitionEntry]:
+    """Return the partition matching the type or all if none"""
+    if partition_type is None:
+        return list(reader.partitions)
+
+    candidates = [p for p in reader.partitions if p.get_readable_part_type() == partition_type]
+    if not candidates:
+        _abort(f"No {partition_type.name} partition found.")
+
+    return candidates
 
 #################################
 ##########   ISO    #############
@@ -85,15 +103,7 @@ def iso_list(
     from wiithon.disc.reader import WiiIsoReader
 
     with WiiIsoReader(str(iso)) as reader:
-        candidates = [
-            p for p in reader.partitions
-            if partition_type is None or p.get_readable_part_type() == partition_type
-        ]
-
-        if partition_type is not None and not candidates:
-            _abort(f"No {partition_type.name} partition found.")
-
-        for p in candidates:
+        for p in _select_partitions(reader, partition_type):
             files = reader.open_partition(p).list_files()
             label = p.get_readable_part_type()
 
@@ -139,15 +149,8 @@ def iso_extract(
     from wiithon.disc.reader import WiiIsoReader
 
     with WiiIsoReader(str(iso)) as reader:
-        candidates = [
-            p for p in reader.partitions
-            if partition_type is None or p.get_readable_part_type() == partition_type
-        ]
-
-        if partition_type is not None and not candidates:
-            _abort(f"No {partition_type.name} partition found.")
-
-        for p in candidates:
+        total = 0
+        for p in _select_partitions(reader, partition_type):
             root = dest / p.get_readable_part_type()
             partition = reader.open_partition(p)
             files = partition.list_files()
@@ -155,7 +158,7 @@ def iso_extract(
 
             with Progress(
                 SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}]"),
+                TextColumn("[progress.description]{task.description}"),
                 BarColumn(),
                 TextColumn("{task.completed}/{task.total}"),
                 TimeElapsedColumn()
@@ -167,9 +170,10 @@ def iso_extract(
                     out.write_bytes(partition.read_file(path))
                     progress.advance(task)
 
-            console.print(f"[green]ヾ(≧▽≦*)o[/green] Extracted {len(files)} file(s) to [bold]{dest}[/bold]")
+            total += len(files)
+            console.print(f"[green]ヾ(≧▽≦*)o[/green] Extracted {len(files)} file(s) to [bold]{root}[/bold]")
 
-    console.print(f"\n[bold]{len(files)}[/bold] file(s) extracted, yeiii (p≧w≦q)")
+    console.print(f"\n[bold]{total}[/bold] file(s) extracted, yeiii (p≧w≦q)")
 
 #################################
 ##########   DOL    #############
@@ -188,16 +192,7 @@ def dol_caves(
     from wiithon.disc.reader import WiiIsoReader
 
     with WiiIsoReader(str(iso)) as reader:
-        candidates = [
-            p for p in reader.partitions
-            if partition_type is None or p.get_readable_part_type() == partition_type
-        ]
-
-
-        if partition_type is not None and not candidates:
-            _abort(f"No {partition_type.name} partition found.")
-
-        for partition in candidates:
+        for partition in _select_partitions(reader, partition_type):
             part = reader.open_partition(partition)
             dol = part.read_dol()
             table = Table("Section type", "Section number", "Start address", "Length")
