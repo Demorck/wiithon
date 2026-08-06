@@ -7,7 +7,7 @@ from typer.testing import CliRunner
 from wiithon.cli import app
 
 COMMANDS = [
-    ["iso", "info"], ["iso", "list"], ["iso", "extract"],
+    ["iso", "info"], ["iso", "list"], ["iso", "extract"], ["iso", "cat"],
     ["dol", "caves"],
     ["rarc", "info"], ["rarc", "extract"], ["rarc", "pack"],
 ]
