@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import json
+import sys
 from enum import Enum
 from pathlib import Path
-from typing import NoReturn, Optional
+from typing import NoReturn, Optional, Annotated
 
 import typer
 from rich.console import Console
@@ -14,12 +16,13 @@ from wiithon.disc.structs.partition_entry import WiiPartitionEntry
 console = Console()
 err_console = Console(stderr=True, style="bold red")
 
+JsonOption = Annotated[bool, typer.Option("--json", help="Emit machine-readable JSON on stdout.")]
+
 
 class PartTypeChoice(str, Enum):
     data = "data"
     update = "update"
     channel = "channel"
-
 
 def abort(msg: str) -> NoReturn:
     err_console.print(f"Error: {msg}")
@@ -47,3 +50,6 @@ def select_partitions(
         abort(f"No {partition_type.name} partition found.")
 
     return candidates
+
+def write_json(data) -> None:
+    sys.stdout.write(json.dumps(data, indent=2, ensure_ascii=False) + "\n")

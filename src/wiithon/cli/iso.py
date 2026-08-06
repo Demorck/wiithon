@@ -12,12 +12,42 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeEl
 from rich.table import Table
 from rich.tree import Tree
 
-from wiithon.cli._common import PartTypeChoice, console, require_file, select_partitions, abort
+from wiithon.cli._common import PartTypeChoice, console, require_file, select_partitions, abort, JsonOption, write_json
 from wiithon import WiiIsoReader, FSTDirectory, FSTFile
 
 iso_app = typer.Typer(help="Operations on Wii ISO files.")
 
 _HEXDUMP_WIDTH = 16
+
+PartitionTypeOption: Annotated[
+    Optional[PartTypeChoice],
+    typer.Option("--partition", "-p",
+                 help="Choose the partition type to list")
+    ]
+
+def _collect_info(reader: WiiIsoReader) -> dict:
+    header = reader.disc_header
+    return {
+        "game_id":     header.game_id.decode("ascii").strip("\x00"),
+        "title":       header.game_title.strip(),
+        "disc_number": header.disc_num,
+        "version":     header.disc_version,
+        "partitions":  [p.get_readable_part_type() for p in reader.partitions],
+    }
+
+
+def _render_info(data: dict, name: str) -> Panel:
+    table = Table(show_header=False, box=None, padding=(0, 2))
+    table.add_column(style="bold cyan")
+    table.add_column()
+
+    table.add_row("Game ID",    data["game_id"])
+    table.add_row("Title",      data["title"])
+    table.add_row("Disc",       str(data["disc_number"]))
+    table.add_row("Version",    str(data["version"]))
+    table.add_row("Partitions", ", ".join(p.upper() for p in data["partitions"]))
+
+    return Panel(table, title=f"[bold]{name}[/bold]", expand=False)
 
 def _find_in_partitions(reader, entries, path: str):
     """Return (partition, node) for the first partition containing path"""
@@ -77,31 +107,23 @@ def _print_tree(paths: list[str], partition_type: str) -> None:
 @iso_app.command("info")
 def iso_info(
     iso: Annotated[Path, typer.Argument(help="Path to the Wii ISO.")],
+    as_json: JsonOption = False,
 ) -> None:
     """Display metadata from a Wii ISO disc header."""
     require_file(iso)
 
     with WiiIsoReader(str(iso)) as reader:
-        h = reader.disc_header
+        data = _collect_info(reader)
 
-        table = Table(show_header=False, box=None, padding=(0, 2))
-        table.add_column(style="bold cyan")
-        table.add_column()
-
-        table.add_row("Game ID",    h.game_id.decode("ascii").strip("\x00"))
-        table.add_row("Title",      h.game_title.strip())
-        table.add_row("Disc",       str(h.disc_num))
-        table.add_row("Version",    str(h.disc_version))
-
-        parts = ", ".join(p.get_readable_part_type().upper() for p in reader.partitions)
-        table.add_row("Partitions", parts)
-
-        console.print(Panel(table, title=f"[bold]{iso.name}[/bold]", expand=False))
+    if as_json:
+        write_json(data)
+    else:
+        console.print(_render_info(data, iso.name))
 
 @iso_app.command("list")
 def iso_list(
     iso: Annotated[Path, typer.Argument(help="Path to the Wii ISO.")],
-    partition_type: Annotated[Optional[PartTypeChoice], typer.Option("--partition", "-p", help="Choose the partition type to list")] = None,
+    partition_type: PartitionTypeOption = None,
     tree: Annotated[bool, typer.Option("--tree", "-t", help="Display as a tree")] = False,
 ) -> None:
     """List all files from a partition"""
@@ -127,9 +149,7 @@ def iso_list(
 def iso_extract(
     iso: Annotated[Path, typer.Argument(help="Path to the Wii ISO.")],
     dest: Annotated[Path, typer.Argument(help="Output directory.")],
-    partition_type: Annotated[
-        Optional[PartTypeChoice], typer.Option("--partition", "-p", help="Choose the partition type to list")
-    ] = None,
+    partition_type: PartitionTypeOption = None,
     file: Annotated[
         Optional[str], typer.Option("--file", "-f", help="Extract only this file or directory.")
     ] = None,
@@ -180,9 +200,7 @@ def iso_extract(
 def iso_cat(
         iso: Annotated[Path, typer.Argument(help="Path to the Wii ISO.")],
         path: Annotated[str, typer.Argument(help="Path of the file inside the partition.")],
-        partition_type: Annotated[
-            Optional[PartTypeChoice], typer.Option("--partition", "-p", help="Restrict the lookup to this partition type")
-        ] = None,
+        partition_type: PartitionTypeOption = None,
         limit: Annotated[int, typer.Option("--bytes", "-n", help="Bytes to show in hexdump mode (0 = all).")] = 512,
 ) -> None:
     """Print one file from a partition: hexdump on a terminal, raw bytes when piped"""
