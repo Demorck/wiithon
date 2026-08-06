@@ -32,18 +32,6 @@ class WiiPartitionInfo:
     which decrypts blocks on demand. Nothing is held in memory beyond the file
     system table, so reading a large file costs a disc read, not a full partition
     decryption
-
-    Attributes:
-        header: Partition header, holding the ticket and the offsets to the TMD,
-            certificates, H3 table and data
-        tmd: Title metadata, describing the contents and their SHA-1 hashes
-        certificates: The partition certificate chain
-        internal_header: Disc header found at offset ``0x000`` of the decrypted
-            data, also known as ``boot.bin``. This is where the DOL and FST
-            offsets live
-        fst: Parsed file system table
-        crypto: Decrypting reader used for every access to partition data
-        partition_offset: Absolute offset of the partition within the ISO
     """
     def __init__(self,  header: WiiPartitionHeader, tmd: TMD,
 		        certificates: List[Certificate], internal_header: DiscHeader,

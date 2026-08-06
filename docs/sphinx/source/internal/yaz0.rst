@@ -33,9 +33,10 @@ When the bit is ``0``, you read a 2-byte pointer: ``Byte1`` and ``Byte2``.
 Let ``N`` be the first 4 bits of ``Byte1``:
 
 * **The Offset:** Combine the lower 4 bits of ``Byte1`` with the 8 bits of ``Byte2`` to get a 12-bit number.
-Add 1 to this number. This is how many bytes you go backwards in your output buffer to start copying
+    Add 1 to this number. This is how many bytes you go backwards in your output buffer to start copying
 
 * **The Length**:
+
     * If ``N > 0`` (2-Byte Encoding): The length is ``N + 2``.
     * If ``N == 0`` (3-Byte Encoding): Read a 3rd byte (``Byte3``). The length is ``Byte3 + 0x12``.
 

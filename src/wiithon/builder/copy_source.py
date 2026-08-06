@@ -6,9 +6,7 @@ import os
 
 from typing import Callable, List, Optional
 
-from wiithon.disc.enums import WiiPartType
-
-from wiithon import WiiPartitionInfo
+from wiithon.disc.partition import WiiPartitionInfo
 from wiithon.disc.structs.certificate import Certificate
 from wiithon.disc.structs.disc_header import DiscHeader
 from wiithon.disc.structs.tmd import TMD

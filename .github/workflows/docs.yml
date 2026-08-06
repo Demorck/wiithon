@@ -26,7 +26,6 @@ jobs:
       - name: Build documentation
         run: sphinx-build -W --keep-going -b html docs/sphinx/source docs/sphinx/build/html
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-pages-artifact@v3
         with:
-          name: docs-html
           path: docs/sphinx/build/html
