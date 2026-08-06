@@ -14,13 +14,13 @@ from rich.tree import Tree
 from wiithon.disc.structs.partition_entry import WiiPartitionEntry
 
 from io import BytesIO
-from wiithon import Rarc
+from wiithon import Rarc, WiiPartType
 from wiithon import Yaz0
 
 from wiithon.disc.reader import WiiIsoReader
 
 
-class DiscPartType(str, Enum):
+class PartTypeChoice(str, Enum):
     data = "data"
     update = "update"
     channel = "channel"
@@ -50,13 +50,13 @@ def _require_file(path: Path) -> None:
 
 def _select_partitions(
     reader: WiiIsoReader,
-    partition_type: Optional[DiscPartType],
+    partition_type: Optional[PartTypeChoice],
 ) -> list[WiiPartitionEntry]:
     """Return the partition matching the type or all if none"""
     if partition_type is None:
         return list(reader.partitions)
 
-    wanted = DiscPartType[partition_type.name.upper()]
+    wanted = WiiPartType[partition_type.name.upper()]
     candidates = [p for p in reader.partitions if p.part_type == wanted]
     if not candidates:
         _abort(f"No {partition_type.name} partition found.")
@@ -104,7 +104,7 @@ def iso_info(
 @iso_app.command("list")
 def iso_list(
         iso: Annotated[Path, typer.Argument(help="Path to the Wii ISO.")],
-        partition_type: Annotated[Optional[DiscPartType], typer.Option("--partition", "-p", help="Choose the partition type to list")] = None,
+        partition_type: Annotated[Optional[PartTypeChoice], typer.Option("--partition", "-p", help="Choose the partition type to list")] = None,
         tree: Annotated[bool, typer.Option("--tree", "-t", help="Display as a tree")] = False,
 ) -> None:
     """List all files from a partition"""
@@ -149,7 +149,7 @@ def iso_extract(
         iso: Annotated[Path, typer.Argument(help="Path to the Wii ISO.")],
         dest: Annotated[Path, typer.Argument(help="Output directory.")],
         partition_type: Annotated[
-            Optional[DiscPartType], typer.Option("--partition", "-p", help="Choose the partition type to list")
+            Optional[PartTypeChoice], typer.Option("--partition", "-p", help="Choose the partition type to list")
         ] = None
 ) -> None:
     """Extract all files from a partition"""
@@ -193,7 +193,7 @@ def dol_caves(
         iso: Annotated[Path, typer.Argument(help="Path to the Wii ISO")],
         min_size: Annotated[int, typer.Option("--min-size", "-m", help="The minimum size of the cave")] = 0x20,
         partition_type: Annotated[
-            Optional[DiscPartType], typer.Option("--partition", "-p", help="Choose the partition type to list")
+            Optional[PartTypeChoice], typer.Option("--partition", "-p", help="Choose the partition type to list")
         ] = None
 ) -> None:
     """Find all code caves in a dol file"""
