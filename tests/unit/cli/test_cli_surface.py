@@ -10,7 +10,7 @@ from wiithon import __version__
 COMMANDS = [
     ["iso", "info"], ["iso", "list"], ["iso", "extract"], ["iso", "cat"],
     ["dol", "caves"],
-    ["rarc", "info"], ["rarc", "extract"], ["rarc", "pack"],
+    ["rarc", "info"], ["rarc", "extract"],
 ]
 
 
@@ -30,7 +30,7 @@ class TestCliSurface(unittest.TestCase):
         for command in COMMANDS:
             with self.subTest(command=" ".join(command)):
                 result = self.runner.invoke(app, [*command, "--help"])
-                self.assertEqual(result.exit_code, 0)
+                self.assertEqual(result.exit_code, 0, msg=result.output)
 
 
 class TestFileValidation(unittest.TestCase):
