@@ -4,26 +4,23 @@ import sys
 
 import typer
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, Optional, List
 
 from rich.markup import escape
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
 from rich.table import Table
 from rich.tree import Tree
+from wiithon.disc.structs.partition_entry import WiiPartitionEntry
 
-from wiithon.cli._common import PartTypeChoice, console, require_file, select_partitions, abort, JsonOption, write_json
+from wiithon.cli._common import console, require_file, select_partitions, abort, JsonOption, write_json, \
+    render_table, PartitionTypeOption
 from wiithon import WiiIsoReader, FSTDirectory, FSTFile
 
 iso_app = typer.Typer(help="Operations on Wii ISO files.")
 
 _HEXDUMP_WIDTH = 16
 
-PartitionTypeOption: Annotated[
-    Optional[PartTypeChoice],
-    typer.Option("--partition", "-p",
-                 help="Choose the partition type to list")
-    ]
 
 def _collect_info(reader: WiiIsoReader) -> dict:
     header = reader.disc_header
@@ -35,6 +32,14 @@ def _collect_info(reader: WiiIsoReader) -> dict:
         "partitions":  [p.get_readable_part_type() for p in reader.partitions],
     }
 
+def _collect_files(reader: WiiIsoReader, entries: List[WiiPartitionEntry]) -> list[dict]:
+    return [
+        {
+            "partition": entry.get_readable_part_type(),
+            "files": reader.open_partition(entry).list_files(),
+        }
+        for entry in entries
+    ]
 
 def _render_info(data: dict, name: str) -> Panel:
     table = Table(show_header=False, box=None, padding=(0, 2))
@@ -125,24 +130,25 @@ def iso_list(
     iso: Annotated[Path, typer.Argument(help="Path to the Wii ISO.")],
     partition_type: PartitionTypeOption = None,
     tree: Annotated[bool, typer.Option("--tree", "-t", help="Display as a tree")] = False,
+    as_json: JsonOption = False,
 ) -> None:
     """List all files from a partition"""
     require_file(iso)
 
     with WiiIsoReader(str(iso)) as reader:
-        for p in select_partitions(reader, partition_type):
-            files = reader.open_partition(p).list_files()
-            label = p.get_readable_part_type()
+        data = _collect_files(reader, select_partitions(reader, partition_type))
 
-            if tree:
-                _print_tree(files, label)
-            else:
-                table = Table("Path")
-                for f in files:
-                    table.add_row(f)
-                console.print(table)
+    if as_json:
+        write_json(data)
+        return
 
-            console.print(f"\n[bold]{len(files)}[/bold] file(s)")
+    for part in data:
+        if tree:
+            _print_tree(part["files"], part["partition"])
+        else:
+            console.print(render_table(["Path"], ([f] for f in part["files"])))
+
+        console.print(f"\n[bold]{len(part['files'])}[/bold] file(s)")
 
 # TODO: Adding an option to extract sys files (dol, bnr, etc.)
 @iso_app.command("extract")

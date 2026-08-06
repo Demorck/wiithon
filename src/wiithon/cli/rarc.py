@@ -7,13 +7,18 @@ import typer
 from pathlib import Path
 from typing import Annotated
 
-from rich.panel import Panel
-from rich.table import Table
-
 from wiithon import Rarc, Yaz0
-from wiithon.cli._common import console, require_file, abort
+from wiithon.formats.rarc import NodeAttribute
+from wiithon.cli._common import console, require_file, JsonOption, write_json, render_table, titled_panel
 
 rarc_app = typer.Typer(help="Operations on RARC files.")
+
+def _collect_rarc_entries(arc: Rarc) -> list[dict]:
+    return [
+        {"name": entry.name, "size": len(entry.data), "id": entry.file_id}
+        for entry in arc.entries
+        if entry.file_id != 0xFFFF and not entry.attributes & NodeAttribute.DIRECTORY
+    ]
 
 def _read_rarc(path: Path) -> Rarc:
     """Read a RARC archive, transparently decompressing Yaz0 if needed."""
@@ -26,18 +31,22 @@ def _read_rarc(path: Path) -> Rarc:
 @rarc_app.command("info")
 def rarc_infos(
     rarc: Annotated[Path, typer.Argument(help="Path to the RARC archive.")],
+    as_json: JsonOption = False,
 ) -> None:
-    """Print information and list files about a RARC archive"""
+    """Print information and list files about a RARC archive. Does not resolve directory for now"""
     require_file(rarc)
-    from wiithon.formats.rarc import NodeAttribute
 
-    arc = _read_rarc(rarc)
-    table = Table("Name", "Size (in bytes)", "ID")
-    for entry in arc.entries:
-        if entry.file_id != 0xFFFF and not entry.attributes & NodeAttribute.DIRECTORY:
-            table.add_row(entry.name, f"{str(len(entry.data))}", str(entry.file_id))
+    data = _collect_rarc_entries(_read_rarc(rarc))
 
-    console.print(Panel(table, title=f"[bold]{rarc.name}[/bold]", expand=False))
+    if as_json:
+        write_json(data)
+        return
+
+    table = render_table(
+        ["Name", "Size (in bytes)", "ID"],
+        ([entry["name"], str(entry["size"]), str(entry["id"])] for entry in data),
+    )
+    console.print(titled_panel(table, rarc.name))
 
 @rarc_app.command("extract")
 def rarc_extract(
@@ -47,7 +56,6 @@ def rarc_extract(
     """Extract all files from a RARC archive"""
     require_file(rarc)
     dest.mkdir(parents=True, exist_ok=True)
-    from wiithon.formats.rarc import NodeAttribute
     arc = _read_rarc(rarc)
     arc.extract_to(str(dest))
 
