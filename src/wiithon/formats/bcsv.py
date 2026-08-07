@@ -130,16 +130,17 @@ def calculate_field_hash(field_name: str) -> int:
 
 class BCSVType(IntEnum):
     """
-    Indicates the type of data that will be stored in each field type.
-    Strings are deprecated and should use of type STRING_OFFSET instead.
-    Longs, Short, and Byte should all AND the read value with the field's bitmask and then
-        shift the result by the field's shift amount.
-    LONG and UNSIGNED_LONG are 32-bit integers. (Signedness not specified, as it can be both)
-    FLOAT are 32-bit. (Signedness not specified, as it can be both)
-    Short are 16-bit integers (Signedness not specified, as it can be both)
-    BYTE is single char/8-bit integers (Signedness not specified, as it can be both)
-    Floats are read and written as is.
-    String_Offset return the offset from the start of the string pool table where the string can be found.
+    Indicates the type of data stored in each field.
+
+    Strings are deprecated, use ``STRING_OFFSET`` instead.
+    ``LONG``, ``SHORT`` and ``BYTE`` values must be ANDed with the field's bitmask,
+    then shifted by the field's shift amount.
+
+    * ``LONG`` / ``UNSIGNED_LONG`` — 32-bit integers (signedness unspecified, can be both)
+    * ``FLOAT`` — 32-bit, read and written as is
+    * ``SHORT`` — 16-bit integer (signedness unspecified)
+    * ``BYTE`` — single char / 8-bit integer (signedness unspecified)
+    * ``STRING_OFFSET`` — offset from the start of the string pool table
     """
     LONG = 0 # 32-bit integer.
     STRING = 1 # Embedded string. Deprecated.
@@ -166,16 +167,22 @@ class StringPoolElement(NamedTuple):
 
 class BCSVField:
     """
-    Represents a singular field of data in a BCSV file. Similar to a column in a data table.
-    Fields are indexed by hashes and its named are defaulted to its hash stringified, however a
-        field_hash->name converter function is provided.
+    Represents a single field of data in a BCSV file, similar to a column in a data table.
 
-    BCSV File Headers are comprised of 12 bytes in total.
-    The first 4 bytes represent the field's hash. Currently, it is unknown how a field's name becomes a hash.
-    The second 4 bytes represent the field's bitmask.
-    The next 2 bytes represent the starting byte for the field within a given data line in the BCSV file.
-    The second to last byte represents shift amount used on the field's value.
-    The last byte represents the data type, see BCSVType for value -> type conversion.
+    Fields are indexed by hash and their name defaults to the stringified hash.
+    A ``field_hash -> name`` converter function is provided.
+
+    A BCSV file header is 12 bytes:
+
+    ========  =========================================================
+    Offset    Meaning
+    ========  =========================================================
+    ``0x00``  Field hash (how a name becomes a hash is unknown)
+    ``0x04``  Field bitmask
+    ``0x08``  Starting byte of the field within a data line
+    ``0x0A``  Shift amount applied to the field's value
+    ``0x0B``  Data type, see :class:`BCSVType`
+    ========  =========================================================
     """
     field_hash: int = 0
     field_name: str = None
@@ -386,14 +393,16 @@ class BCSVEntry(dict[str, BCSVValue]):
 
 class BCSV:
     """
-    BCSV Files are table-structured format files that contain a giant header block and data entry block.
-    These files remark a similar structure to modern day data tables, with one key difference
-        The header block contains the definition of all field headers (columns) and field data
-            Definition of these headers does not matter.
-        The data block contains the table row data one line at a time. Each row is represented as a single list index,
-            where a dictionary maps the key (column) to the value.
-        And lastly, all strings are defined in a string table that is appended at the end of the data itself.
-    BCSV Files also start with 16 bytes that are useful to explain the rest of the structure of the file.
+    BCSV files are table-structured: a header block followed by a data entry block.
+    The structure resembles a modern data table, with one key difference:
+
+    * The header block defines all field headers (columns) and field data.
+      The order of these definitions does not matter.
+    * The data block contains the rows, one at a time. Each row is a single list
+      index where a dictionary maps the key (column) to the value.
+    * All strings live in a string table appended at the end of the data.
+
+    BCSV files start with 16 bytes describing the rest of the file structure.
     """
     fields: list[BCSVField]
     entries: list[BCSVEntry]
@@ -577,11 +586,13 @@ class BCSV:
     def calculate_data_entry_size(self) -> int:
         """
         Calculates the size of the entry based on the field's data type.
-        Order of the entry size calculation is the following:
+
+        Order of the entry size calculation is::
+
             STRING < FLOAT < LONG < LONG_2 < SHORT < BYTE < STRING_OFFSET
 
         Returns:
-            int: Max field size thats required when writing.
+            int: Max field size required when writing.
         """
         return max([field.field_offset + field.get_field_size() for field in self.fields])
 

@@ -1,3 +1,9 @@
+"""
+Assembling a Wii disc image from partitions
+
+:class:`WiiDiscBuilder` writes partitions one after another, then closes the disc. Where the content comes from is
+the job of a :class:`~wiithon.builder.source.PartitionSource`
+"""
 import itertools
 import struct
 import hashlib
@@ -21,13 +27,24 @@ from wiithon.disc.structs.partition_header import WiiPartitionHeader
 U64_SIZE: int = 8
 
 def fakesign_tmd(tmd_bytes: bytearray, h3: bytes, data_size: int) -> None:
-    """Patch a TMD in place so Dolphin accepts it without a valid signature.
+    """
+    Patch a TMD in place so Dolphin accepts it without a valid signature
 
-    Writes the H3 hash and the partition data size, zeroes the signature,
-    then brute-forces the padding until the SHA-1 of the signed blob starts
-    with a null byte.
+    Writes the H3 hash and the partition data size, zeroes the signature, then brute-forces the padding until the
+    SHA-1 of the signed blob starts with a null byte
 
-    See https://wiibrew.org/wiki/Title_metadata
+    Args:
+        tmd_bytes: TMD to patch, modified in place
+        h3: H3 hash table of the partition, as returned by the crypt writer
+        data_size: Size of the partition data, aligned to a full group
+
+    Note:
+        The resulting signature is not valid.
+
+    See Also:
+
+        - https://wiibrew.org/wiki/Title_metadata
+        - https://wiibrew.org/wiki/Signing_bug
     """
     tmd_bytes[TMD_H3_HASH_OFFSET: TMD_H3_HASH_OFFSET + SHA1_SIZE] = hashlib.sha1(h3).digest()
     tmd_bytes[TMD_DATA_SIZE_OFFSET: TMD_DATA_SIZE_OFFSET + U64_SIZE] = struct.pack(">Q", data_size)
@@ -39,10 +56,32 @@ def fakesign_tmd(tmd_bytes: bytearray, h3: bytes, data_size: int) -> None:
             break
 
 class WiiDiscBuilder:
+    """
+    Writes a Wii disc image, one partition at a time
+
+    Call :meth:`add_partition` for each partition, then :meth:`finish` once. Partitions are laid out in the order
+    they are added, starting at the first partition offset, and the builder tracks where the next one goes
+
+    Example:
+        >>> with open("out.iso", "w+b") as dest:
+        ...     builder = WiiDiscBuilder(disc_header, region)
+        ...     builder.add_partition(dest, source, None)
+        ...     builder.finish(dest)
+
+    See Also:
+        :class:`~wiithon.disc.patcher.WiiIsoPatcher` drives this class for you when patching an existing disc
+    """
     def __init__(self, header: DiscHeader, region: bytes):
+        #: Unencrypted disc header written at the start of the image
         self.header: DiscHeader = header
+
+        #: Raw region bytes
         self.region: bytes = region
+
+        #: One tuple per partition added so far, consumed by :meth:`finish` to write the partition table
         self.partitions: List[tuple] = []
+
+        #: Offset where the next partition will be written, advanced by :meth:`add_partition`
         self.current_data_offset = FIRST_PARTITION_OFFSET
 
     def _write_certificate_chain(self, stream: BinaryIO, part_data_off: int,
@@ -117,12 +156,24 @@ class WiiDiscBuilder:
             if not by_bytes and progress_cb:
                 progress_cb(int((processed_files / len(files)) * 100))
 
-    def add_partition(self, stream: BinaryIO, new_partition: PartitionSource, progress_cb: Optional[Callable]) -> None:
+    def add_partition(self, stream: BinaryIO, new_partition: PartitionSource, progress_cb: Optional[Callable] = None) -> None:
         """
-        :param stream:
-        :param new_partition:
-        :param progress_cb:
-        :return:
+        Write one partition to the stream
+
+        Pulls every piece from the source, writes the ticket, TMD and certificate chain in clear, then the system
+        files and the file data through an encrypting writer. Once the data is placed, the FST is rewritten with
+        the real offsets, the H3 table is stored, and the TMD is fakesigned
+
+        The partition is padded to a whole number of encryption groups, and
+        :attr:`current_data_offset` is advanced past it
+
+        Args:
+            stream: Destination, opened in binary read and write mode. It must be seekable
+            new_partition: Where the content of this partition comes from
+            progress_cb: Called with an integer percentage from 0 to 100 as file data is written, or ``None``.
+
+        Note:
+            Progress restarts at 0 for every partition, since the builder has no idea how many will follow
         """
         if progress_cb:
             progress_cb(0)
@@ -196,6 +247,18 @@ class WiiDiscBuilder:
 
 
     def finish(self, stream: BinaryIO) -> None:
+        """
+        Close the disc image
+
+        Writes the disc header, the partition table describing every partition added so far, the region and the
+        magic word. Call this once, after the last :meth:`add_partition`
+
+        Args:
+            stream: The same stream the partitions were written to
+
+        Warning:
+            A disc image whose :meth:`finish` was never called has no partition table and will not boot
+        """
         stream.seek(0)
         self.header.write(stream)
         stream.seek(PARTITION_TABLE_OFFSET)
