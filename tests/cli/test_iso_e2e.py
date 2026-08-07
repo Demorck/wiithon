@@ -37,10 +37,10 @@ class TestIsoExtract(IsoCliTestCase):
 
 class TestIsoCat(IsoCliTestCase):
 
-    def test_prints_hexdump_offsets(self):
-        result = self.invoke("iso", "cat", self.iso, "saint_bernard.jpg", "-n", "64")
+    def test_cat_writes_raw_bytes_when_piped(self):
+        result = self.invoke("iso", "cat", self.iso, "saint_bernard.jpg")
         self.assertEqual(result.exit_code, 0)
-        self.assertIn("00000000", result.stdout)
+        self.assertTrue(result.stdout_bytes.startswith(b"\xff\xd8\xff"))
 
     def test_unknown_path_exits_with_1(self):
         result = self.invoke("iso", "cat", self.iso, "nope.bin")

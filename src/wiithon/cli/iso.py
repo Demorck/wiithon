@@ -88,10 +88,10 @@ def _print_hexdump(data: bytes, limit: int) -> None:
         chunk = shown[offset:offset + _HEXDUMP_WIDTH]
         hexa = " ".join(f"{b:02x}" for b in chunk).ljust(_HEXDUMP_WIDTH * 3 - 1)
         text = "".join(chr(b) if 0x20 <= b < 0x7F else "." for b in chunk)
-        console.print(f"[dim]{offset:08x}[/dim]  {hexa}  [cyan]{escape(text)}[/cyan]")
+        console.print(f"[dim]{offset:08x}[/dim]  {hexa}  [cyan]{escape(text)}[/cyan]", soft_wrap=True)
 
     if limit and len(data) > limit:
-        console.print(f"\n[dim]... {len(data) - limit} more byte(s), use -n 0 to print everything[/dim]")
+        console.print(f"\n[dim]... {len(data) - limit} more byte(s), use -n 0 to print everything[/dim]", soft_wrap=True)
 
 def _print_tree(paths: list[str], partition_type: str) -> None:
     root = Tree(f"[bold cyan]{partition_type.upper()} partition[/bold cyan]")
