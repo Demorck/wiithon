@@ -40,7 +40,7 @@ to the function that initialises the heap. The sequence is remarkably stable acr
     lis    r3, HI      ; 3c 60 ?? ??   <- the instruction to patch
     addi   r3, r3, LO  ; 38 63 ?? ??
     addi   r0, r3, 31  ; 38 03 ?? ??
-    rlwinm r3, r0, ?   ; 54 03 ?? ??
+    rlwinm r3, r0, n   ; 54 03 ?? ??
 
 The last two instructions round the value up to a 32-byte boundary, which is what makes the pattern
 recognisable: a bare ``lis``/``addi`` pair is everywhere, but one immediately followed by an align-to-32 is not.

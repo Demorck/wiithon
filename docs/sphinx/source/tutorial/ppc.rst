@@ -24,16 +24,16 @@ Registers
 
 There are 32 general purpose registers, ``r0`` to ``r31``. The ones you will meet constantly:
 
-=========  ==================================================================
-Register   Role
-=========  ==================================================================
-``r0``     Scratch. Reads as literal zero in some addressing forms
-``r1``     Stack pointer.
-``r2``     Pointer to the read-only small data area
-``r3``     First argument, and the return value
-``r4-r10`` Further arguments
-``r13``    Pointer to the read-write small data area
-=========  ==================================================================
+==========  ==================================================================
+Register    Role
+==========  ==================================================================
+``r0``      Scratch. Reads as literal zero in some addressing forms
+``r1``      Stack pointer. Do not clobber it
+``r2``      Pointer to the read-only small data area
+``r3``      First argument, and the return value
+``r4-r10``  Further arguments
+``r13``     Pointer to the read-write small data area
+==========  ==================================================================
 
 If you remember one line of this table, make it ``r3``. It carries the first argument on the way in and the
 return value on the way out, which is why almost every patch you will ever write touches it
