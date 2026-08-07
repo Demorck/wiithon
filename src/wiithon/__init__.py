@@ -39,7 +39,7 @@ __all__ = [
     "WiithonError", "BinaryError",
     "InvalidFormatError", "InvalidDiscError", "CorruptedDataError", "NoDataPartitionError",
     "FstError", "FstFileNotFoundError", "FstIsADirectoryError",
-    "ArchiveError", "ArchiveFileNotFoundError", "ArchiveIsADirectoryError", "ArchiveEntryExistsError"
+    "ArchiveError", "ArchiveFileNotFoundError", "ArchiveIsADirectoryError", "ArchiveEntryExistsError",
     "DolError", "DolSectionNotFoundError", "DolSectionOverlapError", "DolNoFreeSectionError",
     "BCSVFileError",
 
