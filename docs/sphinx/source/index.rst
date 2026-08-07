@@ -15,6 +15,12 @@ Wiithon
 
 ..  toctree::
     :maxdepth: 2
+    :caption: Tutorial
+
+    tutorial/index
+
+..  toctree::
+    :maxdepth: 3
     :caption: API Reference
 
     api/wiithon
