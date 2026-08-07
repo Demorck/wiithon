@@ -32,7 +32,7 @@ from wiithon.formats.u8 import U8
 from wiithon.formats.yaz0 import Yaz0
 from wiithon.formats.lz77 import Lz77
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 __all__ = [
     # Exceptions
