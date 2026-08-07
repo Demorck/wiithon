@@ -43,7 +43,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/Demorck/wiithon"
 Issues = "https://github.com/Demorck/wiithon/issues"
-Documentation = "https://github.com/Demorck/wiithon/tree/master/docs"
+Documentation = "https://demorck.github.io/wiithon/"
 
 [project.scripts]
 wiithon = "wiithon.cli:app"
