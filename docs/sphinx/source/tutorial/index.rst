@@ -13,7 +13,8 @@ Each chapter stands on its own. Read the one you need.
     dol
     ppc
     code_injection
-
+    files
+    rebuilding
 
 ..  rubric:: Chapters
 
@@ -26,6 +27,12 @@ Each chapter stands on its own. Read the one you need.
 
 :doc:`code_injection`
     Adding new code to a game that has no room for it, and why the heap is the obstacle
+
+:doc:`files`
+    Adding, removing or modifying files
+
+:doc:`rebuilding`
+    Rebuilding the ISO and save your progress
 
 ..  note::
 
