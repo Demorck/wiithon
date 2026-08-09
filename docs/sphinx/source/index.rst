@@ -14,6 +14,12 @@ Wiithon
     user_guide/cli
 
 ..  toctree::
+    :maxdepth: 1
+    :caption: Glossary
+
+    glossary
+
+..  toctree::
     :maxdepth: 2
     :caption: Tutorial
 
