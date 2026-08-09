@@ -521,6 +521,7 @@ class TestRarc(unittest.TestCase):
         rarc = Rarc.create_empty()
         rarc.add_node("sub")
         rarc.remove_node("/sub")
+        rarc.add_node("sub2")
 
         out_stream = BytesIO()
         rarc.write(out_stream)
