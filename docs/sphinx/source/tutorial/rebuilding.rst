@@ -7,13 +7,13 @@ Rebuilding the disc
 Nothing is patched in place
 ===========================
 
-There is no such thing as editing a Wii ISO in place. Every partition is written again from the beginning, and
+There is no such thing as editing a Wii ISO in place. Every :term:`partition` is written again from the beginning and
 the source disc is only ever read
 
 That is not a design preference, it is forced by the format. Partition data is stored in blocks of ``0x8000``
-bytes and each block carries hashes of its own contents. Those hashes feed into a tree covering the whole
-partition whose root ends up in the TMD (Title metadata). Change one byte of one file and the hashes of its block, its
-subgroup, and its group all change
+bytes and each :term:`block` carries hashes of its own contents. Those hashes feed into a tree covering the whole
+partition whose root ends up in the :term:`TMD` (Title metadata). 
+Change one byte of one file and the hashes of its block, its subgroup and its :term:`group` all change
 
 ..  code-block:: text
 
@@ -38,14 +38,14 @@ For each partition:
 
 #. the certificate chain is written unencrypted, after the space reserved for the ticket and the TMD
 #. an encrypting writer is opened over the data area
-#. ``bi2``, the apploader, the DOL and the FST are written, and the DOL and FST offsets are recorded in the
-   internal disc header as each one lands
-#. every file is written in FST order, each aligned to a boundary, and **each node's offset and length are
+#. ``bi2``, the :term:`apploader`, the :term:`DOL` and the :term:`FST` are written, 
+   and the DOL and FST offsets are recorded in the internal disc header as each one lands
+#. every file is written in FST order, each aligned to a boundary and **each node's offset and length are
    rewritten as the file lands**
 #. the total size is rounded up to a whole number of encryption groups
 #. the FST is written a second time, now that every offset is known
 #. the internal disc header is written at offset 0 of the data area
-#. the writer is closed, which finalises the hash tree, and the H3 table is written
+#. the writer is closed, which finalises the hash tree and the :term:`H3` table is written
 #. the TMD is fakesigned against that H3 table, then written
 #. the partition header, which carries the ticket, is written at the very start of the partition
  
@@ -54,7 +54,7 @@ Then, once for the disc, the header, the partition table, the region and the mag
 
 Step 4 is the one worth remembering. **The offsets in the FST you hand to the builder are ignored.** They are
 overwritten with wherever the file actually ended up. This is why replacing a file with a bigger one needs no
-special handling, and why you never compute an offset yourself
+special handling and why you never compute an offset yourself
 
 Size
 ====
@@ -91,7 +91,7 @@ It restarts at 0 for every partition, since the builder has no idea how many wil
 Signatures
 ==========
 
-The TMD is fakesigned: the real signature is zeroed, and the padding is brute-forced until the SHA-1 of the
+The TMD is fakesigned: the real signature is zeroed and the padding is brute-forced until the SHA-1 of the
 signed blob starts with a null byte. This exploits the signature check of the original IOS
 
 Verifying
@@ -116,4 +116,4 @@ That rules out most of what can go wrong structurally
 ..  tip::
 
     Keep a build that works. When a patch breaks the game, the useful question is what changed since the last
-    good build, and that question is much easier to answer when the last good build still exists
+    good build and that question is much easier to answer when the last good build still exists

@@ -2,7 +2,7 @@
 PowerPC Instruction Reference
 =============================
 
-This document covers the PowerPC instructions implemented in
+This document covers the :term:`PowerPC` instructions implemented in
 ``src/helpers/PowerPC.py``, targeting the Broadway CPU found in the
 Nintendo Wii. All functions return 4 bytes in big-endian order, ready to
 be patched directly into a Wii ISO.

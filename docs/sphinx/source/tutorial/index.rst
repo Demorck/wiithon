@@ -19,14 +19,14 @@ Each chapter stands on its own. Read the one you need.
 ..  rubric:: Chapters
 
 :doc:`dol`
-    The game executable: how it is laid out, how to read and write memory in it, and where the free space is. Changing
+    The game executable: how it is laid out, how to read and write memory in it and where the free space is. Changing
     the game code is here.
 
 :doc:`ppc`
-    Enough PowerPC to write your own patches and the traps of a fixed-width instructions set
+    Enough :term:`PowerPC` to write your own patches and the traps of a fixed-width instructions set
 
 :doc:`code_injection`
-    Adding new code to a game that has no room for it, and why the heap is the obstacle
+    Adding new code to a game that has no room for it and why the heap is the obstacle
 
 :doc:`files`
     Adding, removing or modifying files

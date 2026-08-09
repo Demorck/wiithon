@@ -10,7 +10,9 @@ Overview
 --------
 
 A Wii disc is an ISO image of **4.7 GB** (single-layer) or **8.5 GB** (dual-layer) organized in successive layers. 
-There are several levels: **Disc Header**, **Partition Table**, **Partition Headers** (containing the `Ticket`_ and `TMD`_), then **AES decryption** of the data to finally access the **File System Table** (FST).
+There are several levels: :term:`Disc Header`, :term:`Partition Table<Partition>`, Partition Headers (containing the
+:term:`Ticket` and :term:`TMD`, then **AES decryption** of the data to finally access
+the **File System Table** (:term:`FST`).
 
 ..  figure::images/disc_organization.png
 
@@ -22,38 +24,39 @@ Disc Header (``0x000`` – ``0x440``)
 
 The **Disc Header** sits at the very beginning of the ISO (offset ``0x000``). It is read unencrypted and holds the global disc metadata.
 
-+-----------+-----------+---------------------------+------------------------------------------------------------------------+
-| Offset    | Size      | Field                     | Description                                                            |
-+===========+===========+===========================+========================================================================+
-| ``0x000`` | ``0x06``  | Game ID                   | Unique game identifier (like ``RMGE01`` for Super Mario Galaxy NTSC-U) |
-+-----------+-----------+---------------------------+------------------------------------------------------------------------+
-| ``0x006`` | ``0x01``  | Disc Number               | Disc number (0 for single-disc games)                                  |
-+-----------+-----------+---------------------------+------------------------------------------------------------------------+
-| ``0x007`` | ``0x01``  | Disc Version              | Disc version                                                           |
-+-----------+-----------+---------------------------+------------------------------------------------------------------------+
-| ``0x008`` | ``0x01``  | Audio Streaming           | Audio streaming enable flag                                            |
-+-----------+-----------+---------------------------+------------------------------------------------------------------------+
-| ``0x009`` | ``0x01``  | Stream Buffer Size        | Streaming buffer size                                                  |
-+-----------+-----------+---------------------------+------------------------------------------------------------------------+
-| ``0x018`` | ``0x04``  | Wii Magic Word            | Must be ``0x5D1C9EA3`` for a valid Wii disc                            |
-+-----------+-----------+---------------------------+------------------------------------------------------------------------+
-| ``0x01C`` | ``0x04``  | GameCube Magic Word       | ``0xC2339F3D`` for GameCube                                            |
-+-----------+-----------+---------------------------+------------------------------------------------------------------------+
-| ``0x020`` | ``0x40``  | Game Title                | Game name in ASCII                                                     |
-+-----------+-----------+---------------------------+------------------------------------------------------------------------+
-| ``0x060`` | ``0x01``  | Disable Hash Verification | If set, disables H3 hash verification                                  |
-+-----------+-----------+---------------------------+------------------------------------------------------------------------+
-| ``0x061`` | ``0x01``  | Disable Disc Encryption   | If set, the disc is unencrypted                                        |
-+-----------+-----------+---------------------------+------------------------------------------------------------------------+
-| ``0x080`` | ``0x380`` | Padding                   | Just ``\x00``                                                          |
-+-----------+-----------+---------------------------+------------------------------------------------------------------------+
++-----------+-----------+-----------------------------------+------------------------------------------------------------------------+
+| Offset    | Size      | Field                             | Description                                                            |
++===========+===========+===================================+========================================================================+
+| ``0x000`` | ``0x06``  | :term:`Game ID`                   | Unique game identifier (like ``RMGE01`` for Super Mario Galaxy NTSC-U) |
++-----------+-----------+-----------------------------------+------------------------------------------------------------------------+
+| ``0x006`` | ``0x01``  | Disc Number                       | Disc number (0 for single-disc games)                                  |
++-----------+-----------+-----------------------------------+------------------------------------------------------------------------+
+| ``0x007`` | ``0x01``  | Disc Version                      | Disc version                                                           |
++-----------+-----------+-----------------------------------+------------------------------------------------------------------------+
+| ``0x008`` | ``0x01``  | Audio Streaming                   | Audio streaming enable flag                                            |
++-----------+-----------+-----------------------------------+------------------------------------------------------------------------+
+| ``0x009`` | ``0x01``  | Stream Buffer Size                | Streaming buffer size                                                  |
++-----------+-----------+-----------------------------------+------------------------------------------------------------------------+
+| ``0x018`` | ``0x04``  | Wii Magic Word                    | Must be ``0x5D1C9EA3`` for a valid Wii disc                            |
++-----------+-----------+-----------------------------------+------------------------------------------------------------------------+
+| ``0x01C`` | ``0x04``  | GameCube Magic Word               | ``0xC2339F3D`` for GameCube                                            |
++-----------+-----------+-----------------------------------+------------------------------------------------------------------------+
+| ``0x020`` | ``0x40``  | Game Title                        | Game name in ASCII                                                     |
++-----------+-----------+-----------------------------------+------------------------------------------------------------------------+
+| ``0x060`` | ``0x01``  | Disable Hash Verification | If set, disables :term:`H3` hash verification                                  |
++-----------+-----------+-----------------------------------+------------------------------------------------------------------------+
+| ``0x061`` | ``0x01``  | Disable Disc Encryption           | If set, the disc is unencrypted                                        |
++-----------+-----------+-----------------------------------+------------------------------------------------------------------------+
+| ``0x080`` | ``0x380`` | Padding                           | Just ``\x00``                                                          |
++-----------+-----------+-----------------------------------+------------------------------------------------------------------------+
 
 
 
 Internal Header (inside decrypted data)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Once the DATA partition is decrypted, a **second Disc Header** (internal, called ``boot.bin``) is found at offset ``0x000`` of the decrypted data. It additionally contains:
+Once the DATA partition is decrypted, a **second Disc Header** (internal, called ``boot.bin``) is found at offset
+``0x000`` of the decrypted data. It additionally contains the :term:`DOL` and FST informations:
 
 +-----------+----------+--------------+----------------------------+
 | Offset    | Size     | Field        | Description                |
@@ -74,7 +77,7 @@ Once the DATA partition is decrypted, a **second Disc Header** (internal, called
 Partition Table (``0x40000``)
 -----------------------------
 
-The partition table is always at the fixed offset ``0x40000``. It defines 4 partition groups, each consisting of:
+The partition table is always at the fixed offset ``0x40000``. It defines 4 partition :term:`group` s, each consisting of:
 
 +--------+----------+----------------------------------------+
 | Field  | Size     | Description                            |
@@ -145,7 +148,8 @@ Here is the content of a Partition Header
 Ticket - Title key decryption
 -----------------------------
 
-Tickets contains the encrypted AES title key and the title ID of the data. Ticket are signed from a certificate chain.
+Tickets contains the encrypted AES :term:`title key` and the title ID of the data.
+Ticket are signed from a certificate chain.
 
 Title key decryption process
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -221,8 +225,8 @@ Here is the structure
 
 
 
-CMD (Content MetaData)
--------------------------
+:term:`CMD` (Content MetaData)
+------------------------------
 
 Each CMD has this structre:
 
@@ -240,8 +244,8 @@ Each CMD has this structre:
 | ``0x10`` | ``0x14`` | SHA1 hash  |
 +----------+----------+------------+
 
-Certificate chain
------------------
+:term:`Certificate chain`
+-------------------------
 
 Most chains contains 3 certificated, each padded to 0x40.
 
@@ -304,8 +308,11 @@ Partition data is encrypted with AES-128-CBC using the title key. The layout is:
 
     Tree of data encryption
 
-Block structure
-^^^^^^^^^^^^^^^
+:term:`Block` structure
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Each block has a :term:`Merkle Tree` node, the :term:`IV` and their encrypted data.
+
 +-----------+------------+-----------------------------+
 | Offset    | Length     | Description                 |
 +===========+============+=============================+

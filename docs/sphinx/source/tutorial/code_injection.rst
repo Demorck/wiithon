@@ -2,17 +2,17 @@
 Code injection
 ==============
 
-Adding a few instructions is easy. Adding a *routine* is not, and the reason has nothing to do with the DOL
+Adding a few instructions is easy. Adding a *routine* is not and the reason has nothing to do with the :term:`DOL`
 format.
 
 Why you cannot just append a section
 ====================================
 
-A Wii game does not own the whole of MEM1. Its static data ends somewhere, and everything above that point is
-the heap, which the game calls the arena. The lower bound of the arena is a value named **arenaLo**.
+A Wii game does not own the whole of :term:`MEM1`. Its static data ends somewhere and everything above that point is
+the heap, which the game calls the arena. The lower bound of the arena is a value named :term:`arenaLo`.
 
 If you declare a new section above the game's data, you are declaring it inside the heap. The game will
-allocate over your code within the first seconds of running, and your code will be replaced by a bunch of zeroes (or
+allocate over your code within the first seconds of running and your code will be replaced by a bunch of zeroes (or
 maybe a crash, sometimes)
 
 ..  warning::
@@ -22,9 +22,9 @@ maybe a crash, sometimes)
     allocated shortly after.
 
 The fix is to move arenaLo up, so the heap starts above your code instead of on top of it. The game loses that
-much memory, and everything else keeps working.
+much memory and everything else keeps working.
 
-You are probably wondering: "Why can't I put my code between the end of bss and arenaLo ?". And the question is
+You are probably wondering: "Why can't I put my code between the end of :term:`bss` and arenaLo ?". And the question is
 completely correct. There is a bunch of static data, maybe written by the compiler for fast access. In Super Mario
 Galaxy, Mario Object pointer is written in ``0x806B7B40``, between ``bss_end`` and start of ``arenaLo``.
 
@@ -78,7 +78,7 @@ Injecting
 =========
 
 :meth:`~wiithon.formats.dol.DOL.inject_above_arena` does the whole dance: it finds the setter, reads the
-current arenaLo, places your sections above it, and rewrites the setter to point past them.
+current arenaLo, places your sections above it and rewrites the setter to point past them.
 
 ..  code-block:: python
 
@@ -110,7 +110,7 @@ Reserving a fixed region
 ------------------------
 
 By default arenaLo is moved to just past your code, so **every time your code changes size, every address
-moves**. That makes iteration painful, and it invalidates any address you hardcoded elsewhere.
+moves**. That makes iteration painful and it invalidates any address you hardcoded elsewhere.
 
 ``reserved_size`` fixes the layout:
 
@@ -140,7 +140,7 @@ Limits
 ======
 
 **Section slots.** A DOL holds 7 text and 11 data sections. ``inject_above_arena`` takes a free text slot if
-there is one, falls back to a data slot, and raises
+there is one, falls back to a data slot and raises
 :class:`~wiithon.exceptions.DolNoFreeSectionError` when both are exhausted. Most retail games use 2 text and 8
 to 9 data sections, so you have room, but not unlimited room. Concatenate your code into fewer sections rather
 than adding one per function.
@@ -150,5 +150,5 @@ megabytes will make a game that allocates near its limit fail in ways that look 
 
 ..  seealso::
 
-    :doc:`ppc` for writing the code you are about to inject, and :doc:`dol` for code caves, which are the
+    :doc:`ppc` for writing the code you are about to inject and :doc:`dol` for code caves, which are the
     better option below a hundred bytes or so.

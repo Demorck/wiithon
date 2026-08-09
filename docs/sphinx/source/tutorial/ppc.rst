@@ -2,7 +2,7 @@
 PowerPC for patching
 =========================
 
-The Wii runs a PowerPC 750CL, nicknamed Broadway. It is 32-bit, big endian, and every instruction is exactly
+The Wii runs a PowerPC 750CL, nicknamed Broadway. It is 32-bit, big endian and every instruction is exactly
 four bytes. That last property is what makes binary patching practical: you can always overwrite one
 instruction with another without moving anything.
 
@@ -30,7 +30,7 @@ Register    Role
 ``r0``      Scratch. Reads as literal zero in some addressing forms
 ``r1``      Stack pointer. Do not clobber it
 ``r2``      Pointer to the read-only small data area
-``r3``      First argument, and the return value
+``r3``      First argument and the return value
 ``r4-r10``  Further arguments
 ``r13``     Pointer to the read-write small data area
 ==========  ==================================================================
@@ -38,7 +38,7 @@ Register    Role
 If you remember one line of this table, make it ``r3``. It carries the first argument on the way in and the
 return value on the way out, which is why almost every patch you will ever write touches it
 
-Two special registers matter for patching. ``LR`` holds the return address, and ``CTR`` is used for indirect
+Two special registers matter for patching. ``LR`` holds the return address and ``CTR`` is used for indirect
 calls. ``ppc.mflr`` and ``ppc.mtlr`` move values in and out of ``LR``.
 
 32-bit constant
@@ -58,15 +58,15 @@ instructions: one for the top half, one for the bottom.
     ``addi`` you must compensate by incrementing the high half.
 
 That is not a theoretical concern. It is exactly why :meth:`~wiithon.formats.dol.DOL.patch_arena_lo` emits an
-``ori``, and why :meth:`~wiithon.formats.dol.DOL.read_arena_lo` checks the opcode before decoding::
+``ori`` and why :meth:`~wiithon.formats.dol.DOL.read_arena_lo` checks the opcode before decoding::
 
     lo = (lo_raw - 0x10000) if ((w1 >> 26) == 14 and lo_raw >= 0x8000) else lo_raw
 
 Opcode 14 is ``addi``. When the original game used one, the low half has to be read back as signed.
 
-Written by hand, loading ``0x8069CCA0`` means emitting ``3C608069`` then ``6063CCA0``, and remembering that
+Written by hand, loading ``0x8069CCA0`` means emitting ``3C608069`` then ``6063CCA0`` and remembering that
 the second word would have to be ``60630000 | 0xCCA0``. Now do it for an address ending in ``0x8004``, with
-``addi`` this time. That is the kind of arithmetic you get wrong once, at two in the morning, and spend an
+``addi`` this time. That is the kind of arithmetic you get wrong once, at two in the morning and spend an
 evening tracking down.
 
 Branches are relative
@@ -80,7 +80,7 @@ instruction will live:
     ppc.b(target=0x80600000, from_addr=0x80123456)    # jump
     ppc.bl(target=0x80600000, from_addr=0x80123456)   # call, sets LR
 
-Getting ``from_addr`` wrong produces a branch that lands somewhere else entirely, and the game will crash far
+Getting ``from_addr`` wrong produces a branch that lands somewhere else entirely and the game will crash far
 from the actual mistake.
 
 ``ba`` and ``bla`` take an absolute target instead, but the encoding only carries 26 bits, so they can only
@@ -89,7 +89,7 @@ reach the low addresses. They are rarely what you want on Wii.
 Common patches
 ==============
 
-**Neutralise a call.** The single most useful patch, and the safest, since the surrounding code keeps its
+**Neutralise a call.** The single most useful patch and the safest, since the surrounding code keeps its
 layout:
 
 ..  code-block:: python
@@ -102,13 +102,13 @@ layout:
 
     dol.write_at(0x80123456, ppc.li(3, 1) + ppc.blr()) # true = 1
 
-**Change a constant.** Find the ``li`` that sets a lives counter, and rewrite it:
+**Change a constant.** Find the ``li`` that sets a lives counter and rewrite it:
 
 ..  code-block:: python
 
     dol.write_at(0x80123456, ppc.li(3, 99))
 
-**Hook a function.** Replace one instruction with a call to your own code, and have your code end with
+**Hook a function.** Replace one instruction with a call to your own code and have your code end with
 ``blr``:
 
 ..  code-block:: python

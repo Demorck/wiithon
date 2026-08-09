@@ -3,7 +3,7 @@ Yaz0 Format
 ===========
 
 ``Yaz0`` is a compression algorithm developed by Nintendo.
-It is a variant of the LZ77 compression algorithm, which reduces file size by replacing repeated sequences of data with references (pointers) to sequences that have already occurred earlier in the file.
+It is a variant of the :term:`LZ77` compression algorithm, which reduces file size by replacing repeated sequences of data with references (pointers) to sequences that have already occurred earlier in the file.
 
 File Structure
 --------------
@@ -53,8 +53,8 @@ Compressing data into Yaz0 is more complext since it requires a sliding windows 
 
 * Look at the current position in the uncompressed file
 * Search the last 4096 bytes to find if the current sequence of bytes has appeared before
-* f a match is found and is at least ``3 bytes`` long, calculate the distance (offset) and the length, and encode it as a 0 bit followed by a 2-byte or 3-byte pointer
-* Otherwise, leave the byte uncompressed, encode it as a 1 bit, and write the raw byte.
+* f a match is found and is at least ``3 bytes`` long, calculate the distance (offset) and the length and encode it as a 0 bit followed by a 2-byte or 3-byte pointer
+* Otherwise, leave the byte uncompressed, encode it as a 1 bit and write the raw byte.
 * Group bits into blocks of 8 to create the Code Byte
 
 Flowchart

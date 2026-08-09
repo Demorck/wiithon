@@ -8,11 +8,12 @@ three layers deep inside an archive is what this chapter is
 What a path is
 ==============
 
-A partition stores its files in a file system table, the FST. Despite the name, it is not a tree on disc: it is
-a flat array of nodes. A directory node records the index where its contents end, and everything between it and
+A :term:`partition` stores its files in a file system table, the :term:`FST`. 
+Despite the name, it is not a tree on disc: it is a flat array of nodes. 
+A directory node records the index where its contents end and everything between it and
 that index belongs to it. Depth is implied by ranges, not by pointers
 
-That layout has one consequence you will feel: **a directory has no size of its own**, and moving a file between
+That layout has one consequence you will feel: **a directory has no size of its own** and moving a file between
 directories means renumbering everything after it. Wiithon rebuilds the whole array on write, so you never deal
 with this, but it explains why there is no "move" operation
 
@@ -46,7 +47,7 @@ The practical rule is to hold your own reference to whatever you build, rather t
 Add, replace, remove
 ====================
 
-The three operations are not symmetric, because two different things are being changed: the FST, and the file
+The three operations are not symmetric, because two different things are being changed: the FST and the file
 data
 
 ================  ============  ============
@@ -55,7 +56,7 @@ Operation         Touches FST   Touches data
 ``add_file``      yes           yes
 ``replace_file``  no            yes
 ``remove_file``   yes           no
-=============== = ============  ============
+================  ============  ============
 
 ``replace_file`` leaves the tree alone, so the file must already exist. Its new size is picked up from the data
 you pass, which means a replacement may be larger or smaller than the original with no further work
@@ -70,8 +71,8 @@ you pass, which means a replacement may be larger or smaller than the original w
 Archives
 ========
 
-Most of a Wii game is not loose files. It is RARC or U8 archives, frequently Yaz0-compressed and the thing you
-actually want to change is inside of them
+Most of a Wii game is not loose files. It is :term:`RARC` or :term:`U8` archives, 
+frequently :term:`Yaz0`-compressed and the thing you actually want to change is inside of them
 
 ``edit_as`` takes a path that crosses the boundary:
 
@@ -87,10 +88,10 @@ walking the path from the right and asking the FST which prefix resolves to a **
 prefix is the path inside the archive
 
 That detail is worth keeping in mind, because it means the extension is irrelevant. An archive named
-``foo.dat`` works exactly like one named ``foo.arc``, and a directory that happens to be named ``bar.arc`` will
+``foo.dat`` works exactly like one named ``foo.arc`` and a directory that happens to be named ``bar.arc`` will
 never be mistaken for one
 
-Compression is peeled automatically. The resolver looks at the first four bytes, and as long as it recognises a
+Compression is peeled automatically. The resolver looks at the first four bytes and as long as it recognises a
 container magic it unwraps and looks again:
 
 ..  code-block:: text
@@ -117,11 +118,11 @@ Yaz0-compressed
     :meth:`wiithon.disc.patcher.edit_as` for the API of ``edit_as``. If you want to implement your own class to pass
     through it, it needs ``read(stream, **kwargs)`` and ``write(stream)`` implementation
 
-BCSV
-====
+:term:`BCSV`
+============
 
 BCSV is the format behind most of a game's tunable data: stage lists, object parameters, event tables. It is a
-typed table, and its header stores column names as **hashes**
+typed table and its header stores column names as **hashes**
 
 The hash is one-way. A BCSV file genuinely does not know what its own columns are called. Every tool that
 displays readable column names, Wiithon included, is matching hashes against a list of names that somebody
@@ -141,7 +142,7 @@ guessed and confirmed by hand
         for entry in bcsv.entries:
             entry["LuigiModeTimer"] = 0
 
-Any column you did not name shows up under its stringified hash. That is not an error, and the file writes back
+Any column you did not name shows up under its stringified hash. That is not an error and the file writes back
 correctly regardless
 
 ..  important::
@@ -150,5 +151,5 @@ correctly regardless
 
 ..  seealso::
 
-    :doc:`/user_guide/file_formats` for the format classes used on their own, and :doc:`rebuilding` for what
+    :doc:`/user_guide/file_formats` for the format classes used on their own and :doc:`rebuilding` for what
     happens to all of this at build time

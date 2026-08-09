@@ -8,7 +8,7 @@ Layout
 ======
 
 A DOL is a header of ``0x100`` bytes followed by raw section data. There are no relocations and no symbol table.
-Each section declares the virtual address it must be loaded at, and the console copies it.
+Each section declares the virtual address it must be loaded at and the console copies it.
 
 A DOL holds at most **7 text sections** and **11 data sections**. Unused slots have a length of zero.
 
@@ -34,7 +34,7 @@ Which prints something like::
 
 Three things to read off that dump:
 
-* addresses start at ``0x80000000``, which is where MEM1 is mapped. A Wii has 24 MB of MEM1, so valid code
+* addresses start at ``0x80000000``, which is where :term:`MEM1` is mapped. A Wii has 24 MB of MEM1, so valid code
   addresses run up to roughly ``0x81800000``
 * ``text[0]`` is almost always the same small block across games. It is the init stub
 * ``bss`` is declared but not stored. It is zeroed at load time, which is why it has a size but no offset
@@ -64,8 +64,8 @@ corrupting a neighbouring section.
 Finding free space
 ==================
 
-Compilers leave gaps. Alignment padding, removed code, and unused stubs show up as long runs of ``nop``
-(``0x60000000``) or zero words. Those runs are called code caves, and they are the simplest place to put a
+Compilers leave gaps. Alignment padding, removed code and unused stubs show up as long runs of ``nop``
+(``0x60000000``) or zero words. Those runs are called code caves and they are the simplest place to put a
 small routine, since they need no section juggling at all.
 
 ..  code-block:: python
@@ -85,7 +85,7 @@ The same scan is available from the command line::
 
 ..  warning::
 
-    A cave being full of zeros does not prove it is unused. Zeroed data sections are common, and a run of nops
+    A cave being full of zeros does not prove it is unused. Zeroed data sections are common and a run of nops
     inside a text section may be a jump table the game fills at runtime. Test in an emulator before trusting one.
     Dolphin has a memory engine integrated if you run it in debug mode.
 
@@ -104,10 +104,10 @@ When there is a free slot, you can declare a whole new section at an address of 
     if dol.has_free_text_section():
         dol.add_text_section(0x80600000, my_code)
 
-The address must not overlap any existing section, and it must be somewhere the game will not scribble over.
-That second condition is the hard one, and it is the whole subject of :doc:`code_injection`.
+The address must not overlap any existing section and it must be somewhere the game will not scribble over.
+That second condition is the hard one and it is the whole subject of :doc:`code_injection`.
 
 ..  seealso::
 
-    :class:`~wiithon.formats.dol.DOL` for the complete method list, and :doc:`/user_guide/patching` for wiring a
+    :class:`~wiithon.formats.dol.DOL` for the complete method list and :doc:`/user_guide/patching` for wiring a
     patch into ``WiiIsoPatcher``.
