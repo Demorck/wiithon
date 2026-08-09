@@ -46,7 +46,7 @@ class U8:
         reader.seek(base + rootnode_offset)
 
         raw_root_node = reader.raw(NODE_SIZE)
-        total_nodes = struct.unpack_from(">I", raw_root_node, 8)[0] # Maybe change this one to a new writer ? Maybe overkill though
+        total_nodes = struct.unpack_from(">I", raw_root_node, 8)[0]
         raw_nodes = [raw_root_node]
 
         for _ in range(total_nodes - 1):

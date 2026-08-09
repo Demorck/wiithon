@@ -275,7 +275,11 @@ class BCSVField:
         return (value & self.field_bitmask) >> self.field_shift
 
 
-    def set_value_in_buffer(self, reader: BinaryReader, writer: BinaryWriter, entry_value: BCSVValue, string_pool: list[StringPoolElement]):
+    def set_value_in_buffer(self,
+                            reader: BinaryReader,
+                            writer: BinaryWriter,
+                            entry_value: BCSVValue,
+                            string_pool: list[StringPoolElement]):
         """
         Sets the field's value into a given BCSV entry's bytes.
         
@@ -358,7 +362,8 @@ class BCSVEntry(dict[str, BCSVValue]):
 
     def __getitem__(self, key: int | str | BCSVField) -> BCSVValue:
         """
-        Gets a given BCSVValue from a given key. Creates a BSCVKey from the input key provided to verify the field exists first.
+        Gets a given BCSVValue from a given key.
+        Creates a BSCVKey from the input key provided to verify the field exists first.
         
         Args:
             key (BCSVKey): Key used find the related field's value
@@ -372,7 +377,8 @@ class BCSVEntry(dict[str, BCSVValue]):
 
     def __setitem__(self, key: int | str | BCSVField, value: BCSVValue):
         """
-        Sets a given BCSVValue from a given key. Creates a BSCVKey from the input key provided to verify the field exists first.
+        Sets a given BCSVValue from a given key.
+        Creates a BSCVKey from the input key provided to verify the field exists first.
         
         Args:
             key (BCSVKey): Key used find the related field
@@ -430,7 +436,8 @@ class BCSV:
         Args:
             raw_data (BytesIO): raw stream of a file
             field_names (dict[int, str]): Contains the field_hash -> name quick lookup reference. 
-                By default, a field's name is the same as the hash, this allows for human-readable names to be used instead.
+                By default, a field's name is the same as the hash,
+                this allows for human-readable names to be used instead.
             str_fmt (str): Output decoding format.
         """
         data_length: int = raw_data.seek(0, 2)
@@ -455,7 +462,9 @@ class BCSV:
         fields_size: int = entry_data_offset - BCSV_HEADER_SIZE # BCSV Field details start after the above 16 bytes
         remainder_bytes: int = fields_size % BCSV_FIELD_SIZE
         read_field_count: int = int(fields_size / BCSV_FIELD_SIZE)
-        if remainder_bytes != 0 or not read_field_count == field_count: # Make sure there is no extra space between fields and entries
+
+        # Make sure there is no extra space between fields and entries
+        if remainder_bytes != 0 or not read_field_count == field_count:
             raise CorruptedDataError("When trying to read the fields block of the BCSV file, field block has an "
                 f"incorrect size.\nExpected field count: {field_count}\nExpected Byte count: {fields_size}\n"
                 f"Remainder Bytes: {remainder_bytes}\nAmount of fields found: {read_field_count}")
@@ -667,11 +676,13 @@ class BCSV:
 
         for bcsv_field in fields:
             if not isinstance(bcsv_field, BCSVField):
-                raise BCSVFileError(f"Fields provided is not of type 'BCSVField'.\nReceived field type: {type(bcsv_field)}")
+                raise BCSVFileError(f"Fields provided is not of type 'BCSVField'.\n"
+                                    f"Received field type: {type(bcsv_field)}")
             
         for bcsv_entry in entries:
             if not isinstance(bcsv_entry, BCSVEntry):
-                raise BCSVFileError(f"Entries provided is not of type 'BCSVEntry'.\nReceived field type: {type(bcsv_entry)}")
+                raise BCSVFileError(f"Entries provided is not of type 'BCSVEntry'.\n"
+                                    f"Received field type: {type(bcsv_entry)}")
 
     @classmethod
     def read(cls, stream: BytesIO, **kwargs) -> "BCSV":
