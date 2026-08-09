@@ -96,11 +96,9 @@ class WiiDiscBuilder:
                          total_bytes: int, progress_cb: Callable | None) -> None:
         crypt_writer.seek(align(crypt_writer.current_position, FILE_ALIGNMENT))
         by_bytes = total_bytes > 0
-        processed_files = 0
         processed_bytes = 0
 
-        for paths, node in files:
-            processed_files += 1
+        for processed_files, (paths, node) in enumerate(files, start=1):
             node.offset = crypt_writer.current_position
             file_data = source.get_file_data(paths + [node.name])
             node.length = len(file_data)

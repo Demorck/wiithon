@@ -113,11 +113,7 @@ class Yaz0:
                     
                     offset = distance - 1
                     
-                    if length >= 0x12:
-                        length_info = 0
-                    else:
-                        length_info = length - 2
-                        
+                    length_info = 0 if length >= 18 else length - 2
                     byte1 = ((length_info << 4) | (offset >> 8)) & 0xFF
                     byte2 = offset & 0xFF
                     
@@ -153,7 +149,7 @@ class Yaz0:
                 return 0, -1
 
             sub3 = data[pos : pos + 3]
-            valid_occs = occurrences.get(sub3, None)
+            valid_occs = occurrences.get(sub3)
             if not valid_occs:
                 return 0, -1
                 

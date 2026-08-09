@@ -42,9 +42,8 @@ class TestWiiIsoReader(unittest.TestCase):
             opened.append(handle)
             return handle
 
-        with mock.patch.object(builtins, "open", tracking_open):
-            with self.assertRaises(InvalidDiscError):
-                WiiIsoReader(iso_path)
+        with mock.patch.object(builtins, "open", tracking_open), self.assertRaises(InvalidDiscError):
+            WiiIsoReader(iso_path)
 
         self.assertTrue(opened, "no file was opened")
         self.assertTrue(all(h.closed for h in opened), "a file descriptor was not released")

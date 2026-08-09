@@ -131,8 +131,7 @@ class TestDirectoryPartitionBuilderGetFileData(unittest.TestCase):
             )
 
     def test_missing_file_raises(self):
-        with tempfile.TemporaryDirectory() as d:
-            with self.assertRaises((FileNotFoundError, OSError)):
+        with tempfile.TemporaryDirectory() as d, self.assertRaises((FileNotFoundError, OSError)):
                 self._make_builder(d).get_file_data(["ghost.bin"])
 
 

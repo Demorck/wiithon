@@ -174,7 +174,7 @@ class TestResolveWrite(unittest.TestCase):
         resolve_write(p, "Stage.szs/data.bin", b"new_content")
 
         result = p.file_replacements["Stage.szs"]
-        self.assertEqual(result[:4], b"Yaz0", "Le résultat doit rester compressé en Yaz0")
+        self.assertEqual(result[:4], b"Yaz0", "Result need to be yaz0 compressed")
         yaz0 = Yaz0.read(BytesIO(result))
         rarc = Rarc.read(BytesIO(yaz0.data))
         self.assertEqual(rarc.get_file("data.bin").data, b"new_content")
@@ -235,10 +235,9 @@ class TestEditAs(unittest.TestCase):
         initial = (1).to_bytes(4, "big")
         p = make_patcher({"data.bin": initial})
 
-        with self.assertRaises(ValueError):
-            with p.edit_as("data.bin", SimpleData) as obj:
-                obj.value = 999
-                raise ValueError("erreur intentionnelle")
+        with self.assertRaises(ValueError), p.edit_as("data.bin", SimpleData) as obj:
+            obj.value = 999
+            raise ValueError("intentional error")
 
         self.assertNotIn("data.bin", p.file_replacements)
 
@@ -254,7 +253,6 @@ class TestEditAs(unittest.TestCase):
         with p.edit_as("Stage.arc/a.bin", SimpleData) as obj:
             obj.value = 10
 
-        # Le second edit_as doit voir l'archive déjà modifiée
         fst_files["Stage.arc"] = p.file_replacements["Stage.arc"]
 
         with p.edit_as("Stage.arc/b.bin", SimpleData) as obj:

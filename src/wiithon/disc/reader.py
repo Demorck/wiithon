@@ -19,7 +19,7 @@ from wiithon.disc.layout import WII_MAGIC_WORD, REGION_OFFSET, REGION_SIZE, DISC
 class WiiIsoReader:
     def __init__(self, path: str) -> None:
         self.path = path
-        self.file: BinaryIO = open(path, "rb")
+        self.file: BinaryIO = open(path, "rb") # noqa: SIM115
         try:
             self.disc_header: DiscHeader = DiscHeader.read(self.file)
             self.partitions: list[WiiPartitionEntry] = read_parts(self.file)

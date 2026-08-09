@@ -66,15 +66,13 @@ class TestOutOfRangeValues(unittest.TestCase):
     def test_unsigned_overflow(self):
         cases = [("u8", 256), ("u8", -1), ("u16", 65536), ("u32", 1 << 32), ("u64", 1 << 64)]
         for method, value in cases:
-            with self.subTest(method=method, value=value):
-                with self.assertRaises(struct.error):
+            with self.subTest(method=method, value=value), self.assertRaises(struct.error):
                     written(method, value)
 
     def test_signed_overflow(self):
         cases = [("s8", 128), ("s8", -129), ("s16", 32768), ("s32", 1 << 31), ("s64", 1 << 63)]
         for method, value in cases:
-            with self.subTest(method=method, value=value):
-                with self.assertRaises(struct.error):
+            with self.subTest(method=method, value=value), self.assertRaises(struct.error):
                     written(method, value)
 
     def test_float_out_of_32_bit_range(self):

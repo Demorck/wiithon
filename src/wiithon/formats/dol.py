@@ -65,18 +65,10 @@ class DOL:
         raise DolSectionNotFoundError(f"Virtual address {virtual_addr:#010x} not found in any DOL section")
 
     def has_free_text_section(self) -> bool:
-        for i in range(DOL_TEXT_SECTIONS):
-            if self.header.text_length[i] == 0:
-                return True
-
-        return False
+        return any(self.header.data_length[i] == 0 for i in range(DOL_TEXT_SECTIONS))
 
     def has_free_data_section(self) -> bool:
-        for i in range(DOL_DATA_SECTIONS):
-            if self.header.data_length[i] == 0:
-                return True
-
-        return False
+        return any(self.header.data_length[i] == 0 for i in range(DOL_DATA_SECTIONS))
 
     def read_at(self, virtual_addr: int, size: int) -> bytes:
         stype, i, offset = self._virtual_to_section(virtual_addr)
@@ -233,10 +225,7 @@ class DOL:
             padding_before: int = 0x100,
             reserved_size: int | None = None
     ) -> tuple[int, list[int]]:
-        if manual_arena is None:
-            site = self.find_arena_lo_setter()
-        else:
-            site = manual_arena
+        site = self.find_arena_lo_setter() if manual_arena is None else manual_arena
 
         original_arena = self.read_arena_lo(site)
         original_arena = (original_arena + 0x1F) & ~0x1F
