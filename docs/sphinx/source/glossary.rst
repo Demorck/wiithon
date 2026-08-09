@@ -35,7 +35,7 @@ B
         ``boot.bin``. It's like the header of each partition
 
     bi2.bin
-        A configuration block sitting right after the :term:`Internal header`, holding some parameters. If you have
+        A configuration block sitting right after the internal header, holding some parameters. If you have
         any sourced information of it, i'm taking them
 
     Block
