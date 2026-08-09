@@ -1,7 +1,7 @@
 import copy
 import os
 
-from typing import Callable, List, Optional
+from collections.abc import Callable
 
 from wiithon.disc.structs.certificate import Certificate
 from wiithon.disc.structs.disc_header import DiscHeader
@@ -18,8 +18,8 @@ from wiithon.fst.tree import FST
 
 class CopyPartitionSource(PartitionSource):
     def __init__(self, reader: WiiIsoReader, partition: WiiPartitionEntry,
-                 fst_modifier: Optional[Callable[[FST], None]] = None,
-                 dol_modifier: Optional[Callable[[DOL], None]] = None,
+                 fst_modifier: Callable[[FST], None] | None = None,
+                 dol_modifier: Callable[[DOL], None] | None = None,
                  file_overrides: dict[str, bytes] | None = None) -> None:
         copy_partition = copy.copy(partition)
         self.partition_info = reader.open_partition(copy_partition)
@@ -50,7 +50,7 @@ class CopyPartitionSource(PartitionSource):
     def get_tmd(self) -> TMD:
         return self.tmd
 
-    def get_certificates(self) -> List[Certificate]:
+    def get_certificates(self) -> list[Certificate]:
         return self.certificates
 
     def get_encrypted_header(self) -> DiscHeader:
@@ -68,7 +68,7 @@ class CopyPartitionSource(PartitionSource):
     def get_fst(self) -> FST:
         return self.fst
 
-    def get_file_data(self, path: List[str]) -> bytes:
+    def get_file_data(self, path: list[str]) -> bytes:
         key = "/".join(path)
         if key in self._file_overrides:
             return self._file_overrides[key]

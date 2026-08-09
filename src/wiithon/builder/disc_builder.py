@@ -2,7 +2,8 @@ import itertools
 import struct
 import hashlib
 from io import BytesIO
-from typing import List, BinaryIO, Callable, Optional
+from typing import BinaryIO
+from collections.abc import Callable
 
 from wiithon.binary.align import align
 from wiithon.builder.source import PartitionSource
@@ -42,7 +43,7 @@ class WiiDiscBuilder:
     def __init__(self, header: DiscHeader, region: bytes):
         self.header: DiscHeader = header
         self.region: bytes = region
-        self.partitions: List[tuple] = []
+        self.partitions: list[tuple] = []
         self.current_data_offset = FIRST_PARTITION_OFFSET
 
     def _write_certificate_chain(self, stream: BinaryIO, part_data_off: int,
@@ -92,7 +93,7 @@ class WiiDiscBuilder:
 
     @staticmethod
     def _write_file_data(crypt_writer: CryptPartWriter, files: list, source: PartitionSource,
-                         total_bytes: int, progress_cb: Optional[Callable]) -> None:
+                         total_bytes: int, progress_cb: Callable | None) -> None:
         crypt_writer.seek(align(crypt_writer.current_position, FILE_ALIGNMENT))
         by_bytes = total_bytes > 0
         processed_files = 0
@@ -117,7 +118,7 @@ class WiiDiscBuilder:
             if not by_bytes and progress_cb:
                 progress_cb(int((processed_files / len(files)) * 100))
 
-    def add_partition(self, stream: BinaryIO, new_partition: PartitionSource, progress_cb: Optional[Callable]) -> None:
+    def add_partition(self, stream: BinaryIO, new_partition: PartitionSource, progress_cb: Callable | None) -> None:
         """
         :param stream:
         :param new_partition:
