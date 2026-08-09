@@ -4,7 +4,7 @@ import sys
 
 import typer
 from pathlib import Path
-from typing import Annotated, Optional, List
+from typing import Annotated
 
 from rich.markup import escape
 from rich.panel import Panel
@@ -32,7 +32,7 @@ def _collect_info(reader: WiiIsoReader) -> dict:
         "partitions":  [p.get_readable_part_type() for p in reader.partitions],
     }
 
-def _collect_files(reader: WiiIsoReader, entries: List[WiiPartitionEntry]) -> list[dict]:
+def _collect_files(reader: WiiIsoReader, entries: list[WiiPartitionEntry]) -> list[dict]:
     return [
         {
             "partition": entry.get_readable_part_type(),
@@ -158,7 +158,7 @@ def iso_extract(
     dest: Annotated[Path, typer.Argument(help="Output directory.")],
     partition_type: PartitionTypeOption = None,
     file: Annotated[
-        Optional[str], typer.Option("--file", "-f", help="Extract only this file or directory.")
+        str | None, typer.Option("--file", "-f", help="Extract only this file or directory.")
     ] = None,
 ) -> None:
     """Extract all files from a partition"""

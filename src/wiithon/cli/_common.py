@@ -1,15 +1,16 @@
 from __future__ import annotations
 
+from enum import StrEnum
 import json
 import sys
 import typer
 
-from enum import Enum
 from pathlib import Path
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from typing import NoReturn, Optional, Annotated, Iterable, Sequence, Any
+from typing import NoReturn, Annotated, Any
+from collections.abc import Iterable, Sequence
 
 from wiithon import WiiPartType
 from wiithon import WiiIsoReader
@@ -18,7 +19,7 @@ from wiithon.disc.structs.partition_entry import WiiPartitionEntry
 console = Console()
 err_console = Console(stderr=True, style="bold red")
 
-class PartTypeChoice(str, Enum):
+class PartTypeChoice(StrEnum):
     data = "data"
     update = "update"
     channel = "channel"
@@ -26,7 +27,7 @@ class PartTypeChoice(str, Enum):
 JsonOption = Annotated[bool, typer.Option("--json", help="Emit machine-readable JSON on stdout.")]
 
 PartitionTypeOption = Annotated[
-    Optional[PartTypeChoice],
+    PartTypeChoice | None,
     typer.Option("--partition", "-p",
                  help="Choose the partition type to list")
     ]
@@ -44,7 +45,7 @@ def require_file(path: Path) -> None:
 
 def select_partitions(
     reader: WiiIsoReader,
-    partition_type: Optional[PartTypeChoice],
+    partition_type: PartTypeChoice | None,
 ) -> list[WiiPartitionEntry]:
     """Return the partitions matching partition_type, or all of them if None."""
     if partition_type is None:

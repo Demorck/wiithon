@@ -2,7 +2,7 @@ from __future__ import annotations
 import typer
 
 from pathlib import Path
-from typing import Annotated, List
+from typing import Annotated
 from wiithon.disc.structs.partition_entry import WiiPartitionEntry
 
 from wiithon.disc.reader import WiiIsoReader
@@ -12,7 +12,7 @@ from wiithon.cli._common import console, require_file, select_partitions, JsonOp
 
 dol_app = typer.Typer(help="Operations on DOL files.")
 
-def _collect_caves(reader: WiiIsoReader, entries: List[WiiPartitionEntry], min_size: int) -> list[dict]:
+def _collect_caves(reader: WiiIsoReader, entries: list[WiiPartitionEntry], min_size: int) -> list[dict]:
     result = []
     for entry in entries:
         dol = reader.open_partition(entry).read_dol()
