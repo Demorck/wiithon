@@ -40,7 +40,7 @@ def add_node(entries: list[FSTNode], path_parts: list[str], new_node: FSTNode) -
     current_list = entries
     for part in path_parts:
         found = None
-        for i, node in enumerate(current_list):
+        for _, node in enumerate(current_list):
             if node.name.lower() == part.lower():
                 found = node
                 break

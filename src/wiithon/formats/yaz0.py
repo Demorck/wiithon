@@ -80,7 +80,7 @@ class Yaz0:
                     if number_to_copy < 3 or number_to_copy > 0x111:
                         raise CorruptedDataError("Something happens when decompressing yaz0 file")
 
-                    for j in range(number_to_copy):
+                    for _ in range(number_to_copy):
                         dest_buffer.append(dest_buffer[copy_src])
                         copy_src += 1
 

@@ -133,7 +133,7 @@ class TestFST(unittest.TestCase):
     def _compare_nodes(self, a: list, b: list) -> None:
         """Recursively compare two lists of FSTNodes."""
         self.assertEqual(len(a), len(b))
-        for na, nb in zip(a, b):
+        for na, nb in zip(a, b, strict=True):
             self.assertEqual(na.name, nb.name)
             self.assertEqual(type(na), type(nb))
             if isinstance(na, FSTFile):

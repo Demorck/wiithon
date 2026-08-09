@@ -106,7 +106,7 @@ class TestFSTToBytesRoundtrip(unittest.TestCase):
 
     def _compare(self, a, b) -> None:
         self.assertEqual(len(a), len(b))
-        for na, nb in zip(a, b):
+        for na, nb in zip(a, b, strict=True):
             self.assertEqual(na.name, nb.name)
             self.assertEqual(type(na), type(nb))
             if isinstance(na, FSTFile):

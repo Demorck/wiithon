@@ -1,4 +1,3 @@
-import warnings
 from io import BytesIO
 from typing import BinaryIO
 import struct
@@ -309,16 +308,12 @@ class DOL:
             (self.header.text_starts, self.header.text_length),
             (self.header.data_starts, self.header.data_length),
         ]:
-            for start, length in zip(starts, lengths):
+            for start, length in zip(starts, lengths, strict=True):
                 if length == 0:
                     continue
                 if start < virtual_addr + size and virtual_addr < start + length:
                     return False
 
-
-        bss_end = self.header.bss_start + self.header.bss_size
-        if self.header.bss_start < virtual_addr + size and virtual_addr < bss_end:
-            warnings.warn(f"Warning: {virtual_addr:08X} is in  BSS")
         return True
 
 def _align4(size: int) -> int:
