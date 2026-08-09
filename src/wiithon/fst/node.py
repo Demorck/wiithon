@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+
 class FSTNode(ABC):
     """Abstract base class for a FST entries (composite pattern)"""
     def __init__(self,  name: str = "") -> None:

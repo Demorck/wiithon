@@ -3,9 +3,9 @@ from io import BytesIO
 from unittest.mock import MagicMock
 
 from wiithon.disc.patcher import WiiIsoPatcher
-from wiithon.formats.rarc import Rarc, RarcNode, RarcFileEntry, NodeAttribute
-from wiithon.formats.yaz0 import Yaz0
 from wiithon.formats.archive import resolve_read, resolve_write
+from wiithon.formats.rarc import NodeAttribute, Rarc, RarcFileEntry, RarcNode
+from wiithon.formats.yaz0 import Yaz0
 
 
 def _rarc_entry(name: str, file_id: int, is_dir: bool,

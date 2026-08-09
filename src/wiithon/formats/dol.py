@@ -1,9 +1,9 @@
+import struct
 from io import BytesIO
 from typing import BinaryIO
-import struct
 
 from wiithon.binary.reader import BinaryReader
-from wiithon.exceptions import DolSectionNotFoundError, DolSectionOverlapError, DolError, DolNoFreeSectionError
+from wiithon.exceptions import DolError, DolNoFreeSectionError, DolSectionNotFoundError, DolSectionOverlapError
 from wiithon.formats.dol_header import DOLHeader
 from wiithon.ppc import instructions as ppc
 

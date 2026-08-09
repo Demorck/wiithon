@@ -1,8 +1,8 @@
-from typing import BinaryIO
 from collections.abc import Callable
+from typing import BinaryIO
 
 from wiithon.crypto.part_writer import CryptPartWriter
-from wiithon.fst.node import FSTNode, FSTFile, FSTDirectory
+from wiithon.fst.node import FSTDirectory, FSTFile, FSTNode
 from wiithon.fst.raw_node import RawFSTNode
 
 

@@ -1,19 +1,19 @@
 import unittest
 from io import BytesIO
 
-from wiithon.exceptions import BinaryError, InvalidFormatError, CorruptedDataError, BCSVFileError
+from wiithon.exceptions import BCSVFileError, BinaryError, CorruptedDataError, InvalidFormatError
 from wiithon.formats.bcsv import (
     BCSV,
-    BCSVEntry,
-    BCSVField,
-    BCSVKey,
-    BCSVNameKey,
-    BCSVHashKey,
-    BCSVFieldKey,
-    BCSVType,
-    BCSVTypeSize,
     BCSV_FIELD_SIZE,
     BCSV_HEADER_SIZE,
+    BCSVEntry,
+    BCSVField,
+    BCSVFieldKey,
+    BCSVHashKey,
+    BCSVKey,
+    BCSVNameKey,
+    BCSVType,
+    BCSVTypeSize,
     calculate_field_hash,
 )
 

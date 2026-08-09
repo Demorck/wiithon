@@ -1,21 +1,29 @@
 from __future__ import annotations
 
 import sys
-
-import typer
 from pathlib import Path
 from typing import Annotated
 
+import typer
 from rich.markup import escape
 from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
+from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 from rich.table import Table
 from rich.tree import Tree
-from wiithon.disc.structs.partition_entry import WiiPartitionEntry
 
-from wiithon.cli._common import console, require_file, select_partitions, abort, JsonOption, write_json, \
-    render_table, PartitionTypeOption
-from wiithon import WiiIsoReader, FSTDirectory, FSTFile
+from wiithon.cli._common import (
+    JsonOption,
+    PartitionTypeOption,
+    abort,
+    console,
+    render_table,
+    require_file,
+    select_partitions,
+    write_json,
+)
+from wiithon.disc.reader import WiiIsoReader
+from wiithon.disc.structs.partition_entry import WiiPartitionEntry
+from wiithon.fst.node import FSTDirectory, FSTFile
 
 iso_app = typer.Typer(help="Operations on Wii ISO files.")
 

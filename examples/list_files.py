@@ -1,5 +1,6 @@
 from wiithon.disc.reader import WiiIsoReader
 
+
 def main():
     # Opening the iso with WiiIsoReader
     with WiiIsoReader("../assets/smg.iso") as reader:

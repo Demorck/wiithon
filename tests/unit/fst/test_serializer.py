@@ -1,9 +1,9 @@
 import unittest
 from io import BytesIO
 
-from wiithon.fst.tree import FST
-from wiithon.fst.node import FSTFile, FSTDirectory
+from wiithon.fst.node import FSTDirectory, FSTFile
 from wiithon.fst.serializer import FSTToBytes
+from wiithon.fst.tree import FST
 
 
 def _make_fst() -> FST:

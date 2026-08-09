@@ -3,10 +3,10 @@ import struct
 from io import BytesIO
 from typing import BinaryIO
 
-from wiithon.binary.reader import BinaryReader
 from wiithon.binary.align import align
+from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
-from wiithon.exceptions import InvalidFormatError, ArchiveFileNotFoundError, ArchiveIsADirectoryError
+from wiithon.exceptions import ArchiveFileNotFoundError, ArchiveIsADirectoryError, InvalidFormatError
 
 NODE_SIZE = 0xC
 ROOTNODE_OFFSET = 0x20

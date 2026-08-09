@@ -1,18 +1,16 @@
 import copy
 import os
-
 from collections.abc import Callable
 
+from wiithon.builder.source import PartitionSource
+from wiithon.disc.reader import WiiIsoReader
 from wiithon.disc.structs.certificate import Certificate
 from wiithon.disc.structs.disc_header import DiscHeader
-from wiithon.disc.structs.tmd import TMD
-from wiithon.disc.structs.ticket import Ticket
 from wiithon.disc.structs.partition_entry import WiiPartitionEntry
+from wiithon.disc.structs.ticket import Ticket
+from wiithon.disc.structs.tmd import TMD
 from wiithon.exceptions import FstFileNotFoundError
 from wiithon.formats.dol import DOL
-
-from wiithon.disc.reader import WiiIsoReader
-from wiithon.builder.source import PartitionSource
 from wiithon.fst.tree import FST
 
 

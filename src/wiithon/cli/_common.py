@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-from enum import StrEnum
 import json
 import sys
-import typer
-
+from collections.abc import Iterable, Sequence
+from enum import StrEnum
 from pathlib import Path
+from typing import Annotated, Any, NoReturn
+
+import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from typing import NoReturn, Annotated, Any
-from collections.abc import Iterable, Sequence
 
-from wiithon import WiiPartType
-from wiithon import WiiIsoReader
+from wiithon.disc.enums import WiiPartType
+from wiithon.disc.reader import WiiIsoReader
 from wiithon.disc.structs.partition_entry import WiiPartitionEntry
 
 console = Console()

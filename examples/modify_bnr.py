@@ -1,4 +1,5 @@
 from io import BytesIO
+
 from wiithon.disc.patcher import WiiIsoPatcher
 from wiithon.formats.bnr import BNR
 

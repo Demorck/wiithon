@@ -1,10 +1,10 @@
+from collections import deque
 from io import BytesIO
 from typing import BinaryIO
-from collections import deque
 
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
-from wiithon.exceptions import InvalidFormatError, CorruptedDataError
+from wiithon.exceptions import CorruptedDataError, InvalidFormatError
 
 
 class Yaz0:

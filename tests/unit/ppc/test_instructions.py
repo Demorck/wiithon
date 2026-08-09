@@ -1,11 +1,32 @@
-import unittest
 import struct
+import unittest
 
 from wiithon.ppc.instructions import (
-    b, bl, cntlzw,
-    li, lis, addi, lwz, stw, lbz, stb, lhz, sth,
-    ori, nop,
-    add, or_, mtspr, lfs, mulli, oris, rlwnm, stfs, andi, and_, blr,
+    add,
+    addi,
+    and_,
+    andi,
+    b,
+    bl,
+    blr,
+    cntlzw,
+    lbz,
+    lfs,
+    lhz,
+    li,
+    lis,
+    lwz,
+    mtspr,
+    mulli,
+    nop,
+    or_,
+    ori,
+    oris,
+    rlwnm,
+    stb,
+    stfs,
+    sth,
+    stw,
 )
 
 

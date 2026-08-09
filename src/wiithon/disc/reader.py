@@ -1,19 +1,18 @@
 from io import BytesIO
 from typing import BinaryIO
 
-from wiithon.disc.enums import WiiPartType
-from wiithon.disc.partition import WiiPartitionInfo
-from wiithon.crypto.part_reader import CryptPartReader
-from wiithon.exceptions import InvalidDiscError
-from wiithon.fst.tree import FST
 from wiithon.binary.reader import BinaryReader
+from wiithon.crypto.part_reader import CryptPartReader
+from wiithon.disc.enums import WiiPartType
+from wiithon.disc.layout import DISC_HEADER_SIZE, MAGIC_WORD_OFFSET, REGION_OFFSET, REGION_SIZE, WII_MAGIC_WORD
+from wiithon.disc.partition import WiiPartitionInfo
 from wiithon.disc.structs.certificate import Certificate
 from wiithon.disc.structs.disc_header import DiscHeader
-from wiithon.disc.structs.tmd import TMD
 from wiithon.disc.structs.partition_entry import WiiPartitionEntry, read_parts
 from wiithon.disc.structs.partition_header import WiiPartitionHeader
-
-from wiithon.disc.layout import WII_MAGIC_WORD, REGION_OFFSET, REGION_SIZE, DISC_HEADER_SIZE, MAGIC_WORD_OFFSET
+from wiithon.disc.structs.tmd import TMD
+from wiithon.exceptions import InvalidDiscError
+from wiithon.fst.tree import FST
 
 
 class WiiIsoReader:

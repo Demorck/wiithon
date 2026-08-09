@@ -2,7 +2,7 @@ from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
-from wiithon.fst.node import FSTNode, FSTDirectory, FSTFile
+from wiithon.fst.node import FSTDirectory, FSTFile, FSTNode
 from wiithon.fst.raw_node import RawFSTNode
 
 

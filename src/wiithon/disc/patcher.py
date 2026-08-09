@@ -1,20 +1,19 @@
-from contextlib import contextmanager
-from typing import TypeVar
 from collections.abc import Callable, Iterator
-
+from contextlib import contextmanager
 from io import BytesIO
+from typing import TypeVar
 
-from wiithon import NoDataPartitionError
-from wiithon.formats.bnr import BNR
+from wiithon.builder.copy_source import CopyPartitionSource
+from wiithon.builder.disc_builder import WiiDiscBuilder
+from wiithon.disc.enums import WiiPartType
+from wiithon.disc.reader import WiiIsoReader
+from wiithon.exceptions import NoDataPartitionError
 from wiithon.formats.archive import resolve_read, resolve_write
-from wiithon.fst.tree import FST
+from wiithon.formats.bnr import BNR
+from wiithon.formats.dol import DOL
 from wiithon.fst.node import FSTFile
 from wiithon.fst.operations import add_node, remove_node
-from wiithon.disc.enums import WiiPartType
-from wiithon.formats.dol import DOL
-from wiithon.disc.reader import WiiIsoReader
-from wiithon.builder.disc_builder import WiiDiscBuilder
-from wiithon.builder.copy_source import CopyPartitionSource
+from wiithon.fst.tree import FST
 
 T = TypeVar("T")
 

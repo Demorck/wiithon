@@ -1,7 +1,8 @@
 import bisect
 
 from wiithon.exceptions import FstError
-from wiithon.fst.node import FSTNode, FSTDirectory
+from wiithon.fst.node import FSTDirectory, FSTNode
+
 
 def find_node(entries: list[FSTNode], path_parts: list[str]) -> FSTNode | None:
     current: None | FSTDirectory = None

@@ -2,8 +2,8 @@ import struct
 import unittest
 from io import BytesIO
 
+from wiithon.fst.node import FSTDirectory, FSTFile
 from wiithon.fst.tree import FST
-from wiithon.fst.node import FSTFile, FSTDirectory
 
 
 class TestFST(unittest.TestCase):

@@ -1,23 +1,40 @@
+import hashlib
 import itertools
 import struct
-import hashlib
+from collections.abc import Callable
 from io import BytesIO
 from typing import BinaryIO
-from collections.abc import Callable
 
 from wiithon.binary.align import align
 from wiithon.builder.source import PartitionSource
+from wiithon.crypto.layout import GROUP_DATA_SIZE, GROUP_SIZE, SHA1_SIZE
 from wiithon.crypto.part_writer import CryptPartWriter
-from wiithon.disc.layout import FIRST_PARTITION_OFFSET, BI2_OFFSET, APPLOADER_OFFSET, PARTITION_TABLE_OFFSET, \
-    PARTITION_TABLE_ENTRIES, REGION_OFFSET, MAGIC_WORD_OFFSET, WII_MAGIC_WORD, PART_TMD_OFFSET, PART_DATA_OFFSET, \
-    PART_H3_OFFSET, TMD_H3_HASH_OFFSET, TMD_DATA_SIZE_OFFSET, TMD_SIGNATURE_SIZE, TMD_FAKESIGN_PADDING, \
-    TMD_SIGNED_START, TMD_SIGNATURE_OFFSET, SECTION_ALIGNMENT, FILE_ALIGNMENT
-from wiithon.fst.serializer import FSTToBytes
-from wiithon.fst.node import FSTFile
-from wiithon.crypto.layout import GROUP_SIZE, GROUP_DATA_SIZE, SHA1_SIZE
+from wiithon.disc.layout import (
+    APPLOADER_OFFSET,
+    BI2_OFFSET,
+    FILE_ALIGNMENT,
+    FIRST_PARTITION_OFFSET,
+    MAGIC_WORD_OFFSET,
+    PART_DATA_OFFSET,
+    PART_H3_OFFSET,
+    PART_TMD_OFFSET,
+    PARTITION_TABLE_ENTRIES,
+    PARTITION_TABLE_OFFSET,
+    REGION_OFFSET,
+    SECTION_ALIGNMENT,
+    TMD_DATA_SIZE_OFFSET,
+    TMD_FAKESIGN_PADDING,
+    TMD_H3_HASH_OFFSET,
+    TMD_SIGNATURE_OFFSET,
+    TMD_SIGNATURE_SIZE,
+    TMD_SIGNED_START,
+    WII_MAGIC_WORD,
+)
 from wiithon.disc.structs.disc_header import DiscHeader
 from wiithon.disc.structs.partition_entry import WiiPartitionEntry
 from wiithon.disc.structs.partition_header import WiiPartitionHeader
+from wiithon.fst.node import FSTFile
+from wiithon.fst.serializer import FSTToBytes
 
 U64_SIZE: int = 8
 

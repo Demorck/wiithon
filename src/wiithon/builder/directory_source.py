@@ -1,14 +1,14 @@
 import os
 
+from wiithon.builder.source import PartitionSource
+from wiithon.disc.enums import WiiPartType
 from wiithon.disc.structs.certificate import Certificate
 from wiithon.disc.structs.disc_header import DiscHeader
-from wiithon.disc.structs.tmd import TMD
 from wiithon.disc.structs.ticket import Ticket
-from wiithon.disc.enums import WiiPartType
-
-from wiithon.builder.source import PartitionSource
+from wiithon.disc.structs.tmd import TMD
+from wiithon.fst.node import FSTDirectory, FSTFile
 from wiithon.fst.tree import FST
-from wiithon.fst.node import FSTFile, FSTDirectory
+
 
 def build_from_directory_tree(files_dir: str) -> FST:
     fst = FST()

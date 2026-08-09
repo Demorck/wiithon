@@ -1,8 +1,9 @@
-from typing import BinaryIO
 from io import BytesIO
+from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
+
 
 class DiscHeader:
     """

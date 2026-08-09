@@ -1,12 +1,13 @@
-from io import BytesIO
-from typing import runtime_checkable, Protocol, BinaryIO
 from collections.abc import Callable
+from io import BytesIO
+from typing import BinaryIO, Protocol, runtime_checkable
 
-from wiithon.exceptions import InvalidFormatError, FstFileNotFoundError
+from wiithon.exceptions import FstFileNotFoundError, InvalidFormatError
 from wiithon.formats.lz77 import Lz77
-from wiithon.formats.rarc import Rarc, RarcFileEntry, RARC_MAGIC_WORD
+from wiithon.formats.rarc import RARC_MAGIC_WORD, Rarc, RarcFileEntry
 from wiithon.formats.u8 import U8, U8_MAGIC_WORD
 from wiithon.formats.yaz0 import Yaz0
+
 
 @runtime_checkable
 class Archive(Protocol):

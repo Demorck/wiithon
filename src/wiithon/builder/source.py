@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 
 from wiithon.disc.structs.certificate import Certificate
 from wiithon.disc.structs.disc_header import DiscHeader
-from wiithon.disc.structs.tmd import TMD
 from wiithon.disc.structs.ticket import Ticket
+from wiithon.disc.structs.tmd import TMD
 from wiithon.fst.tree import FST
 
 

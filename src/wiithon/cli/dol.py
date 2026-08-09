@@ -1,14 +1,22 @@
 from __future__ import annotations
-import typer
 
 from pathlib import Path
 from typing import Annotated
-from wiithon.disc.structs.partition_entry import WiiPartitionEntry
 
+import typer
+
+from wiithon.cli._common import (
+    JsonOption,
+    PartitionTypeOption,
+    console,
+    render_table,
+    require_file,
+    select_partitions,
+    titled_panel,
+    write_json,
+)
 from wiithon.disc.reader import WiiIsoReader
-
-from wiithon.cli._common import console, require_file, select_partitions, JsonOption, \
-    PartitionTypeOption, write_json, render_table, titled_panel
+from wiithon.disc.structs.partition_entry import WiiPartitionEntry
 
 dol_app = typer.Typer(help="Operations on DOL files.")
 

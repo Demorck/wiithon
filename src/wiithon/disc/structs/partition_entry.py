@@ -3,7 +3,7 @@ from typing import BinaryIO
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
 from wiithon.disc.enums import WiiPartType
-from wiithon.disc.layout import PARTITION_TABLE_OFFSET, PARTITION_GROUP_COUNT
+from wiithon.disc.layout import PARTITION_GROUP_COUNT, PARTITION_TABLE_OFFSET
 
 
 class WiiPartitionEntry:

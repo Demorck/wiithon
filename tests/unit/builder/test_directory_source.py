@@ -3,10 +3,10 @@ import tempfile
 import unittest
 
 from wiithon.builder.directory_source import (
-    build_from_directory_tree,
     DirectoryPartitionSource,
+    build_from_directory_tree,
 )
-from wiithon.fst.node import FSTFile, FSTDirectory
+from wiithon.fst.node import FSTDirectory, FSTFile
 
 
 #  build_from_directory_tree

@@ -1,11 +1,11 @@
+from abc import ABC, abstractmethod
 from enum import IntEnum
 from io import BytesIO
 from typing import NamedTuple, Union
-from abc import ABC, abstractmethod
 
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
-from wiithon.exceptions import InvalidFormatError, CorruptedDataError, BCSVFileError
+from wiithon.exceptions import BCSVFileError, CorruptedDataError, InvalidFormatError
 
 BCSV_HEADER_SIZE: int = 0x10
 BCSV_FIELD_SIZE: int = 0xC

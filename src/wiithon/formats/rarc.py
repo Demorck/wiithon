@@ -1,11 +1,11 @@
-from io import BytesIO
-from typing import BinaryIO
 import os
 from enum import IntFlag
+from io import BytesIO
+from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
-from wiithon.exceptions import InvalidFormatError, ArchiveFileNotFoundError, ArchiveEntryExistsError
+from wiithon.exceptions import ArchiveEntryExistsError, ArchiveFileNotFoundError, InvalidFormatError
 
 RARC_MAGIC_WORD: bytes = b'RARC'
 

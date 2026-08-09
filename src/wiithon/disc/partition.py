@@ -2,17 +2,17 @@ from collections.abc import Callable
 from io import BytesIO
 
 from wiithon.crypto.part_reader import CryptPartReader
-from wiithon.disc.layout import APPLOADER_OFFSET, APPLOADER_HEADER_SIZE, BI2_OFFSET, BI2_SIZE
-from wiithon.exceptions import FstIsADirectoryError, FstFileNotFoundError
-from wiithon.formats.dol_header import DOLHeader
-from wiithon.fst.tree import FST
-from wiithon.fst.node import FSTNode, FSTDirectory, FSTFile
+from wiithon.disc.layout import APPLOADER_HEADER_SIZE, APPLOADER_OFFSET, BI2_OFFSET, BI2_SIZE
 from wiithon.disc.structs.apploader_header import ApploaderHeader
 from wiithon.disc.structs.certificate import Certificate
 from wiithon.disc.structs.disc_header import DiscHeader
-from wiithon.disc.structs.tmd import TMD
 from wiithon.disc.structs.partition_header import WiiPartitionHeader
-from wiithon.formats.dol import DOL, DOL_HEADER_SIZE, DOL_TEXT_SECTIONS, DOL_DATA_SECTIONS
+from wiithon.disc.structs.tmd import TMD
+from wiithon.exceptions import FstFileNotFoundError, FstIsADirectoryError
+from wiithon.formats.dol import DOL, DOL_DATA_SECTIONS, DOL_HEADER_SIZE, DOL_TEXT_SECTIONS
+from wiithon.formats.dol_header import DOLHeader
+from wiithon.fst.node import FSTDirectory, FSTFile, FSTNode
+from wiithon.fst.tree import FST
 
 
 class WiiPartitionInfo:

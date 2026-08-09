@@ -6,6 +6,7 @@ from wiithon.disc.structs.disc_header import DiscHeader
 from wiithon.disc.structs.partition_entry import read_parts
 from wiithon.disc.structs.partition_header import WiiPartitionHeader
 
+
 def main():
     # Opening ISO
     with open("../assets/smg1.iso", "rb") as f:

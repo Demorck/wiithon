@@ -1,6 +1,6 @@
+import random
 import unittest
 from io import BytesIO
-import random
 
 from wiithon.exceptions import InvalidFormatError
 from wiithon.formats.lz77 import Lz77
