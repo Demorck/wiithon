@@ -1,5 +1,5 @@
 from io import BytesIO
-from typing import BinaryIO, List, Optional
+from typing import BinaryIO
 
 from wiithon.disc.enums import WiiPartType
 from wiithon.disc.partition import WiiPartitionInfo
@@ -22,7 +22,7 @@ class WiiIsoReader:
         self.file: BinaryIO = open(path, "rb")
         try:
             self.disc_header: DiscHeader = DiscHeader.read(self.file)
-            self.partitions: List[WiiPartitionEntry] = read_parts(self.file)
+            self.partitions: list[WiiPartitionEntry] = read_parts(self.file)
             self.region: bytes = self.read_region()
             self.magic_word: int = self.read_magic_word()
             if self.magic_word != WII_MAGIC_WORD:
@@ -31,13 +31,13 @@ class WiiIsoReader:
             self.file.close()
             raise
 
-    def get_data_partition(self) -> Optional[WiiPartitionEntry]:
+    def get_data_partition(self) -> WiiPartitionEntry | None:
         return next((p for p in self.partitions if p.part_type == WiiPartType.DATA), None)
 
-    def get_update_partition(self) -> Optional[WiiPartitionEntry]:
+    def get_update_partition(self) -> WiiPartitionEntry | None:
         return next((p for p in self.partitions if p.part_type == WiiPartType.UPDATE), None)
 
-    def get_partitions(self) -> List[WiiPartitionEntry]:
+    def get_partitions(self) -> list[WiiPartitionEntry]:
         return self.partitions
 
     def read_region(self) -> bytes:
@@ -63,7 +63,7 @@ class WiiIsoReader:
 
         # Reading certificates
         self.file.seek(offset + header.certificate_chain_offset)
-        certificates: List[Certificate] = []
+        certificates: list[Certificate] = []
         for _ in range(3):
             certificates.append(Certificate.read(self.file))
 

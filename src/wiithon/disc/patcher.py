@@ -1,5 +1,6 @@
 from contextlib import contextmanager
-from typing import Callable, Optional, TypeVar, Iterator
+from typing import TypeVar
+from collections.abc import Callable, Iterator
 
 from io import BytesIO
 
@@ -21,13 +22,13 @@ T = TypeVar("T")
 class WiiIsoPatcher:
     def __init__(self, src_path: str):
         self.src_path = src_path
-        self.reader: Optional[WiiIsoReader] = None
+        self.reader: WiiIsoReader | None = None
 
         self.data_partition = None # TODO: currently doing for data partition, may need a change
-        self.dol_modifier: Optional[Callable[[DOL], None]] = None
+        self.dol_modifier: Callable[[DOL], None] | None = None
 
         self.file_replacements: dict[str, bytes] = {}
-        self.fst_modifier: Optional[Callable[[FST], None]] = None
+        self.fst_modifier: Callable[[FST], None] | None = None
         self.files_to_add: dict[str, bytes] = {}
         self.files_to_remove: list[str] = []
 
@@ -135,7 +136,7 @@ class WiiIsoPatcher:
 
             builder.finish(dest)
 
-    def _build_fst_modifier(self) -> Optional[Callable[[FST], None]]:
+    def _build_fst_modifier(self) -> Callable[[FST], None] | None:
         user_modification = self.fst_modifier
         files_to_add = dict(self.files_to_add)
         files_to_remove = list(self.files_to_remove)

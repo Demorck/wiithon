@@ -1,6 +1,5 @@
 from collections.abc import Callable
 from io import BytesIO
-from typing import List, Optional
 
 from wiithon.crypto.part_reader import CryptPartReader
 from wiithon.disc.layout import APPLOADER_OFFSET, APPLOADER_HEADER_SIZE, BI2_OFFSET, BI2_SIZE
@@ -18,7 +17,7 @@ from wiithon.formats.dol import DOL, DOL_HEADER_SIZE, DOL_TEXT_SECTIONS, DOL_DAT
 
 class WiiPartitionInfo:
     def __init__(self,  header: WiiPartitionHeader, tmd: TMD,
-                        certificates: List[Certificate], internal_header: DiscHeader,
+                        certificates: list[Certificate], internal_header: DiscHeader,
                         fst: FST, crypto: CryptPartReader,
                         partition_offset: int) -> None:
         self.header = header
@@ -70,7 +69,7 @@ class WiiPartitionInfo:
 
         return self.crypto.read_at(bi2_offset, bi2_size)
 
-    def list_files(self, node: Optional[FSTNode] = None, prefix: str = "") -> List[str]:
+    def list_files(self, node: FSTNode | None = None, prefix: str = "") -> list[str]:
         paths: list[str] = []
         entries = self.fst.entries if node is None else (
             node.children if isinstance(node, FSTDirectory) else []
@@ -85,7 +84,7 @@ class WiiPartitionInfo:
 
         return paths
 
-    def callback_all_files(self, callback: Callable[[FSTNode], None], node: Optional[FSTNode] = None) -> None:
+    def callback_all_files(self, callback: Callable[[FSTNode], None], node: FSTNode | None = None) -> None:
         entries = self.fst.entries if node is None else (
             node.children if isinstance(node, FSTDirectory) else []
         )
