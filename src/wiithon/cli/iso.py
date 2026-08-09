@@ -91,7 +91,8 @@ def _print_hexdump(data: bytes, limit: int) -> None:
         console.print(f"[dim]{offset:08x}[/dim]  {hexa}  [cyan]{escape(text)}[/cyan]", soft_wrap=True)
 
     if limit and len(data) > limit:
-        console.print(f"\n[dim]... {len(data) - limit} more byte(s), use -n 0 to print everything[/dim]", soft_wrap=True)
+        console.print(f"\n[dim]... {len(data) - limit} more byte(s), use -n 0 to print everything[/dim]",
+                      soft_wrap=True)
 
 def _print_tree(paths: list[str], partition_type: str) -> None:
     root = Tree(f"[bold cyan]{partition_type.upper()} partition[/bold cyan]")
