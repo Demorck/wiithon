@@ -79,7 +79,7 @@ class CryptPartWriter:
         self.group_cache = bytearray(raw_group)
         self.current_group = group
 
-        # Decrypt - because of all the issues that i had, i recreated the function but may TODO: using the decrypt_group from Utils
+        # Decrypt
         for i in range(BLOCK_PER_GROUP):
             start = i * BLOCK_SIZE
 
