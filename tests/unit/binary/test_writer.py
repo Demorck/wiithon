@@ -233,7 +233,7 @@ class TestString(unittest.TestCase):
         # "héllo" is 6 bytes in utf-8, so it does not fit in a 5 byte field
         with self.assertRaises(BinaryError):
             written("string", "héllo", 5)
-        self.assertEqual(written("string", "héllo", 6), "héllo".encode("utf-8"))
+        self.assertEqual(written("string", "héllo", 6), "héllo".encode())
 
     def test_encoding_from_the_constructor(self):
         binary_writer, stream = writer(encoding="latin-1")
