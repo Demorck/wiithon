@@ -1,7 +1,7 @@
 import os
 import struct
 from io import BytesIO
-from typing import BinaryIO, List
+from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.align import align
@@ -24,7 +24,7 @@ class U8Node:
 
 class U8:
     def __init__(self) -> None:
-        self.nodes : List[U8Node] = []
+        self.nodes : list[U8Node] = []
 
 
     @classmethod
@@ -83,7 +83,7 @@ class U8:
 
         return obj
 
-    def _search(self, parts: List[str], start: int, end: int) -> int | None:
+    def _search(self, parts: list[str], start: int, end: int) -> int | None:
         if not parts:
             return None
 

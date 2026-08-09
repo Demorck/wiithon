@@ -1,5 +1,5 @@
 from io import BytesIO
-from typing import BinaryIO, List
+from typing import BinaryIO
 import os
 from enum import IntFlag
 
@@ -68,8 +68,8 @@ class Rarc:
         self.string_table_offset: int = 0
         self.number_of_files: int = 0
 
-        self.nodes: List[RarcNode] = []
-        self.entries: List[RarcFileEntry] = []
+        self.nodes: list[RarcNode] = []
+        self.entries: list[RarcFileEntry] = []
         self.string_table: bytes = b""
 
     @staticmethod

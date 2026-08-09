@@ -1,5 +1,6 @@
 from io import BytesIO
-from typing import runtime_checkable, Protocol, BinaryIO, Callable
+from typing import runtime_checkable, Protocol, BinaryIO
+from collections.abc import Callable
 
 from wiithon.exceptions import InvalidFormatError, FstFileNotFoundError
 from wiithon.formats.lz77 import Lz77
