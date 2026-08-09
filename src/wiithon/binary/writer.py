@@ -1,5 +1,5 @@
 import struct
-from typing import BinaryIO, List
+from typing import BinaryIO
 
 from wiithon.binary.common import STRING_FORMAT
 from wiithon.exceptions import BinaryError
@@ -58,7 +58,7 @@ class BinaryWriter:
         self._write_number(data, '>f')
 
 
-    def list_u32(self, numbers: List[int]) -> None:
+    def list_u32(self, numbers: list[int]) -> None:
         for num in numbers:
             self.u32(num)
 

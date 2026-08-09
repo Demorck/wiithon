@@ -1,6 +1,6 @@
 import struct
 from io import BytesIO
-from typing import BinaryIO, List
+from typing import BinaryIO
 from wiithon.binary.common import STRING_FORMAT
 from wiithon.exceptions import BinaryError
 
@@ -73,7 +73,7 @@ class BinaryReader:
             raise BinaryError(f"Tried to read {size} bytes, got {len(data)}.")
         return data
 
-    def list_u32(self, size: int) -> List[int]:
+    def list_u32(self, size: int) -> list[int]:
         result_list = list()
         for _ in range(size):
             result_list.append(self.u32())
