@@ -190,13 +190,17 @@ class DOL:
 
     def find_arena_lo_setter(self) -> int:
         """
-        Finds the 'lis r3' address in the arenaLo setup sequence.
-        Pattern (found empirically across multiple Wii games):
-          lis r3, X        (3c 60 ?? ??)
-          addi r3, r3, Y   (38 63 ?? ??)
-          addi r0, r3, 31  (38 03 ?? ??)
-          rlwinm r3, r0, ? (54 03 ?? ??)
-        Returns the virtual address of the lis.
+        Finds the ``lis r3`` address in the arenaLo setup sequence.
+
+        Pattern (found empirically across multiple Wii games)::
+
+            lis    r3, X       (3c 60 ?? ??)
+            addi   r3, r3, Y   (38 63 ?? ??)
+            addi   r0, r3, 31  (38 03 ?? ??)
+            rlwinm r3, r0, ?   (54 03 ?? ??)
+
+        Returns:
+            int: virtual address of the ``lis``.
         """
         checks = [(0, b'\x3c\x60'), (4, b'\x38\x63'), (8, b'\x38\x03'), (12, b'\x54\x03')]
 
