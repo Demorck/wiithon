@@ -1,5 +1,4 @@
 import hashlib
-import os
 import struct
 import unittest
 from io import BytesIO

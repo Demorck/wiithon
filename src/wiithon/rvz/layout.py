@@ -1,4 +1,3 @@
-from typing import NamedTuple, Optional
 
 #: WIA Magic Word
 WIA_MAGIC_WORD: bytes = b'WIA\x01'

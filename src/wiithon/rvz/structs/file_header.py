@@ -1,9 +1,9 @@
 import hashlib
 from typing import BinaryIO
 
-from wiithon import BinaryReader, InvalidFormatError, CorruptedDataError
+from wiithon import BinaryReader, CorruptedDataError, InvalidFormatError
 from wiithon.crypto.layout import SHA1_SIZE
-from wiithon.rvz.layout import RVZ_MAGIC_WORD, HEADER_SIZE, WIA_MAGIC_WORD, RVZ_GROUP_SIZE, HEADER_HASH
+from wiithon.rvz.layout import HEADER_HASH, HEADER_SIZE, RVZ_MAGIC_WORD, WIA_MAGIC_WORD
 
 
 class WiaHeader:

@@ -1,4 +1,5 @@
 from typing import BinaryIO
+
 from wiithon.rvz.structs.file_header import WiaHeader
 
 
@@ -11,7 +12,7 @@ class WiaReader:
 
     def __init__(self, path: str) -> None:
         self.path = path
-        self.file: BinaryIO = open(path, "rb")
+        self.file: BinaryIO = open(path, "rb") # noqa: SIM115
 
         try:
             self.header: WiaHeader = WiaHeader.read(self.file)

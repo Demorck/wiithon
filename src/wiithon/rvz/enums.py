@@ -1,5 +1,6 @@
 from enum import IntEnum
 
+
 class WiaCompression(IntEnum):
     """Compression method of a WIA or RVZ file"""
     NONE  = 0
