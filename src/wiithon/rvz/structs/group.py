@@ -1,13 +1,16 @@
 from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
-from wiithon.rvz.layout import GROUP_COMPRESSED_FLAG, GROUP_SIZE_MASK
+from wiithon.rvz.layout import GROUP_COMPRESSED_FLAG, GROUP_SIZE_MASK, RVZ_GROUP_SIZE, WIA_GROUP_SIZE
 
 
 class WiaGroup:
     """
     A pointer to one chunk of disc data, compressed
     """
+
+    #: Size of this structure
+    STRUCT_SIZE: int = WIA_GROUP_SIZE
 
     def __init__(self) -> None:
         """
@@ -70,6 +73,9 @@ class RvzGroup(WiaGroup):
     """
     Same as WiaGroup, extended by RVZ with a packed size and a compression flag
     """
+
+    #: Size of this structure
+    STRUCT_SIZE: int = RVZ_GROUP_SIZE
 
     @classmethod
     def read(cls, stream: BinaryIO) -> "WiaGroup":

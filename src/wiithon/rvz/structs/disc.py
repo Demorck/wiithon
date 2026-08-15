@@ -102,7 +102,7 @@ class WiaDisc:
         obj.partition_hash = reader.raw(SHA1_SIZE)
         obj.raw_data_count = reader.u32()
         obj.raw_data_offset = reader.u64()
-        obj.raw_data_struct_size = reader.u32()
+        obj.raw_data_size = reader.u32()
         obj.group_count = reader.u32()
         obj.group_offset = reader.u64()
         obj.group_size = reader.u32()
