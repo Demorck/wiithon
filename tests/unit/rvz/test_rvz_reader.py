@@ -4,6 +4,8 @@ import unittest
 from io import BytesIO
 
 from wiithon.exceptions import CorruptedDataError, InvalidFormatError
+from wiithon.rvz.disc import WiaDisc
+from wiithon.rvz.enums import WiaCompression, WiaDiscType
 from wiithon.rvz.layout import DISC_SIZE, RVZ_MAGIC_WORD, WIA_MAGIC_WORD
 from wiithon.rvz.structs.file_header import WiaHeader
 
@@ -44,6 +46,24 @@ class TestWiaRvzStructures(unittest.TestCase):
         with self.assertRaises(CorruptedDataError):
             WiaHeader.read(BytesIO(tampered_bytes))
 
+class TestWiaDisc(unittest.TestCase):
+    def test_reads_a_zstd_disc(self):
+        """Fields land at the right offsets, and the level is read as signed"""
+        raw = bytearray(DISC_SIZE)
+        raw[0x00:0x04] = struct.pack(">I", WiaDiscType.WII)
+        raw[0x04:0x08] = struct.pack(">I", WiaCompression.ZSTD)
+        raw[0x08:0x0C] = struct.pack(">i", -3)
+        raw[0x0C:0x10] = struct.pack(">I", 0x20000)
+        raw[0x90:0x94] = struct.pack(">I", 2)
+
+        disc = WiaDisc.read(BytesIO(bytes(raw)))
+
+        self.assertEqual(disc.disc_type, WiaDiscType.WII)
+        self.assertEqual(disc.compression, WiaCompression.ZSTD)
+        self.assertEqual(disc.compression_level, -3)
+        self.assertEqual(disc.chunk_size, 0x20000)
+        self.assertEqual(disc.partition_count, 2)
+        self.assertEqual(disc.partition_chunk_size, 0x1F000)
 
 if __name__ == '__main__':
     unittest.main()
