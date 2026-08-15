@@ -1,7 +1,8 @@
 import hashlib
 from typing import BinaryIO
 
-from wiithon import BinaryReader, CorruptedDataError, InvalidFormatError
+from wiithon.binary.reader import BinaryReader
+from wiithon.exceptions import CorruptedDataError, InvalidFormatError
 from wiithon.crypto.layout import SHA1_SIZE
 from wiithon.rvz.layout import HEADER_HASH, HEADER_SIZE, RVZ_MAGIC_WORD, WIA_MAGIC_WORD
 
