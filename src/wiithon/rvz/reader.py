@@ -4,9 +4,10 @@ from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
 from wiithon.exceptions import CorruptedDataError
-from wiithon.rvz.disc import WiaDisc
-from wiithon.rvz.layout import DISC_OFFSET, DISC_SIZE
+from wiithon.rvz.layout import DISC_OFFSET, DISC_SIZE, PARTITION_SIZE
+from wiithon.rvz.structs.disc import WiaDisc
 from wiithon.rvz.structs.file_header import WiaHeader
+from wiithon.rvz.structs.partition import WiaPartition
 
 
 class WiaReader:
@@ -26,6 +27,7 @@ class WiaReader:
                 DISC_OFFSET, self.header.disc_size, self.header.disc_hash,
                 DISC_SIZE, "Disc structure",
             ))
+            self.partitions: list[WiaPartition] = self._read_partitions()
 
         except BaseException:
             self.file.close()
@@ -60,6 +62,22 @@ class WiaReader:
             raise CorruptedDataError(f"{what} in WIA/RVZ has a hash mismatch")
 
         return BytesIO(raw.ljust(padded_to, b'\x00'))
+
+    def _read_partitions(self) -> list[WiaPartition]:
+        """
+        Read the partition descriptors, which are never compressed.
+
+        Returns:
+            One descriptor per partition of the disc
+        """
+        stream = self._read_verified(
+            self.disc.partition_offset,
+            self.disc.partition_count * self.disc.partition_struct_size,
+            self.disc.partition_hash,
+            self.disc.partition_count * PARTITION_SIZE,
+            "Partition array",
+        )
+        return [WiaPartition.read(stream) for _ in range(self.disc.partition_count)]
 
     def __enter__(self) -> "WiaReader":
         return self

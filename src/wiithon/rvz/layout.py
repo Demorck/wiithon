@@ -28,6 +28,10 @@ RAW_DATA_SIZE:              int = 0x18
 WIA_GROUP_SIZE:             int = 0x08
 RVZ_GROUP_SIZE:             int = 0x0C
 
+#: Most significant bit of group data size in RVZ
+GROUP_COMPRESSED_FLAG: int = 0x8000_0000
+#: Remaining bits
+GROUP_SIZE_MASK: int = 0x7FFF_FFFF # FFFF_FFFF ^ GROUP_COMPRESSED_FLAG
 
 MIN_CHUNK_SIZE: int = 0x8000
 WIA_CHUNK_UNIT: int = 0x200000

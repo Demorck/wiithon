@@ -4,9 +4,9 @@ import unittest
 from io import BytesIO
 
 from wiithon.exceptions import CorruptedDataError, InvalidFormatError
-from wiithon.rvz.disc import WiaDisc
 from wiithon.rvz.enums import WiaCompression, WiaDiscType
 from wiithon.rvz.layout import DISC_SIZE, RVZ_MAGIC_WORD, WIA_MAGIC_WORD
+from wiithon.rvz.structs.disc import WiaDisc
 from wiithon.rvz.structs.file_header import WiaHeader
 
 
