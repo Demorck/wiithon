@@ -48,8 +48,8 @@ class WiaDisc:
         #: Where the struct is, compressed
         self.raw_data_offset: int = 0
 
-        #: Size of one raw_data structure
-        self.raw_data_struct_size: int = 0
+        #: Size of compressed raw data
+        self.raw_data_size: int = 0
 
         #: Number of group structures
         self.group_count: int = 0

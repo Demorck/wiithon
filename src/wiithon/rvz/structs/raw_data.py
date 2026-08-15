@@ -1,7 +1,7 @@
 from typing import BinaryIO
 
-from wiithon import BinaryReader
-from wiithon.crypto.layout import GROUP_SIZE
+from wiithon.binary.reader import BinaryReader
+from wiithon.crypto.layout import BLOCK_SIZE
 
 
 class WiaRawData:
@@ -45,7 +45,7 @@ class WiaRawData:
         obj.group_index = reader.u32()
         obj.group_count = reader.u32()
 
-        obj.offset = offset - (offset % GROUP_SIZE)
+        obj.offset = offset - (offset % BLOCK_SIZE)
         obj.size   = size + (offset - obj.offset)
 
         return obj

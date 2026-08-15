@@ -1,6 +1,6 @@
 from typing import BinaryIO
 
-from wiithon import BinaryReader
+from wiithon.binary.reader import BinaryReader
 from wiithon.rvz.layout import GROUP_COMPRESSED_FLAG, GROUP_SIZE_MASK
 
 
@@ -90,7 +90,5 @@ class RvzGroup(WiaGroup):
         obj.compressed  = bool(size & GROUP_COMPRESSED_FLAG)
         obj.size        = size & GROUP_SIZE_MASK
         obj.packed_size = reader.u32()
-
-        return obj
 
         return obj

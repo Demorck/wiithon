@@ -111,6 +111,13 @@ class TestGroupEntries(unittest.TestCase):
             structure.read(stream)
             self.assertEqual(stream.read(4), FLAG)
 
+    def test_block_aligned_entry_is_untouched(self):
+        """0x50000 is block aligned but not group aligned, which separates the two"""
+        entry = WiaRawData.read(BytesIO(struct.pack(">QQII", 0x50000, 0x20000, 1, 1)))
+
+        self.assertEqual(entry.offset, 0x50000)
+        self.assertEqual(entry.size, 0x20000)
+
 
 if __name__ == "__main__":
     unittest.main()
