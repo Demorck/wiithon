@@ -385,7 +385,7 @@ def cntlzw(rA: int, rS: int) -> bytes:
     return _fmt_x(0x1F, rS, rA, 0, 26)
 
 
-def lbzx(rD: int, rA: int, rB; int) -> bytes:
+def lbzx(rD: int, rA: int, rB: int) -> bytes:
     """lbzx rD, rA, rB  - load byte and zero-extend indexed"""
     return _fmt_x(31, rD, rA, rB, 87)
 
