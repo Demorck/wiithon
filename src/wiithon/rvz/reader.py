@@ -2,11 +2,13 @@ import hashlib
 from io import BytesIO
 from typing import BinaryIO
 
+from wiithon.binary.align import align
 from wiithon.binary.reader import BinaryReader
 from wiithon.exceptions import CorruptedDataError
 from wiithon.rvz.enums import WiaCompression
 from wiithon.rvz.layout import DISC_OFFSET, DISC_SIZE, PARTITION_SIZE
 from wiithon.rvz.structs.disc import WiaDisc
+from wiithon.rvz.structs.exception_list import WiaExceptionList
 from wiithon.rvz.structs.file_header import WiaHeader
 from wiithon.rvz.structs.group import RvzGroup, WiaGroup
 from wiithon.rvz.structs.partition import WiaPartition
@@ -122,6 +124,34 @@ class WiaReader:
 
         self.file.seek(group.offset)
         return BinaryReader(self.file).raw(group.size)
+
+    def read_partition_group(self, index: int) -> tuple[WiaExceptionList, bytes]:
+        """
+        Read one group of partition data. Splitted into Exception list and the payload
+
+        Args:
+            index: Index into :attr:`groups`
+
+        Returns:
+            The exceptions list and the decrypted data without the hash
+
+        Raises:
+            NotImplementedError: If the image is compressed by a compression not currently implemented
+        """
+        data = self.read_group(index)
+        if not data:
+            return WiaExceptionList(), b''
+
+        stream = BytesIO(data)
+        exceptions = WiaExceptionList.read(stream)
+
+        if self.disc.compression in (
+                WiaCompression.NONE,
+                WiaCompression.PURGE
+        ):
+            stream.seek(align(stream.tell(), 4))
+
+        return exceptions, stream.read()
 
     def close(self) -> None:
         self.file.close()

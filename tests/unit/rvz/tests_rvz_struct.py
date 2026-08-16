@@ -2,17 +2,13 @@ import struct
 import unittest
 from io import BytesIO
 
+from unit.rvz._common import DATA_KEY, FIRST_SEGMENT, FLAG, PARTITION
+
 from wiithon.crypto.layout import BLOCK_SIZE
 from wiithon.rvz.structs.group import RvzGroup, WiaGroup
 from wiithon.rvz.structs.partition import WiaPartition
 from wiithon.rvz.structs.partition_data import WiaPartitionData
 from wiithon.rvz.structs.raw_data import WiaRawData
-
-FLAG = b"NEXT"
-DATA_KEY = bytes.fromhex("0e5b5db26d4b71fd91a6eb12afed1796")
-FIRST_SEGMENT = struct.pack(">IIII", 7940, 256, 127, 4)
-SECOND_SEGMENT = struct.pack(">IIII", 8196, 134772, 131, 2106)
-PARTITION = DATA_KEY + FIRST_SEGMENT + SECOND_SEGMENT
 
 
 class TestPartitionTable(unittest.TestCase):

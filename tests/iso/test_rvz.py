@@ -78,9 +78,8 @@ class TestMockImages(unittest.TestCase):
         """A WIA magic must not produce twelve byte group structures"""
         wia = self.open_image(WIA_PATH)
         self.assertEqual(len(wia.groups), wia.disc.group_count)
-        for index, group in enumerate(wia.groups):
-            with self.subTest(group=index):
-                self.assertIs(type(group), WiaGroup)
+        for _, group in enumerate(wia.groups):
+            self.assertIs(type(group), WiaGroup)
 
     @needs_wia
     def test_raw_groups_hold_one_chunk_each(self):
@@ -93,8 +92,7 @@ class TestMockImages(unittest.TestCase):
                 index = entry.group_index + i
                 if wia.groups[index].is_zero:
                     continue
-                with self.subTest(group=index):
-                    self.assertEqual(len(wia.read_group(index)), min(chunk, entry.size - i * chunk))
+                self.assertEqual(len(wia.read_group(index)), min(chunk, entry.size - i * chunk))
 
     @needs_wia
     def test_partition_groups_start_with_their_exceptions(self):
@@ -115,9 +113,8 @@ class TestMockImages(unittest.TestCase):
                     seen_exceptions |= count > 0
                     blocks = min(blocks_per_group, segment.block_count - i * blocks_per_group)
 
-                    with self.subTest(group=index):
-                        header = (2 + EXCEPTION_SIZE * count + 3) // 4 * 4
-                        self.assertEqual(len(data), header + blocks * BLOCK_DATA_SIZE)
+                    header = (2 + EXCEPTION_SIZE * count + 3) // 4 * 4
+                    self.assertEqual(len(data), header + blocks * BLOCK_DATA_SIZE)
 
     @needs_rvz
     def test_rvz_header_announces_zstd(self):
@@ -144,13 +141,12 @@ class TestMockImages(unittest.TestCase):
         self.assertEqual(wia.disc.disc_head, rvz.disc.disc_head)
         self.assertEqual(len(wia.partitions), len(rvz.partitions))
 
-        for index, (from_wia, from_rvz) in enumerate(zip(wia.partitions, rvz.partitions, strict=True)):
-            with self.subTest(partition=index):
-                self.assertEqual(from_wia.title_key, from_rvz.title_key)
-                self.assertEqual(
-                    [(segment.first_block, segment.block_count) for segment in from_wia.segments],
-                    [(segment.first_block, segment.block_count) for segment in from_rvz.segments],
-                )
+        for _, (from_wia, from_rvz) in enumerate(zip(wia.partitions, rvz.partitions, strict=True)):
+            self.assertEqual(from_wia.title_key, from_rvz.title_key)
+            self.assertEqual(
+                [(segment.first_block, segment.block_count) for segment in from_wia.segments],
+                [(segment.first_block, segment.block_count) for segment in from_rvz.segments],
+            )
 
     @needs_both
     def test_chunk_size_drives_the_group_count(self):
@@ -159,6 +155,17 @@ class TestMockImages(unittest.TestCase):
         self.assertNotEqual(wia.disc.chunk_size, rvz.disc.chunk_size)
         self.assertNotEqual(wia.disc.group_count, rvz.disc.group_count)
 
+    @needs_wia
+    def test_partition_group_splits_into_exceptions_and_payload(self):
+        """The first group of the data partition starts on the internal disc header"""
+        wia = self.open_image(WIA_PATH)
+        exceptions, payload = wia.read_partition_group(125)
+
+        self.assertEqual(len(exceptions), 2848)
+        self.assertEqual(exceptions.exceptions[0].offset, 0x0354)
+        self.assertEqual(exceptions.exceptions[-1].block, 63)
+        self.assertEqual(len(payload), wia.disc.partition_chunk_size)
+        self.assertEqual(payload[:6], GAME_ID)
 
 if __name__ == "__main__":
     unittest.main()
