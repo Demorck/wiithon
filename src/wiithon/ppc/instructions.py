@@ -233,7 +233,7 @@ def lwz(rD: int, offset: int, rA: int) -> bytes:
 
 
 def lwzu(rD: int, offset: int, rA: int) -> bytes:
-    """lwz rD, offset(rA)  - load word and zero-extend from effective address and update"""
+    """lwzu rD, offset(rA)  - load word and zero-extend from effective address and update"""
     return _fmt_d(33, rD, rA, offset)
 
 
@@ -243,7 +243,7 @@ def stw(rS: int, offset: int, rA: int) -> bytes:
 
 
 def stwu(rS: int, offset: int, rA: int) -> bytes:
-    """stw rS, offset(rA)  - store 32-bit word to effective address and update"""
+    """stwu rS, offset(rA)  - store 32-bit word to effective address and update"""
     return _fmt_d(37, rS, rA, offset)
 
 
@@ -253,8 +253,12 @@ def lbz(rD: int, offset: int, rA: int) -> bytes:
 
 
 def lbzu(rD: int, offset: int, rA: int) -> bytes:
-    """lbz rD, offset(rA)  - load byte and zero-extend and update"""
+    """lbzu rD, offset(rA)  - load byte and zero-extend and update"""
     return _fmt_d(35, rD, rA, offset)
+
+
+def lbzx(rD: int, rA: int, rB; int) -> bytes:
+    """lbzx rD, rA, rB  - load byte and zero-extend indexed"""
 
 
 def stb(rS: int, offset: int, rA: int) -> bytes:
@@ -263,7 +267,7 @@ def stb(rS: int, offset: int, rA: int) -> bytes:
 
 
 def stbu(rS: int, offset: int, rA: int) -> bytes:
-    """stb rS, offset(rA)  - store byte (low 8 bits of rS) and update"""
+    """stbu rS, offset(rA)  - store byte (low 8 bits of rS) and update"""
     return _fmt_d(39, rS, rA, offset)
 
 
@@ -273,7 +277,7 @@ def lhz(rD: int, offset: int, rA: int) -> bytes:
 
 
 def lhzu(rD: int, offset: int, rA: int) -> bytes:
-    """lhz rD, offset(rA)  - load halfword and zero-extend and update"""
+    """lhzu rD, offset(rA)  - load halfword and zero-extend and update"""
     return _fmt_d(41, rD, rA, offset)
     
 
@@ -283,7 +287,7 @@ def sth(rS: int, offset: int, rA: int) -> bytes:
 
 
 def sthu(rS: int, offset: int, rA: int) -> bytes:
-    """sth rS, offset(rA)  - store halfword (low 16 bits of rS) and update"""
+    """sthu rS, offset(rA)  - store halfword (low 16 bits of rS) and update"""
     return _fmt_d(45, rS, rA, offset)
 
 
