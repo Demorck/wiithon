@@ -1,28 +1,27 @@
 from io import BytesIO
-from typing import BinaryIO, List, Optional
+from typing import BinaryIO
 
-from wiithon.disc.enums import WiiPartType
-from wiithon.disc.partition import WiiPartitionInfo
-from wiithon.crypto.part_reader import CryptPartReader
-from wiithon.exceptions import InvalidDiscError
-from wiithon.fst.tree import FST
 from wiithon.binary.reader import BinaryReader
+from wiithon.crypto.part_reader import CryptPartReader
+from wiithon.disc.enums import WiiPartType
+from wiithon.disc.layout import DISC_HEADER_SIZE, MAGIC_WORD_OFFSET, REGION_OFFSET, REGION_SIZE, WII_MAGIC_WORD
+from wiithon.disc.partition import WiiPartitionInfo
 from wiithon.disc.structs.certificate import Certificate
 from wiithon.disc.structs.disc_header import DiscHeader
-from wiithon.disc.structs.tmd import TMD
 from wiithon.disc.structs.partition_entry import WiiPartitionEntry, read_parts
 from wiithon.disc.structs.partition_header import WiiPartitionHeader
-
-from wiithon.disc.layout import WII_MAGIC_WORD, REGION_OFFSET, REGION_SIZE, DISC_HEADER_SIZE, MAGIC_WORD_OFFSET
+from wiithon.disc.structs.tmd import TMD
+from wiithon.exceptions import InvalidDiscError
+from wiithon.fst.tree import FST
 
 
 class WiiIsoReader:
     def __init__(self, path: str) -> None:
         self.path = path
-        self.file: BinaryIO = open(path, "rb")
+        self.file: BinaryIO = open(path, "rb") # noqa: SIM115
         try:
             self.disc_header: DiscHeader = DiscHeader.read(self.file)
-            self.partitions: List[WiiPartitionEntry] = read_parts(self.file)
+            self.partitions: list[WiiPartitionEntry] = read_parts(self.file)
             self.region: bytes = self.read_region()
             self.magic_word: int = self.read_magic_word()
             if self.magic_word != WII_MAGIC_WORD:
@@ -31,13 +30,13 @@ class WiiIsoReader:
             self.file.close()
             raise
 
-    def get_data_partition(self) -> Optional[WiiPartitionEntry]:
+    def get_data_partition(self) -> WiiPartitionEntry | None:
         return next((p for p in self.partitions if p.part_type == WiiPartType.DATA), None)
 
-    def get_update_partition(self) -> Optional[WiiPartitionEntry]:
+    def get_update_partition(self) -> WiiPartitionEntry | None:
         return next((p for p in self.partitions if p.part_type == WiiPartType.UPDATE), None)
 
-    def get_partitions(self) -> List[WiiPartitionEntry]:
+    def get_partitions(self) -> list[WiiPartitionEntry]:
         return self.partitions
 
     def read_region(self) -> bytes:
@@ -63,7 +62,7 @@ class WiiIsoReader:
 
         # Reading certificates
         self.file.seek(offset + header.certificate_chain_offset)
-        certificates: List[Certificate] = []
+        certificates: list[Certificate] = []
         for _ in range(3):
             certificates.append(Certificate.read(self.file))
 

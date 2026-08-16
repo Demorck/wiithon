@@ -1,11 +1,11 @@
-from io import BytesIO
-from typing import BinaryIO, List
 import os
 from enum import IntFlag
+from io import BytesIO
+from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
-from wiithon.exceptions import InvalidFormatError, ArchiveFileNotFoundError, ArchiveEntryExistsError
+from wiithon.exceptions import ArchiveEntryExistsError, ArchiveFileNotFoundError, InvalidFormatError
 
 RARC_MAGIC_WORD: bytes = b'RARC'
 
@@ -68,8 +68,8 @@ class Rarc:
         self.string_table_offset: int = 0
         self.number_of_files: int = 0
 
-        self.nodes: List[RarcNode] = []
-        self.entries: List[RarcFileEntry] = []
+        self.nodes: list[RarcNode] = []
+        self.entries: list[RarcFileEntry] = []
         self.string_table: bytes = b""
 
     @staticmethod

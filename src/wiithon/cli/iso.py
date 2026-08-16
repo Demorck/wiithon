@@ -1,21 +1,29 @@
 from __future__ import annotations
 
 import sys
+from pathlib import Path
+from typing import Annotated
 
 import typer
-from pathlib import Path
-from typing import Annotated, Optional, List
-
 from rich.markup import escape
 from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
+from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 from rich.table import Table
 from rich.tree import Tree
-from wiithon.disc.structs.partition_entry import WiiPartitionEntry
 
-from wiithon.cli._common import console, require_file, select_partitions, abort, JsonOption, write_json, \
-    render_table, PartitionTypeOption
-from wiithon import WiiIsoReader, FSTDirectory, FSTFile
+from wiithon.cli._common import (
+    JsonOption,
+    PartitionTypeOption,
+    abort,
+    console,
+    render_table,
+    require_file,
+    select_partitions,
+    write_json,
+)
+from wiithon.disc.reader import WiiIsoReader
+from wiithon.disc.structs.partition_entry import WiiPartitionEntry
+from wiithon.fst.node import FSTDirectory, FSTFile
 
 iso_app = typer.Typer(help="Operations on Wii ISO files.")
 
@@ -32,7 +40,7 @@ def _collect_info(reader: WiiIsoReader) -> dict:
         "partitions":  [p.get_readable_part_type() for p in reader.partitions],
     }
 
-def _collect_files(reader: WiiIsoReader, entries: List[WiiPartitionEntry]) -> list[dict]:
+def _collect_files(reader: WiiIsoReader, entries: list[WiiPartitionEntry]) -> list[dict]:
     return [
         {
             "partition": entry.get_readable_part_type(),
@@ -91,7 +99,8 @@ def _print_hexdump(data: bytes, limit: int) -> None:
         console.print(f"[dim]{offset:08x}[/dim]  {hexa}  [cyan]{escape(text)}[/cyan]", soft_wrap=True)
 
     if limit and len(data) > limit:
-        console.print(f"\n[dim]... {len(data) - limit} more byte(s), use -n 0 to print everything[/dim]", soft_wrap=True)
+        console.print(f"\n[dim]... {len(data) - limit} more byte(s), use -n 0 to print everything[/dim]",
+                      soft_wrap=True)
 
 def _print_tree(paths: list[str], partition_type: str) -> None:
     root = Tree(f"[bold cyan]{partition_type.upper()} partition[/bold cyan]")
@@ -157,7 +166,7 @@ def iso_extract(
     dest: Annotated[Path, typer.Argument(help="Output directory.")],
     partition_type: PartitionTypeOption = None,
     file: Annotated[
-        Optional[str], typer.Option("--file", "-f", help="Extract only this file or directory.")
+        str | None, typer.Option("--file", "-f", help="Extract only this file or directory.")
     ] = None,
 ) -> None:
     """Extract all files from a partition"""

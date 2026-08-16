@@ -157,23 +157,23 @@ def blrl():
 # L=0 for 32-bit comparison (always the case on 32-bit PowerPC / Wii).
 # ---------------------------------------------------------------------------
 
-def cmp(crfD: int, rA: int, rB: int, l: int = 0) -> bytes:
+def cmp(crfD: int, rA: int, rB: int, length: int = 0) -> bytes:
     """cmp crfD, rA, rB  - signed integer compare; result written to CR field crfD"""
     _check_crf(crfD, "crfD")
     _check_reg(rA, "rA")
     _check_reg(rB, "rB")
 
     # bits 25:21 = [BF:3][0:1][L:1]
-    field = (crfD << 2) | (l & 1)
+    field = (crfD << 2) | (length & 1)
     return _pack((31 << 26) | (field << 21) | (rA << 16) | (rB << 11) | (0 << 1) | 0)
 
 
-def cmpi(crfD: int, rA: int, imm: int, l: int = 0) -> bytes:
+def cmpi(crfD: int, rA: int, imm: int, length: int = 0) -> bytes:
     """cmpi crfD, rA, imm  - signed compare immediate; result written to CR field crfD"""
     _check_crf(crfD, "crfD")
     _check_reg(rA, "rA")
     _check_signed_imm16(imm)
-    field = (crfD << 2) | (l & 1)
+    field = (crfD << 2) | (length & 1)
     return _pack((11 << 26) | (field << 21) | (rA << 16) | (imm & 0xFFFF))
 
 

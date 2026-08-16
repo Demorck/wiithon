@@ -1,10 +1,10 @@
+from collections import deque
 from io import BytesIO
 from typing import BinaryIO
-from collections import deque
 
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
-from wiithon.exceptions import InvalidFormatError, CorruptedDataError
+from wiithon.exceptions import CorruptedDataError, InvalidFormatError
 
 
 class Yaz0:
@@ -80,7 +80,7 @@ class Yaz0:
                     if number_to_copy < 3 or number_to_copy > 0x111:
                         raise CorruptedDataError("Something happens when decompressing yaz0 file")
 
-                    for j in range(number_to_copy):
+                    for _ in range(number_to_copy):
                         dest_buffer.append(dest_buffer[copy_src])
                         copy_src += 1
 
@@ -113,11 +113,7 @@ class Yaz0:
                     
                     offset = distance - 1
                     
-                    if length >= 0x12:
-                        length_info = 0
-                    else:
-                        length_info = length - 2
-                        
+                    length_info = 0 if length >= 18 else length - 2
                     byte1 = ((length_info << 4) | (offset >> 8)) & 0xFF
                     byte2 = offset & 0xFF
                     
@@ -153,7 +149,7 @@ class Yaz0:
                 return 0, -1
 
             sub3 = data[pos : pos + 3]
-            valid_occs = occurrences.get(sub3, None)
+            valid_occs = occurrences.get(sub3)
             if not valid_occs:
                 return 0, -1
                 

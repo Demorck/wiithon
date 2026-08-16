@@ -1,19 +1,19 @@
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from typing import Callable, Optional, TypeVar, Iterator
-
 from io import BytesIO
+from typing import TypeVar
 
-from wiithon import NoDataPartitionError
-from wiithon.formats.bnr import BNR
+from wiithon.builder.copy_source import CopyPartitionSource
+from wiithon.builder.disc_builder import WiiDiscBuilder
+from wiithon.disc.enums import WiiPartType
+from wiithon.disc.reader import WiiIsoReader
+from wiithon.exceptions import NoDataPartitionError
 from wiithon.formats.archive import resolve_read, resolve_write
-from wiithon.fst.tree import FST
+from wiithon.formats.bnr import BNR
+from wiithon.formats.dol import DOL
 from wiithon.fst.node import FSTFile
 from wiithon.fst.operations import add_node, remove_node
-from wiithon.disc.enums import WiiPartType
-from wiithon.formats.dol import DOL
-from wiithon.disc.reader import WiiIsoReader
-from wiithon.builder.disc_builder import WiiDiscBuilder
-from wiithon.builder.copy_source import CopyPartitionSource
+from wiithon.fst.tree import FST
 
 T = TypeVar("T")
 
@@ -21,13 +21,13 @@ T = TypeVar("T")
 class WiiIsoPatcher:
     def __init__(self, src_path: str):
         self.src_path = src_path
-        self.reader: Optional[WiiIsoReader] = None
+        self.reader: WiiIsoReader | None = None
 
         self.data_partition = None # TODO: currently doing for data partition, may need a change
-        self.dol_modifier: Optional[Callable[[DOL], None]] = None
+        self.dol_modifier: Callable[[DOL], None] | None = None
 
         self.file_replacements: dict[str, bytes] = {}
-        self.fst_modifier: Optional[Callable[[FST], None]] = None
+        self.fst_modifier: Callable[[FST], None] | None = None
         self.files_to_add: dict[str, bytes] = {}
         self.files_to_remove: list[str] = []
 
@@ -135,7 +135,7 @@ class WiiIsoPatcher:
 
             builder.finish(dest)
 
-    def _build_fst_modifier(self) -> Optional[Callable[[FST], None]]:
+    def _build_fst_modifier(self) -> Callable[[FST], None] | None:
         user_modification = self.fst_modifier
         files_to_add = dict(self.files_to_add)
         files_to_remove = list(self.files_to_remove)

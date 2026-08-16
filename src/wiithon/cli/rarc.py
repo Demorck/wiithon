@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 from io import BytesIO
-
-import typer
-
 from pathlib import Path
 from typing import Annotated
 
-from wiithon import Rarc, Yaz0
-from wiithon.formats.rarc import NodeAttribute
-from wiithon.cli._common import console, require_file, JsonOption, write_json, render_table, titled_panel
+import typer
+
+from wiithon.cli._common import JsonOption, console, render_table, require_file, titled_panel, write_json
+from wiithon.formats.rarc import NodeAttribute, Rarc
+from wiithon.formats.yaz0 import Yaz0
 
 rarc_app = typer.Typer(help="Operations on RARC files.")
 

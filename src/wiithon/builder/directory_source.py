@@ -1,15 +1,14 @@
 import os
-from typing import List
-
-from wiithon.disc.structs.certificate import Certificate
-from wiithon.disc.structs.disc_header import DiscHeader
-from wiithon.disc.structs.tmd import TMD
-from wiithon.disc.structs.ticket import Ticket
-from wiithon.disc.enums import WiiPartType
 
 from wiithon.builder.source import PartitionSource
+from wiithon.disc.enums import WiiPartType
+from wiithon.disc.structs.certificate import Certificate
+from wiithon.disc.structs.disc_header import DiscHeader
+from wiithon.disc.structs.ticket import Ticket
+from wiithon.disc.structs.tmd import TMD
+from wiithon.fst.node import FSTDirectory, FSTFile
 from wiithon.fst.tree import FST
-from wiithon.fst.node import FSTFile, FSTDirectory
+
 
 def build_from_directory_tree(files_dir: str) -> FST:
     fst = FST()
@@ -70,7 +69,7 @@ class DirectoryPartitionSource(PartitionSource):
     def get_tmd(self) -> TMD:
         return self.tmd
 
-    def get_certificates(self) -> List[Certificate]:
+    def get_certificates(self) -> list[Certificate]:
         return self.certificates
 
     def get_encrypted_header(self) -> DiscHeader:
@@ -91,7 +90,7 @@ class DirectoryPartitionSource(PartitionSource):
     def get_fst(self) -> FST:
         return self.fst
 
-    def get_file_data(self, path: List[str]) -> bytes:
+    def get_file_data(self, path: list[str]) -> bytes:
         rel_path = os.path.join(*path)
         file_path = os.path.join(self.files_dir, rel_path) # pycharm yells at me because arguments are not correct lmao
         with open(file_path, 'rb') as f:

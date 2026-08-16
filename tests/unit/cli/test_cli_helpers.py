@@ -41,9 +41,8 @@ class TestSelectPartitions(unittest.TestCase):
 
     def test_aborts_when_type_absent(self):
         reader = FakeReader(WiiPartType.DATA)
-        with contextlib.redirect_stderr(io.StringIO()):
-            with self.assertRaises(typer.Exit) as ctx:
-                select_partitions(reader, PartTypeChoice.channel)
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(typer.Exit) as ctx:
+            select_partitions(reader, PartTypeChoice.channel)
         self.assertEqual(ctx.exception.exit_code, 1)
 
     def test_unknown_type_is_never_matched(self):

@@ -1,4 +1,5 @@
 from io import BytesIO
+
 from wiithon.disc.patcher import WiiIsoPatcher
 from wiithon.formats.bnr import BNR
 
@@ -27,9 +28,14 @@ def main():
         print(f"banner : {len(banner_bytes):#x} bytes")
         print(f"sound  : {len(sound_bytes):#x} bytes")
 
-        with open("../extract/icon.bin", "wb") as f: f.write(icon_bytes)
-        with open("../extract/banner.bin", "wb") as f: f.write(banner_bytes)
-        with open("../extract/sound.bin", "wb") as f: f.write(sound_bytes)
+        with open("../extract/icon.bin", "wb") as f:
+            f.write(icon_bytes)
+
+        with open("../extract/banner.bin", "wb") as f:
+            f.write(banner_bytes)
+
+        with open("../extract/sound.bin", "wb") as f:
+            f.write(sound_bytes)
 
         # with open("my_custom_sound.bin", "rb") as f:
         #     custom_sound = f.read()

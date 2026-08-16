@@ -1,6 +1,6 @@
+import random
 import unittest
 from io import BytesIO
-import random
 
 from wiithon.formats.yaz0 import Yaz0
 

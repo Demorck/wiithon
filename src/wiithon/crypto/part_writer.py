@@ -1,11 +1,18 @@
 from typing import BinaryIO
+
 from Crypto.Cipher import AES
 
-from wiithon.crypto.layout import (
-    GROUP_SIZE, GROUP_DATA_SIZE, BLOCK_SIZE,
-    BLOCK_HEADER_SIZE, BLOCK_DATA_SIZE, BLOCK_PER_GROUP, IV_OFFSET, IV_SIZE
-)
 from wiithon.crypto.blocks import encrypt_group
+from wiithon.crypto.layout import (
+    BLOCK_DATA_SIZE,
+    BLOCK_HEADER_SIZE,
+    BLOCK_PER_GROUP,
+    BLOCK_SIZE,
+    GROUP_DATA_SIZE,
+    GROUP_SIZE,
+    IV_OFFSET,
+    IV_SIZE,
+)
 from wiithon.disc.layout import H3_TABLE_SIZE
 
 
@@ -79,7 +86,7 @@ class CryptPartWriter:
         self.group_cache = bytearray(raw_group)
         self.current_group = group
 
-        # Decrypt - because of all the issues that i had, i recreated the function but may TODO: using the decrypt_group from Utils
+        # Decrypt
         for i in range(BLOCK_PER_GROUP):
             start = i * BLOCK_SIZE
 

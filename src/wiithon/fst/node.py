@@ -1,5 +1,5 @@
-from typing import List, Optional
 from abc import ABC, abstractmethod
+
 
 class FSTNode(ABC):
     """Abstract base class for a FST entries (composite pattern)"""
@@ -47,9 +47,9 @@ class FSTDirectory(FSTNode):
     """
     def __init__(self, name = "") -> None:
         super().__init__(name)
-        self.children: List[FSTNode] = []
+        self.children: list[FSTNode] = []
 
-    def find(self, path: str) -> Optional[FSTNode]:
+    def find(self, path: str) -> FSTNode | None:
         """
         Find a node by the relative path
         :param path:

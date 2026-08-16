@@ -1,14 +1,14 @@
-from typing import List, BinaryIO
+from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
-from wiithon.fst.node import FSTNode, FSTDirectory, FSTFile
+from wiithon.fst.node import FSTDirectory, FSTFile, FSTNode
 from wiithon.fst.raw_node import RawFSTNode
 
 
 class FST:
     def __init__(self):
-        self.entries: List[FSTNode] = []
+        self.entries: list[FSTNode] = []
 
     @classmethod
     def read(cls, stream: BinaryIO, offset: int) -> "FST":
@@ -18,7 +18,7 @@ class FST:
 
         root = RawFSTNode.read(stream)
         total_nodes = root.length
-        nodes: List[RawFSTNode] = [root]
+        nodes: list[RawFSTNode] = [root]
         for _ in range(total_nodes - 1):
             nodes.append(RawFSTNode.read(stream))
 
@@ -82,8 +82,8 @@ class FST:
 
 
 def _build_tree(reader: BinaryReader, string_offset: int,
-                nodes: List[RawFSTNode],
-                start: int, end: int) -> tuple[List[FSTNode], int]:
+                nodes: list[RawFSTNode],
+                start: int, end: int) -> tuple[list[FSTNode], int]:
     """Recursively convert flat raw nodes into a tree.
 
     :param stream: Binary stream (for reading names from string table).
@@ -94,7 +94,7 @@ def _build_tree(reader: BinaryReader, string_offset: int,
 
     :return: list of FSTNodes, next index to process.
     """
-    result: List[FSTNode] = []
+    result: list[FSTNode] = []
     i = start
 
     while i < end:
