@@ -232,9 +232,19 @@ def lwz(rD: int, offset: int, rA: int) -> bytes:
     return _fmt_d(32, rD, rA, offset)
 
 
+def lwzu(rD: int, offset: int, rA: int) -> bytes:
+    """lwz rD, offset(rA)  - load word and zero-extend from effective address and update"""
+    return _fmt_d(33, rD, rA, offset)
+
+
 def stw(rS: int, offset: int, rA: int) -> bytes:
     """stw rS, offset(rA)  - store 32-bit word to effective address"""
     return _fmt_d(36, rS, rA, offset)
+
+
+def stwu(rS: int, offset: int, rA: int) -> bytes:
+    """stw rS, offset(rA)  - store 32-bit word to effective address and update"""
+    return _fmt_d(37, rS, rA, offset)
 
 
 def lbz(rD: int, offset: int, rA: int) -> bytes:
@@ -242,9 +252,19 @@ def lbz(rD: int, offset: int, rA: int) -> bytes:
     return _fmt_d(34, rD, rA, offset)
 
 
+def lbzu(rD: int, offset: int, rA: int) -> bytes:
+    """lbz rD, offset(rA)  - load byte and zero-extend and update"""
+    return _fmt_d(35, rD, rA, offset)
+
+
 def stb(rS: int, offset: int, rA: int) -> bytes:
     """stb rS, offset(rA)  - store byte (low 8 bits of rS)"""
     return _fmt_d(38, rS, rA, offset)
+
+
+def stbu(rS: int, offset: int, rA: int) -> bytes:
+    """stb rS, offset(rA)  - store byte (low 8 bits of rS) and update"""
+    return _fmt_d(39, rS, rA, offset)
 
 
 def lhz(rD: int, offset: int, rA: int) -> bytes:
@@ -252,22 +272,35 @@ def lhz(rD: int, offset: int, rA: int) -> bytes:
     return _fmt_d(40, rD, rA, offset)
 
 
+def lhzu(rD: int, offset: int, rA: int) -> bytes:
+    """lhz rD, offset(rA)  - load halfword and zero-extend and update"""
+    return _fmt_d(41, rD, rA, offset)
+    
+
 def sth(rS: int, offset: int, rA: int) -> bytes:
     """sth rS, offset(rA)  - store halfword (low 16 bits of rS)"""
     return _fmt_d(44, rS, rA, offset)
+
+
+def sthu(rS: int, offset: int, rA: int) -> bytes:
+    """sth rS, offset(rA)  - store halfword (low 16 bits of rS) and update"""
+    return _fmt_d(45, rS, rA, offset)
 
 
 def ori(rA: int, rS: int, imm: int) -> bytes:
     """ori rA, rS, imm  - bitwise OR with unsigned 16-bit immediate"""
     return _fmt_d_unsigned(24, rS, rA, imm)
 
+
 def oris(rA: int, rS: int, imm: int):
     """oris rA, rS, imm  - bitwise OR with unsigned 16-bit immediate shifted"""
     return _fmt_d_unsigned(0x19, rS, rA, imm)
 
+
 def nop() -> bytes:
     """nop  - no operation (pseudo: ori r0, r0, 0)"""
     return ori(0, 0, 0)
+
 
 def andi(rA: int, rS: int, imm: int) -> bytes:
     """andi. rA, rS, imm  - rA = rS & imm (unsigned 16-bit); always updates CR0"""
