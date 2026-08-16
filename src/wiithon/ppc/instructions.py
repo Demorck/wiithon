@@ -257,10 +257,6 @@ def lbzu(rD: int, offset: int, rA: int) -> bytes:
     return _fmt_d(35, rD, rA, offset)
 
 
-def lbzx(rD: int, rA: int, rB; int) -> bytes:
-    """lbzx rD, rA, rB  - load byte and zero-extend indexed"""
-
-
 def stb(rS: int, offset: int, rA: int) -> bytes:
     """stb rS, offset(rA)  - store byte (low 8 bits of rS)"""
     return _fmt_d(38, rS, rA, offset)
@@ -387,6 +383,11 @@ def mr(rA: int, rS: int) -> bytes:
 
 def cntlzw(rA: int, rS: int) -> bytes:
     return _fmt_x(0x1F, rS, rA, 0, 26)
+
+
+def lbzx(rD: int, rA: int, rB; int) -> bytes:
+    """lbzx rD, rA, rB  - load byte and zero-extend indexed"""
+    return _fmt_x(31, rD, rA, rB, 87)
 
 
 # ---------------------------------------------------------------------------
