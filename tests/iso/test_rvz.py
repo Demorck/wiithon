@@ -1,24 +1,25 @@
+import tempfile
 import unittest
 from pathlib import Path
+
+from iso._common import (
+    COMPARE_BUFFER,
+    EXCEPTION_SIZE,
+    GAME_ID,
+    ISO_PATH,
+    ISO_SIZE,
+    RVZ_PATH,
+    WIA_PATH,
+    needs_both,
+    needs_rvz,
+    needs_wia,
+)
 
 from wiithon.crypto.layout import BLOCK_DATA_SIZE, BLOCK_SIZE, GROUP_SIZE
 from wiithon.rvz.enums import WiaCompression, WiaDiscType
 from wiithon.rvz.reader import WiaReader
+from wiithon.rvz.rebuilder import IsoRebuilder
 from wiithon.rvz.structs.group import WiaGroup
-
-MOCK_DIR = Path(__file__).parent.parent / "mock_iso"
-WIA_PATH = MOCK_DIR / "test.wia"
-RVZ_PATH = MOCK_DIR / "test.rvz"
-
-GAME_ID = b"FEUR69"
-ISO_SIZE = 4_699_979_776
-
-
-EXCEPTION_SIZE = 22
-
-needs_wia = unittest.skipUnless(WIA_PATH.is_file(), "WIA not found")
-needs_rvz = unittest.skipUnless(RVZ_PATH.is_file(), "RVZ not found")
-needs_both = unittest.skipUnless(WIA_PATH.is_file() and RVZ_PATH.is_file(), "WIA or RVZ not found")
 
 
 class TestMockImages(unittest.TestCase):
@@ -29,6 +30,16 @@ class TestMockImages(unittest.TestCase):
     One Disc to rule them all, one Disc to find them,
     One Disc to bring them all, and in the darkness bind them
     """
+
+    def rebuild_raw_data(self, path: Path) -> Path:
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        target = Path(directory.name) / "rebuilt.iso"
+
+        with target.open("w+b") as stream:
+            IsoRebuilder(self.open_image(path)).write_raw_data(stream)
+
+        return target
 
     def open_image(self, path: Path) -> WiaReader:
         reader = WiaReader(str(path))
@@ -89,7 +100,7 @@ class TestMockImages(unittest.TestCase):
 
         for entry in wia.raw_data:
             for i in range(entry.group_count):
-                index = entry.group_index + i
+                index = entry.first_group_index + i
                 if wia.groups[index].is_zero:
                     continue
                 self.assertEqual(len(wia.read_group(index)), min(chunk, entry.size - i * chunk))
@@ -166,6 +177,46 @@ class TestMockImages(unittest.TestCase):
         self.assertEqual(exceptions.exceptions[-1].block, 63)
         self.assertEqual(len(payload), wia.disc.partition_chunk_size)
         self.assertEqual(payload[:6], GAME_ID)
+
+    @needs_both
+    def test_rebuilt_image_has_the_original_size(self):
+        self.assertEqual(self.rebuild_raw_data(WIA_PATH).stat().st_size, ISO_SIZE)
+
+    @needs_both
+    def test_rebuilt_groups_match_the_iso(self):
+        wia = self.open_image(WIA_PATH)
+        chunk = wia.disc.chunk_size
+        rebuilt = self.rebuild_raw_data(WIA_PATH)
+
+        with rebuilt.open("rb") as left, ISO_PATH.open("rb") as right:
+            for entry in wia.raw_data:
+                for i in range(entry.group_count):
+                    index = entry.first_group_index + i
+                    if wia.groups[index].is_zero:
+                        continue
+
+                    offset = entry.offset + i * chunk
+                    size = len(wia.read_group(index))
+                    left.seek(offset)
+                    right.seek(offset)
+
+                    self.assertEqual(left.read(size), right.read(size))
+
+    @needs_both
+    def test_rebuilt_raw_areas_match_the_iso(self):
+        wia = self.open_image(WIA_PATH)
+        rebuilt = self.rebuild_raw_data(WIA_PATH)
+
+        with rebuilt.open("rb") as left, ISO_PATH.open("rb") as right:
+            for entry in wia.raw_data:
+                left.seek(entry.offset)
+                right.seek(entry.offset)
+                remaining = entry.size
+
+                while remaining:
+                    count = min(COMPARE_BUFFER, remaining)
+                    self.assertEqual(left.read(count), right.read(count))
+                    remaining -= count
 
 if __name__ == "__main__":
     unittest.main()

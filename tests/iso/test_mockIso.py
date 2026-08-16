@@ -1,11 +1,8 @@
-from pathlib import Path
 
 import pytest
+from iso._common import GAME_ID, ISO_PATH
 
-ISO_PATH = Path(__file__).parent.parent / "mock_iso" / "test.iso"
-
-GAME_ID = b"FEUR69"
-WII_MAGIC = 0x5D1C9EA3
+from wiithon.disc.layout import WII_MAGIC_WORD
 
 
 @pytest.fixture(scope="module")
@@ -21,4 +18,4 @@ def test_game_id(header):
 
 
 def test_wii_magic(header):
-    assert int.from_bytes(header[0x18:0x1C], "big") == WII_MAGIC
+    assert int.from_bytes(header[0x18:0x1C], "big") == WII_MAGIC_WORD

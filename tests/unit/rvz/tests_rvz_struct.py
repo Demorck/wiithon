@@ -44,7 +44,7 @@ class TestPartitionTable(unittest.TestCase):
         entry = WiaRawData.read(BytesIO(struct.pack(">QQII", 0xF800000, 0x20000, 126, 1)))
         self.assertEqual(entry.offset, 0xF800000)
         self.assertEqual(entry.size, 0x20000)
-        self.assertEqual(entry.group_index, 126)
+        self.assertEqual(entry.first_group_index, 126)
         self.assertEqual(entry.group_count, 1)
 
     def test_reader_stops_at_the_end_of_the_structure(self):

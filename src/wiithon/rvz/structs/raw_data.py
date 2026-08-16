@@ -20,7 +20,7 @@ class WiaRawData:
         self.size: int = 0
 
         #: Index of the first group holding this data, the other follows
-        self.group_index: int = 0
+        self.first_group_index: int = 0
 
         #: The number of group structs used for this data
         self.group_count: int = 0
@@ -42,7 +42,7 @@ class WiaRawData:
 
         offset          = reader.u64()
         size            = reader.u64()
-        obj.group_index = reader.u32()
+        obj.first_group_index = reader.u32()
         obj.group_count = reader.u32()
 
         obj.offset = offset - (offset % BLOCK_SIZE)
