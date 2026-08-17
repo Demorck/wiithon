@@ -75,7 +75,7 @@ class TestGhidra(unittest.TestCase):
         # Location: 0x802cb07c - Instruction: 0x8d4b8518 - Code:     lbzu       r10, -0x7ae8 (r11 )=>DAT_80538518
         self.assertEqual(u32(lbzu(10, -0x7ae8, 11)), 0x8d4b8518)
         # Location: 0x80004374 - Instruction: 0x8c04ffff - Code:     lbzu       r0 ,-0x1 (r4 )
-        self.assertEqual(u32(lbzu(0, -0x1, r4)), 0x8c04ffff)
+        self.assertEqual(u32(lbzu(0, -0x1, 4)), 0x8c04ffff)
 
     
     def test_lhz(self):
@@ -101,7 +101,7 @@ class TestGhidra(unittest.TestCase):
 
     def test_lwzu(self):
         # Location: 0x8003695c - Instruction: 0x84a6270c - Code:     lwzu       r5 ,0x270c (r6 )
-        self.assertEqual(u32(lzwu(5, 0x270c, 6)), 0x84a6270c)
+        self.assertEqual(u32(lwzu(5, 0x270c, 6)), 0x84a6270c)
         # Location: 0x800580d8 - Instruction: 0x84040008 - Code:     lwzu       r0 ,0x8 (r4 )
         self.assertEqual(u32(lwzu(0, 0x8, 4)), 0x84040008)
         # Location: 0x800c6d88 - Instruction: 0x84c43f7c - Code:     lwzu       r6 ,3f7c (r4 )
@@ -159,7 +159,7 @@ class TestGhidra(unittest.TestCase):
         # Location: 0x80004378 - Instruction: 0x9c06ffff - Code:     stbu       r0 ,-0x1 (r6 )
         self.assertEqual(u32(stbu(0, -0x1, 6)), 0x9c06ffff)
         # Location: 0x80518f04 - Instruction: 0x9cec0001 - Code:     stbu       r7 ,0x1 (r12 )
-        self.assertEqual(u32(stbu(7, -0x1, 12)), 0x9cec0001)
+        self.assertEqual(u32(stbu(7, 0x1, 12)), 0x9cec0001)
         # Location: 0x8051e824 - Instruction: 0x9c050001 - Code:     stbu       r0 ,0x1 (r5 )
         self.assertEqual(u32(stbu(0, 0x1, 5)), 0x9c050001)
 
