@@ -3,7 +3,7 @@ import struct
 
 from wiithon.ppc.instructions import (
     b, bl, cntlzw,
-    li, lis, addi, lwz, lwzu, stw, stwu, lbz, lbzu, stb, stbu, lhz, lhzu, sth, sthu,
+    li, lis, addi, lwz, lwzu, stw, stwu, lbz, lbzu, lbzx, stb, stbu, lhz, lhzu, sth, sthu,
     ori, nop,
     add, or_, mtspr, lfs, mulli, oris, rlwnm, stfs, andi, and_, blr,
 )
@@ -69,6 +69,7 @@ class TestGhidra(unittest.TestCase):
         self.assertEqual(u32(lbz(0, 0x43, 31)), 0x881f0043)     # Location: 0x800075b4  - Instruction: 0x881f0043 - Code: lbz        r0, 0x43 (r31 )
         self.assertEqual(u32(lbz(6, -0x67fb, 13)), 0x88cd9805)  # Location: 0x800089d0  - Instruction: 0x88cd9805 - Code: lbz        r6, -0x67fb (r13 )=>DAT_8069e4a4+1
 
+    
     def test_lbzu(self):
         # LocatioN: 0x80004350 - Instruction: 0x8c040001 - Code:     lbzu       r0 ,0x1 (r4 )
         self.assertEqual(u32(lbzu(0, 1, 4)), 0x8c040001)
@@ -77,7 +78,16 @@ class TestGhidra(unittest.TestCase):
         # Location: 0x80004374 - Instruction: 0x8c04ffff - Code:     lbzu       r0 ,-0x1 (r4 )
         self.assertEqual(u32(lbzu(0, -0x1, 4)), 0x8c04ffff)
 
-    
+
+    def test_lbzx(self):
+        # Location: 0x803fd584 - Instruction: 0x7c9c18ae - Code:     lbzx       r4 ,r28 ,r3
+        self.assertEqual(u32(lbzx(4, 28, 3)), 0x7c9c18ae)
+        # Location: 0x8042c9f0 - Instruction: 0x7d0530ae - Code:     lbzx       r8 ,r5 ,r6
+        self.assertEqual(u32(lbzx(8, 5, 6)), 0x7d0530ae)
+        # Location: 0x80430d28 - Instruction: 0x7c0320ae - Code:     lbzx       r0 ,r3 ,r4
+        self.assertEqual(u32(lbzx(0, 3, 4)), 0x7c0320ae)
+
+
     def test_lhz(self):
         self.assertEqual(u32(lhz(4, 0x10, 31)), 0xa09f0010)   # Location: 0x8000b870  - Instruction: 0xa09f0010 - Code: lhz        r4, 0x10 (r31 )
         self.assertEqual(u32(lhz(0, 0x1C, 28)), 0xa01c001c)   # Location: 0x80014c08  - Instruction: 0xa01c001c - Code: lhz        r0, 0x1c (r28 )
