@@ -274,6 +274,71 @@ class TestBuildIntegration(unittest.TestCase):
         _, kwargs = MockCopyBuilder.call_args
         self.assertIsNone(kwargs.get("fst_modifier"))
 
+# patch_dol
+class TestPatchDol(unittest.TestCase):
+    def setUp(self):
+        self.patcher = _make_patcher()
+        self.dol = MagicMock()
+
+    def rebuild_dol(self):
+        """Replay what the patcher do"""
+        for modifier in self.patcher.dol_modifiers:
+            modifier(self.dol)
+
+    def test_patching_only_schedules_the_work(self):
+        """Nothing touches the DOL at registration"""
+        calls = []
+        self.assertEqual(self.patcher.dol_modifiers, [])
+
+        self.patcher.patch_dol(lambda dol: calls.append(dol))
+        self.assertEqual(len(self.patcher.dol_modifiers), 1)
+        self.assertEqual(calls, [])
+
+        self.rebuild_dol()
+        self.assertEqual(calls, [self.dol])
+
+    def test_modifiers_run_in_registration_order(self):
+        """Patches build on each other so a second call must queue up and not replace the first"""
+        order = []
+        self.patcher.patch_dol(lambda dol: order.append("a"))
+        self.patcher.patch_dol(lambda dol: order.append("b"))
+        self.patcher.patch_dol(lambda dol: order.append("c"))
+        self.assertEqual(len(self.patcher.dol_modifiers), 3)
+
+        self.rebuild_dol()
+        self.assertEqual(order, ["a", "b", "c"])
+
+    def test_extra_args_are_frozen_at_registration(self):
+        """The caller configures the patch once the modifier only has to replay it later"""
+        seen = []
+        self.patcher.patch_dol(
+            lambda dol, stars, galaxy=None: seen.append((dol, stars, galaxy)),
+            3,
+            galaxy="HeavensDoorGalaxy",
+        )
+
+        self.rebuild_dol()
+        self.assertEqual(seen, [(self.dol, 3, "HeavensDoorGalaxy")])
+
+    def test_a_modifier_can_collect_its_options(self):
+        seen = []
+
+        def tweak_galaxies(dol, **options):
+            seen.append((dol, options))
+
+        self.patcher.patch_dol(tweak_galaxies, dome_galaxies=["a", "b"], star_requirement=5)
+
+        self.rebuild_dol()
+        self.assertEqual(seen, [(self.dol, {"dome_galaxies": ["a", "b"], "star_requirement": 5})])
+
+    def test_each_modifier_keeps_its_own_args(self):
+        seen = []
+        self.patcher.patch_dol(lambda dol, name: seen.append(name), "first")
+        self.patcher.patch_dol(lambda dol, name: seen.append(name), "second")
+
+        self.rebuild_dol()
+        self.assertEqual(seen, ["first", "second"])
+
 
 if __name__ == "__main__":
     unittest.main()

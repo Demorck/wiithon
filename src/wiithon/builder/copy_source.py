@@ -19,7 +19,7 @@ from wiithon.fst.tree import FST
 class CopyPartitionSource(PartitionSource):
     def __init__(self, reader: WiiIsoReader, partition: WiiPartitionEntry,
                  fst_modifier: Optional[Callable[[FST], None]] = None,
-                 dol_modifier: Optional[Callable[[DOL], None]] = None,
+                 dol_modifiers: Optional[list[Callable[[DOL], None]]] = None,
                  file_overrides: dict[str, bytes] | None = None) -> None:
         copy_partition = copy.copy(partition)
         self.partition_info = reader.open_partition(copy_partition)
@@ -36,8 +36,11 @@ class CopyPartitionSource(PartitionSource):
         if fst_modifier is not None:
             fst_modifier(self.fst)
 
-        if dol_modifier is not None:
-            dol_modifier(self.dol)
+        if dol_modifiers is None:
+            dol_modifiers = []
+
+        for modifier in dol_modifiers:
+            modifier(self.dol)
 
         self._file_overrides: dict[str, bytes] = file_overrides or {}
 

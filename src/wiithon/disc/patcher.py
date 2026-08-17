@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Callable, Optional, TypeVar, Iterator
+from typing import Callable, Optional, TypeVar, Iterator, Concatenate, ParamSpec
 
 from io import BytesIO
 
@@ -16,6 +16,7 @@ from wiithon.builder.disc_builder import WiiDiscBuilder
 from wiithon.builder.copy_source import CopyPartitionSource
 
 T = TypeVar("T")
+P = ParamSpec("P")
 
 # TODO: Currently patch only data partition
 class WiiIsoPatcher:
@@ -24,7 +25,7 @@ class WiiIsoPatcher:
         self.reader: Optional[WiiIsoReader] = None
 
         self.data_partition = None # TODO: currently doing for data partition, may need a change
-        self.dol_modifier: Optional[Callable[[DOL], None]] = None
+        self.dol_modifiers: list[Callable[[DOL], None]] = []
 
         self.file_replacements: dict[str, bytes] = {}
         self.fst_modifier: Optional[Callable[[FST], None]] = None
@@ -86,8 +87,9 @@ class WiiIsoPatcher:
         obj.write(buf)
         resolve_write(self, path, buf.getvalue())
 
-    def patch_dol(self, fn: Callable[[DOL], None]) -> None:
-        self.dol_modifier = fn
+    # noinspection PyTypeHints
+    def patch_dol(self, fn: Callable[Concatenate[DOL, P], None], *args: P.args, **kwargs: P.kwargs) -> None:
+        self.dol_modifiers.append(lambda dol: fn(dol, *args, **kwargs))
 
     def read_dol(self) -> DOL:
         return self.data_partition.read_dol()
@@ -128,7 +130,7 @@ class WiiIsoPatcher:
                     self.reader,
                     entry,
                     fst_modifier=self._build_fst_modifier() if is_data else None,
-                    dol_modifier=self.dol_modifier if is_data else None,
+                    dol_modifiers=self.dol_modifiers if is_data else None,
                     file_overrides=self.file_replacements if is_data else None,
                 )
                 builder.add_partition(dest, copy_builder, progress_cb)
