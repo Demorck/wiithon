@@ -22,7 +22,7 @@ def _check_reg_nonzero(r: int, name: str = "register") -> None:
         raise ValueError(f"{name} must be in [1, 31], got {r}")
 
 
-def _compare_reg(r1: int, r2: int, name1: str = "register", name2: str = "register") -> None
+def _compare_reg(r1: int, r2: int, name1: str = "register", name2: str = "register") -> None:
     """Raise ValueError if r1 is the same as r2"""
     if r1 == r2:
         raise ValueError(f"{name1} must not be the same as {name2}, got {r1} and {r2}")
