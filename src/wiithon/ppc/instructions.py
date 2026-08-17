@@ -22,7 +22,7 @@ def _check_reg_nonzero(r: int, name: str = "register") -> None:
         raise ValueError(f"{name} must be in [1, 31], got {r}")
 
 
-def _compare_reg(r1: int, name1: str = "register", r2: int, name2: str = "register") -> None
+def _compare_reg(r1: int, r2: int, name1: str = "register", name2: str = "register") -> None
     """Raise ValueError if r1 is the same as r2"""
     if r1 == r2:
         raise ValueError(f"{name1} must not be the same as {name2}, got {r1} and {r2}")
@@ -247,7 +247,7 @@ def lwz(rD: int, offset: int, rA: int) -> bytes:
 def lwzu(rD: int, offset: int, rA: int) -> bytes:
     """lwzu rD, offset(rA)  - load word and zero-extend from effective address and update"""
     _check_reg_nonzero(rA, "rA")
-    _compare_reg(rA, "rA", rD, "rD")
+    _compare_reg(rA, rD, "rA", "rD")
     return _fmt_d(33, rD, rA, offset)
 
 
@@ -270,7 +270,7 @@ def lbz(rD: int, offset: int, rA: int) -> bytes:
 def lbzu(rD: int, offset: int, rA: int) -> bytes:
     """lbzu rD, offset(rA)  - load byte and zero-extend and update"""
     _check_reg_nonzero(rA, "rA")
-    _compare_reg(rA, "rA", rD, "rD")
+    _compare_reg(rA, rD, "rA", "rD")
     return _fmt_d(35, rD, rA, offset)
 
 
@@ -293,7 +293,7 @@ def lhz(rD: int, offset: int, rA: int) -> bytes:
 def lhzu(rD: int, offset: int, rA: int) -> bytes:
     """lhzu rD, offset(rA)  - load halfword and zero-extend and update"""
     _check_reg_nonzero(rA, "rA")
-    _compare_reg(rA, "rA", rD, "rD")
+    _compare_reg(rA, rD, "rA", "rD")
     return _fmt_d(41, rD, rA, offset)
     
 
