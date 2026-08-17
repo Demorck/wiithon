@@ -191,7 +191,7 @@ class TestGhidra(unittest.TestCase):
         # Location: 0x8000c720 - Instruction: 0x9421ffe0 - Code:     stwu       r1 ,-0x20 (r1 )
         self.assertEqual(u32(stwu(1, -0x20, 1)), 0x9421ffe0)
         # Location: 0x8020320c - Instruction: 0x947c0098 - Code:     stwu       r3 ,0x98 (r28 )
-        self.assertEqual(u32(stwu(3, 0x98, 28)), 0x947c0098
+        self.assertEqual(u32(stwu(3, 0x98, 28)), 0x947c0098)
 
 
     def test_stfs(self):
