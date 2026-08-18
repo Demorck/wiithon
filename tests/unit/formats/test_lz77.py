@@ -92,8 +92,6 @@ class TestLz77Compress(unittest.TestCase):
         self.assertEqual(Lz77.uncompress(compressed, len(original)), original)
 
     def test_distance_fits_in_12_bits(self):
-        # A match found at the far end of the 4095-byte window must still be
-        # encodable (distance - 1 <= 0xFFF)
         random.seed(7)
         filler = bytes(random.getrandbits(8) for _ in range(4000))
         pattern = b"PATTERN_TO_MATCH"

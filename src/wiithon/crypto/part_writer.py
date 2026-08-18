@@ -123,7 +123,6 @@ class CryptPartWriter:
         physical_offset = self.data_offset + (self.current_group * GROUP_SIZE)
         self.stream.seek(physical_offset)
         self.stream.write(encrypted_data)
-        # print(encrypted_data)
 
         self.is_dirty = False
 

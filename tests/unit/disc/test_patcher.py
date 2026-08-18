@@ -237,7 +237,7 @@ class TestBuildFstModifier(unittest.TestCase):
         self.assertNotIn("second.bin", names)
 
 
-# build()
+# build
 class TestBuildIntegration(unittest.TestCase):
 
     def _make_reader_mock(self):

@@ -12,11 +12,6 @@ def main():
         bnr = BNR.read(BytesIO(bnr_bytes))
 
         print(repr(bnr))
-        # BNR title='Super Mario Galaxy'
-        # IMET  icon=0x...  banner=0x...  sound=0x...
-        #   Japanese  : スーパーマリオギャラクシー
-        #   English   : Super Mario Galaxy
-        #   ...
 
         bnr.imet.set_title("Modded game", language="English")
 
@@ -37,10 +32,10 @@ def main():
         with open("../extract/sound.bin", "wb") as f:
             f.write(sound_bytes)
 
-        # with open("my_custom_sound.bin", "rb") as f:
-        #     custom_sound = f.read()
-        #
-        # bnr.replace_sound(custom_sound)
+        with open("my_custom_sound.bin", "rb") as f:
+            custom_sound = f.read()
+
+        bnr.replace_sound(custom_sound)
 
         patcher.replace_file("opening.bnr", bnr.get_bytes())
 

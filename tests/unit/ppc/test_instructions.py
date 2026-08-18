@@ -11,11 +11,15 @@ from wiithon.ppc.instructions import (
     blr,
     cntlzw,
     lbz,
+    lbzu,
+    lbzx,
     lfs,
     lhz,
+    lhzu,
     li,
     lis,
     lwz,
+    lwzu,
     mtspr,
     mulli,
     nop,
@@ -24,9 +28,12 @@ from wiithon.ppc.instructions import (
     oris,
     rlwnm,
     stb,
+    stbu,
     stfs,
     sth,
+    sthu,
     stw,
+    stwu,
 )
 
 
@@ -152,8 +159,10 @@ class TestGhidra(unittest.TestCase):
 
     def test_lbzx(self):
         # Location: 0x803fd584 - Instruction: 0x7c9c18ae - Code:     lbzx       r4 ,r28 ,r3
+
         self.assertEqual(u32(lbzx(4, 28, 3)), 0x7c9c18ae)
         # Location: 0x8042c9f0 - Instruction: 0x7d0530ae - Code:     lbzx       r8 ,r5 ,r6
+
         self.assertEqual(u32(lbzx(8, 5, 6)), 0x7d0530ae)
         # Location: 0x80430d28 - Instruction: 0x7c0320ae - Code:     lbzx       r0 ,r3 ,r4
         self.assertEqual(u32(lbzx(0, 3, 4)), 0x7c0320ae)
@@ -173,8 +182,10 @@ class TestGhidra(unittest.TestCase):
 
     def test_lhzu(self):
         # Location: 0x80183654 - Instruction: 0xa4180002 - Code:     lhzu       r0 ,0x2 (r24 )
+
         self.assertEqual(u32(lhzu(0, 0x2, 24)), 0xa4180002)
         # Location: 0x80278588 - Instruction: 0xa4e881c8 - Code:     lhzu       r7 ,-0x7e38 (r8 )=> DAT_805381c8
+
         self.assertEqual(u32(lhzu(7, -0x7e38, 8)), 0xa4e881c8)
         # Location: 0x803b2a78 - Instruction: 0xa41afff8 - Code:     lhzu       r0 ,-0x8 (r26 )
         self.assertEqual(u32(lhzu(0, -0x8, 26)), 0xa41afff8)
@@ -195,8 +206,10 @@ class TestGhidra(unittest.TestCase):
     def test_lwzu(self):
         # Location: 0x8003695c - Instruction: 0x84a6270c - Code:     lwzu       r5 ,0x270c (r6 )
         self.assertEqual(u32(lwzu(5, 0x270c, 6)), 0x84a6270c)
+
         # Location: 0x800580d8 - Instruction: 0x84040008 - Code:     lwzu       r0 ,0x8 (r4 )
         self.assertEqual(u32(lwzu(0, 0x8, 4)), 0x84040008)
+
         # Location: 0x800c6d88 - Instruction: 0x84c43f7c - Code:     lwzu       r6 ,3f7c (r4 )
         self.assertEqual(u32(lwzu(6, 0x3f7c, 4)), 0x84c43f7c)
 
@@ -297,8 +310,10 @@ class TestGhidra(unittest.TestCase):
     def test_stbu(self):
         # Location: 0x80004378 - Instruction: 0x9c06ffff - Code:     stbu       r0 ,-0x1 (r6 )
         self.assertEqual(u32(stbu(0, -0x1, 6)), 0x9c06ffff)
+
         # Location: 0x80518f04 - Instruction: 0x9cec0001 - Code:     stbu       r7 ,0x1 (r12 )
         self.assertEqual(u32(stbu(7, 0x1, 12)), 0x9cec0001)
+
         # Location: 0x8051e824 - Instruction: 0x9c050001 - Code:     stbu       r0 ,0x1 (r5 )
         self.assertEqual(u32(stbu(0, 0x1, 5)), 0x9c050001)
 
@@ -318,8 +333,10 @@ class TestGhidra(unittest.TestCase):
     def test_sthu(self):
         # Location: 0x8038134c - Instruction: 0xb7a30004 - Code:     sthu       r29 ,0x4 (r3 )
         self.assertEqual(u32(sthu(29, 0x4, 3)), 0xb7a30004)
+
         # Location: 0x8052133c - Instruction: 0xb41bfffc - Code:     sthu       r0 ,-0x4 (r27 )
         self.assertEqual(u32(sthu(0, -0x4, 27)), 0xb41bfffc)
+
         # Location: 0x80522b88 - Instruction: 0xb4060002 - Code:     sthu       r0 ,0x2 (r6 )
         self.assertEqual(u32(sthu(0, 0x2, 6)), 0xb4060002)
 
@@ -339,8 +356,10 @@ class TestGhidra(unittest.TestCase):
     def test_stwu(self):
         # Location: 0x80004414 - Instruction: 0x94e30004 - Code:     stwu       r7 ,0x4 (r3 )
         self.assertEqual(u32(stwu(7, 0x4, 3)), 0x94e30004)
+
         # Location: 0x8000c720 - Instruction: 0x9421ffe0 - Code:     stwu       r1 ,-0x20 (r1 )
         self.assertEqual(u32(stwu(1, -0x20, 1)), 0x9421ffe0)
+
         # Location: 0x8020320c - Instruction: 0x947c0098 - Code:     stwu       r3 ,0x98 (r28 )
         self.assertEqual(u32(stwu(3, 0x98, 28)), 0x947c0098)
 
