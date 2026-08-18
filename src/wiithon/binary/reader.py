@@ -75,7 +75,7 @@ class BinaryReader:
         return data
 
     def list_u32(self, size: int) -> list[int]:
-        result_list = list()
+        result_list: list[int] = []
         for _ in range(size):
             result_list.append(self.u32())
 

@@ -79,6 +79,9 @@ select = [
 
     # Shadowing python builtin
     "A",
+
+    # Unecessary stuff
+    "C4"
 ]
 
 [tool.ruff.lint.per-file-ignores]
