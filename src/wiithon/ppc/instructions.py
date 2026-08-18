@@ -16,6 +16,18 @@ def _check_reg(r: int, name: str = "register") -> None:
         raise ValueError(f"{name} must be in [0, 31], got {r}")
 
 
+def _check_reg_nonzero(r: int, name: str = "register") -> None:
+    """Raise ValueError if r is not a valid GPR (General Purpose Registers) index (1-31)"""
+    if not (1 <= r <= 31):
+        raise ValueError(f"{name} must be in [1, 31], got {r}")
+
+
+def _compare_reg(r1: int, r2: int, name1: str = "register", name2: str = "register") -> None:
+    """Raise ValueError if r1 is the same as r2"""
+    if r1 == r2:
+        raise ValueError(f"{name1} must not be the same as {name2}, got {r1} and {r2}")
+        
+
 def _check_freg(r: int, name: str = "register") -> None:
     """Raise ValueError if r is not a valid FPR (Floating-Point Registers) index (0–31)"""
     if not (0 <= r <= 31):
@@ -232,9 +244,22 @@ def lwz(rD: int, offset: int, rA: int) -> bytes:
     return _fmt_d(32, rD, rA, offset)
 
 
+def lwzu(rD: int, offset: int, rA: int) -> bytes:
+    """lwzu rD, offset(rA)  - load word and zero-extend from effective address and update"""
+    _check_reg_nonzero(rA, "rA")
+    _compare_reg(rA, rD, "rA", "rD")
+    return _fmt_d(33, rD, rA, offset)
+
+
 def stw(rS: int, offset: int, rA: int) -> bytes:
     """stw rS, offset(rA)  - store 32-bit word to effective address"""
     return _fmt_d(36, rS, rA, offset)
+
+
+def stwu(rS: int, offset: int, rA: int) -> bytes:
+    """stwu rS, offset(rA)  - store 32-bit word to effective address and update"""
+    _check_reg_nonzero(rA, "rA")
+    return _fmt_d(37, rS, rA, offset)
 
 
 def lbz(rD: int, offset: int, rA: int) -> bytes:
@@ -242,9 +267,22 @@ def lbz(rD: int, offset: int, rA: int) -> bytes:
     return _fmt_d(34, rD, rA, offset)
 
 
+def lbzu(rD: int, offset: int, rA: int) -> bytes:
+    """lbzu rD, offset(rA)  - load byte and zero-extend and update"""
+    _check_reg_nonzero(rA, "rA")
+    _compare_reg(rA, rD, "rA", "rD")
+    return _fmt_d(35, rD, rA, offset)
+
+
 def stb(rS: int, offset: int, rA: int) -> bytes:
     """stb rS, offset(rA)  - store byte (low 8 bits of rS)"""
     return _fmt_d(38, rS, rA, offset)
+
+
+def stbu(rS: int, offset: int, rA: int) -> bytes:
+    """stbu rS, offset(rA)  - store byte (low 8 bits of rS) and update"""
+    _check_reg_nonzero(rA, "rA")
+    return _fmt_d(39, rS, rA, offset)
 
 
 def lhz(rD: int, offset: int, rA: int) -> bytes:
@@ -252,22 +290,38 @@ def lhz(rD: int, offset: int, rA: int) -> bytes:
     return _fmt_d(40, rD, rA, offset)
 
 
+def lhzu(rD: int, offset: int, rA: int) -> bytes:
+    """lhzu rD, offset(rA)  - load halfword and zero-extend and update"""
+    _check_reg_nonzero(rA, "rA")
+    _compare_reg(rA, rD, "rA", "rD")
+    return _fmt_d(41, rD, rA, offset)
+    
+
 def sth(rS: int, offset: int, rA: int) -> bytes:
     """sth rS, offset(rA)  - store halfword (low 16 bits of rS)"""
     return _fmt_d(44, rS, rA, offset)
+
+
+def sthu(rS: int, offset: int, rA: int) -> bytes:
+    """sthu rS, offset(rA)  - store halfword (low 16 bits of rS) and update"""
+    _check_reg_nonzero(rA, "rA")
+    return _fmt_d(45, rS, rA, offset)
 
 
 def ori(rA: int, rS: int, imm: int) -> bytes:
     """ori rA, rS, imm  - bitwise OR with unsigned 16-bit immediate"""
     return _fmt_d_unsigned(24, rS, rA, imm)
 
+
 def oris(rA: int, rS: int, imm: int):
     """oris rA, rS, imm  - bitwise OR with unsigned 16-bit immediate shifted"""
     return _fmt_d_unsigned(0x19, rS, rA, imm)
 
+
 def nop() -> bytes:
     """nop  - no operation (pseudo: ori r0, r0, 0)"""
     return ori(0, 0, 0)
+
 
 def andi(rA: int, rS: int, imm: int) -> bytes:
     """andi. rA, rS, imm  - rA = rS & imm (unsigned 16-bit); always updates CR0"""
@@ -350,6 +404,11 @@ def mr(rA: int, rS: int) -> bytes:
 
 def cntlzw(rA: int, rS: int) -> bytes:
     return _fmt_x(0x1F, rS, rA, 0, 26)
+
+
+def lbzx(rD: int, rA: int, rB: int) -> bytes:
+    """lbzx rD, rA, rB  - load byte and zero-extend indexed"""
+    return _fmt_x(31, rD, rA, rB, 87)
 
 
 # ---------------------------------------------------------------------------
