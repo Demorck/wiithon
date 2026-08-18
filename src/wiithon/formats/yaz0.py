@@ -87,7 +87,7 @@ class Yaz0:
         return bytes(dest_buffer)
 
     @staticmethod
-    def compress(data: bytes) -> bytes:
+    def compress(data: bytes) -> bytes: # noqa: C901
         size = len(data)
         dest_buffer = bytearray()
         

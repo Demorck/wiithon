@@ -369,8 +369,8 @@ class BCSVEntry(dict[str, BCSVValue]):
         Returns:
             BCSVValue: Field_type format's value.
         """
-        bcsvField: str = BCSVKey.create(key).resolve_name()
-        return super().__getitem__(bcsvField)
+        bcsv_field: str = BCSVKey.create(key).resolve_name()
+        return super().__getitem__(bcsv_field)
 
 
     def __setitem__(self, key: int | str | BCSVField, value: BCSVValue) -> None:
@@ -384,8 +384,8 @@ class BCSVEntry(dict[str, BCSVValue]):
         if not isinstance(value, int | str | float):
             raise TypeError(f"Provided value {value} is not of valid types: {type(BCSVValue)}")
 
-        bcsvField: str = BCSVKey.create(key).resolve_name()
-        super().__setitem__(bcsvField, value)
+        bcsv_field: str = BCSVKey.create(key).resolve_name()
+        super().__setitem__(bcsv_field, value)
 
 
 class BCSV:
@@ -616,13 +616,13 @@ class BCSV:
         Args:
             key (BCSVKey): field to add into a given file.
         """
-        keyName = BCSVKey.create(key).resolve_name()
-        field_found: BCSVField = next((field for field in self.fields if field.field_name == keyName), None)
+        key_name = BCSVKey.create(key).resolve_name()
+        field_found: BCSVField = next((field for field in self.fields if field.field_name == key_name), None)
         if field_found is None:
             raise ValueError(f"No BCSVField was found with key: {key}")
 
         for entry in self.entries:
-            del entry[keyName]
+            del entry[key_name]
 
         self.fields.remove(field_found)
 

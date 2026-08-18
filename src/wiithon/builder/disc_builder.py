@@ -5,7 +5,6 @@ from collections.abc import Callable
 from io import BytesIO
 from typing import BinaryIO
 
-from wiithon import FSTNode
 from wiithon.binary.align import align
 from wiithon.builder.source import PartitionSource
 from wiithon.crypto.layout import GROUP_DATA_SIZE, GROUP_SIZE, SHA1_SIZE
@@ -34,7 +33,7 @@ from wiithon.disc.layout import (
 from wiithon.disc.structs.disc_header import DiscHeader
 from wiithon.disc.structs.partition_entry import WiiPartitionEntry
 from wiithon.disc.structs.partition_header import WiiPartitionHeader
-from wiithon.fst.node import FSTFile
+from wiithon.fst.node import FSTFile, FSTNode
 from wiithon.fst.serializer import FSTToBytes
 
 U64_SIZE: int = 8

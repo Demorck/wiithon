@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 from collections.abc import Callable
 from io import BytesIO
-from typing import BinaryIO, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, BinaryIO, Protocol, runtime_checkable
 
-from wiithon import WiiIsoPatcher
 from wiithon.exceptions import FstFileNotFoundError, InvalidFormatError
 from wiithon.formats.lz77 import Lz77
 from wiithon.formats.rarc import RARC_MAGIC_WORD, Rarc, RarcFileEntry
@@ -10,6 +11,8 @@ from wiithon.formats.u8 import U8, U8_MAGIC_WORD
 from wiithon.formats.yaz0 import Yaz0
 from wiithon.fst.tree import FST
 
+if TYPE_CHECKING:
+    from wiithon.disc.patcher import WiiIsoPatcher
 
 @runtime_checkable
 class Archive(Protocol):
@@ -28,7 +31,7 @@ class Container(Protocol):
     data: bytes
 
     @classmethod
-    def read(cls, stream: BinaryIO) -> "Container":
+    def read(cls, stream: BinaryIO) -> Container:
         pass
 
     def get_bytes(self) -> bytes:

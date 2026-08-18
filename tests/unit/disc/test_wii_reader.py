@@ -1,5 +1,6 @@
 import builtins
 import os
+from pathlib import Path
 import shutil
 import tempfile
 import unittest
@@ -35,14 +36,15 @@ class TestWiiIsoReader(unittest.TestCase):
 
         opened: list[BinaryIO] = []
         self.addCleanup(self._close_all, opened)
-        real_open = builtins.open
 
-        def tracking_open(*args, **kwargs) -> BinaryIO:
-            handle = real_open(*args, **kwargs)
+        real_open = Path.open
+
+        def tracking_open(self_obj, *args, **kwargs) -> BinaryIO:
+            handle = real_open(self_obj, *args, **kwargs)
             opened.append(handle)
             return handle
 
-        with mock.patch.object(builtins, "open", tracking_open), self.assertRaises(InvalidDiscError):
+        with mock.patch.object(Path, "open", tracking_open), self.assertRaises(InvalidDiscError):
             WiiIsoReader(iso_path)
 
         self.assertTrue(opened, "no file was opened")

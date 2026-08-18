@@ -102,14 +102,24 @@ select = [
     "ARG",
 
     # Using Pathlib instead of os - Excluded: tests (for now)
-    "PTH"
+    "PTH",
+
+    # Complexe structure, probably need a refactor
+#    "C90"
+
+    # PEP8 naming - Excluded: ppc
+    "N"
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "examples/*"        = ["BLE", "T20", "PTH"]
 "src/wiithon/cli/*" = ["FBT"]
+"src/wiithon/ppc/*" = ["N"]
 "tests/*"           = ["ANN", "FBT", "ISC", "SLF", "ARG", "PTH"]
 "tests/iso/*"       = ["S101"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 13
 
 [tool.mypy]
 python_version = "3.11"
