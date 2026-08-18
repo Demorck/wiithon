@@ -3,7 +3,7 @@ import struct
 
 from wiithon.ppc.instructions import (
     b, bl, cntlzw,
-    li, lis, addi, lwz, stw, lbz, stb, lhz, sth,
+    li, lis, addi, lwz, lwzu, stw, stwu, lbz, lbzu, lbzx, stb, stbu, lhz, lhzu, sth, sthu,
     ori, nop,
     add, or_, mtspr, lfs, mulli, oris, rlwnm, stfs, andi, and_, blr,
 )
@@ -69,16 +69,54 @@ class TestGhidra(unittest.TestCase):
         self.assertEqual(u32(lbz(0, 0x43, 31)), 0x881f0043)     # Location: 0x800075b4  - Instruction: 0x881f0043 - Code: lbz        r0, 0x43 (r31 )
         self.assertEqual(u32(lbz(6, -0x67fb, 13)), 0x88cd9805)  # Location: 0x800089d0  - Instruction: 0x88cd9805 - Code: lbz        r6, -0x67fb (r13 )=>DAT_8069e4a4+1
 
+    
+    def test_lbzu(self):
+        # LocatioN: 0x80004350 - Instruction: 0x8c040001 - Code:     lbzu       r0 ,0x1 (r4 )
+        self.assertEqual(u32(lbzu(0, 1, 4)), 0x8c040001)
+        # Location: 0x802cb07c - Instruction: 0x8d4b8518 - Code:     lbzu       r10, -0x7ae8 (r11 )=>DAT_80538518
+        self.assertEqual(u32(lbzu(10, -0x7ae8, 11)), 0x8d4b8518)
+        # Location: 0x80004374 - Instruction: 0x8c04ffff - Code:     lbzu       r0 ,-0x1 (r4 )
+        self.assertEqual(u32(lbzu(0, -0x1, 4)), 0x8c04ffff)
+
+
+    def test_lbzx(self):
+        # Location: 0x803fd584 - Instruction: 0x7c9c18ae - Code:     lbzx       r4 ,r28 ,r3
+        self.assertEqual(u32(lbzx(4, 28, 3)), 0x7c9c18ae)
+        # Location: 0x8042c9f0 - Instruction: 0x7d0530ae - Code:     lbzx       r8 ,r5 ,r6
+        self.assertEqual(u32(lbzx(8, 5, 6)), 0x7d0530ae)
+        # Location: 0x80430d28 - Instruction: 0x7c0320ae - Code:     lbzx       r0 ,r3 ,r4
+        self.assertEqual(u32(lbzx(0, 3, 4)), 0x7c0320ae)
+
 
     def test_lhz(self):
         self.assertEqual(u32(lhz(4, 0x10, 31)), 0xa09f0010)   # Location: 0x8000b870  - Instruction: 0xa09f0010 - Code: lhz        r4, 0x10 (r31 )
         self.assertEqual(u32(lhz(0, 0x1C, 28)), 0xa01c001c)   # Location: 0x80014c08  - Instruction: 0xa01c001c - Code: lhz        r0, 0x1c (r28 )
         self.assertEqual(u32(lhz(4, 0x22C, 25)), 0xa099022c)  # Location: 0x80033528  - Instruction: 0xa099022c - Code: lhz        r4, 0x22c (r25 )
 
+
+    def test_lhzu(self):
+        # Location: 0x80183654 - Instruction: 0xa4180002 - Code:     lhzu       r0 ,0x2 (r24 )
+        self.assertEqual(u32(lhzu(0, 0x2, 24)), 0xa4180002)
+        # Location: 0x80278588 - Instruction: 0xa4e881c8 - Code:     lhzu       r7 ,-0x7e38 (r8 )=> DAT_805381c8
+        self.assertEqual(u32(lhzu(7, -0x7e38, 8)), 0xa4e881c8)
+        # Location: 0x803b2a78 - Instruction: 0xa41afff8 - Code:     lhzu       r0 ,-0x8 (r26 )
+        self.assertEqual(u32(lhzu(0, -0x8, 26)), 0xa41afff8)
+
+    
     def test_lwz(self):
         self.assertEqual(u32(lwz(30, 0x58, 31)), 0x83df0058)  # Location: 0x8000740c  - Instruction: 0x83df0058 - Code:     lwz        r30 ,0x58 (r31 )
         self.assertEqual(u32(lwz(3, 0x8, 3)), 0x80630008)     # Location: 0x80007c34  - Instruction: 0x80630008 - Code:     lwz        r3,0x8 (r3)
         self.assertEqual(u32(lwz(0, 0x1c, 4)), 0x8004001c)    # Location: 0x80008404  - Instruction: 0x8004001c - Code:     lwz        r0,0x1c (r4)
+
+
+    def test_lwzu(self):
+        # Location: 0x8003695c - Instruction: 0x84a6270c - Code:     lwzu       r5 ,0x270c (r6 )
+        self.assertEqual(u32(lwzu(5, 0x270c, 6)), 0x84a6270c)
+        # Location: 0x800580d8 - Instruction: 0x84040008 - Code:     lwzu       r0 ,0x8 (r4 )
+        self.assertEqual(u32(lwzu(0, 0x8, 4)), 0x84040008)
+        # Location: 0x800c6d88 - Instruction: 0x84c43f7c - Code:     lwzu       r6 ,3f7c (r4 )
+        self.assertEqual(u32(lwzu(6, 0x3f7c, 4)), 0x84c43f7c)
+
 
     def test_lfs(self):
         self.assertEqual(u32(lfs(31, 0x8, 6)), 0xc3e60008)    # Location: 0x80007528  - Instruction: 0xc3e60008 - Code: lfs        f31, 0x8 (r6)
@@ -115,24 +153,56 @@ class TestGhidra(unittest.TestCase):
     def test_nop(self):
         self.assertEqual(u32(nop()), 0x60000000)
 
+    
     def test_rlwnm(self):
         self.assertEqual(u32(rlwnm(3,3,0,0x1f ,0x1f)), 0x5c6307fe)      # Location: 0x80070c60  - Instruction: 0x5c6307fe - Code:     rlwnm      r3,r3,r0,0x1f ,0x1f
         self.assertEqual(u32(rlwnm(10 ,11 ,9,0x1f ,0x1f)), 0x5d6a4ffe)  # Location: 0x8045371c  - Instruction: 0x5d6a4ffe - Code:     rlwnm      r10 ,r11 ,r9,0x1f ,0x1f
 
+    
     def test_stb(self):
         self.assertEqual(u32(stb(6, 5, 4)), 0x98c40005)      # Location: 0x8000812c  - Instruction: 0x98c40005 - Code:     stb        r6,0x5 (r4)
         self.assertEqual(u32(stb(3, 0x10, 31)), 0x987f0010)  # Location: 0x800085ac  - Instruction: 0x987f0010 - Code:     stb        r3,0x10 (r31)
         self.assertEqual(u32(stb(5, 0x1a, 3)), 0x98a3001a)   # Location: 0x8000873c  - Instruction: 0x98a3001a - Code:     stb        r5,0x1a (r3)
 
+
+    def test_stbu(self):
+        # Location: 0x80004378 - Instruction: 0x9c06ffff - Code:     stbu       r0 ,-0x1 (r6 )
+        self.assertEqual(u32(stbu(0, -0x1, 6)), 0x9c06ffff)
+        # Location: 0x80518f04 - Instruction: 0x9cec0001 - Code:     stbu       r7 ,0x1 (r12 )
+        self.assertEqual(u32(stbu(7, 0x1, 12)), 0x9cec0001)
+        # Location: 0x8051e824 - Instruction: 0x9c050001 - Code:     stbu       r0 ,0x1 (r5 )
+        self.assertEqual(u32(stbu(0, 0x1, 5)), 0x9c050001)
+
+    
     def test_sth(self):
         self.assertEqual(u32(sth(0, 0x12, 4)), 0xb0040012)      # Location: 0x8000815c  - Instruction: 0xb0040012 - Code:     sth        r0,0x12 (r4)
         self.assertEqual(u32(sth(31, -0x8000, 3)), 0xb3e38000)        # Location: 0x80009808  - Instruction: 0xb3e38000 - Code:     sth        r31 ,-0x8000 (r3)=>DAT_cc008000                   = ??
         self.assertEqual(u32(sth(31, 0xf8, 30)), 0xb3fe00f8)    # Location: 0x8000e884  - Instruction: 0xb3fe00f8 - Code:     sth        r31 ,0xf8 (r30 )
 
+
+    def test_sthu(self):
+        # Location: 0x8038134c - Instruction: 0xb7a30004 - Code:     sthu       r29 ,0x4 (r3 )
+        self.assertEqual(u32(sthu(29, 0x4, 3)), 0xb7a30004)
+        # Location: 0x8052133c - Instruction: 0xb41bfffc - Code:     sthu       r0 ,-0x4 (r27 )
+        self.assertEqual(u32(sthu(0, -0x4, 27)), 0xb41bfffc)
+        # Location: 0x80522b88 - Instruction: 0xb4060002 - Code:     sthu       r0 ,0x2 (r6 )
+        self.assertEqual(u32(sthu(0, 0x2, 6)), 0xb4060002)
+
+    
     def test_stw(self):
         self.assertEqual(u32(stw(7, 0x18, 3)), 0x90e30018)  # Location: 0x800043f8  - Instruction: 0x90e30018 - Code:     stw        r7,0x18 (r3)
         self.assertEqual(u32(stw(8, 0x18, 3)), 0x91030018)  # Location: 0x80008508  - Instruction: 0x91030018 - Code:     stw        r8,0x18 (r3)
         self.assertEqual(u32(stw(7, 0, 6)), 0x90e60000)     # Location: 0x80004124  - Instruction: 0x90e60000 - Code:     stw        r7,0x0 (r6)
+
+
+    def test_stwu(self):
+        # Location: 0x80004414 - Instruction: 0x94e30004 - Code:     stwu       r7 ,0x4 (r3 )
+        self.assertEqual(u32(stwu(7, 0x4, 3)), 0x94e30004)
+        # Location: 0x8000c720 - Instruction: 0x9421ffe0 - Code:     stwu       r1 ,-0x20 (r1 )
+        self.assertEqual(u32(stwu(1, -0x20, 1)), 0x9421ffe0)
+        # Location: 0x8020320c - Instruction: 0x947c0098 - Code:     stwu       r3 ,0x98 (r28 )
+        self.assertEqual(u32(stwu(3, 0x98, 28)), 0x947c0098)
+
 
     def test_stfs(self):
         self.assertEqual(u32(stfs(0, 0, 27)), 0xd01b0000)        # Location: 0x80007548  - Instruction: 0xd01b0000 - Code:     stfs       f0,0x0 (r27 )
