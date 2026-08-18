@@ -8,7 +8,7 @@ from wiithon.exceptions import CorruptedDataError, InvalidFormatError
 
 
 class IMD5:
-    def __init__(self):
+    def __init__(self) -> None:
         self.magic_word = ""
         self.filesize: int
         self.zeroes: bytes

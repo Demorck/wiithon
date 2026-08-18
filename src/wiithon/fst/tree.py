@@ -7,7 +7,7 @@ from wiithon.fst.raw_node import RawFSTNode
 
 
 class FST:
-    def __init__(self):
+    def __init__(self) -> None:
         self.entries: list[FSTNode] = []
 
     @classmethod
@@ -55,7 +55,7 @@ class FST:
     def count_files(self) -> int:
         return sum(e.count_files() for e in self.entries)
 
-    def find_node(self, path) -> FSTNode | None:
+    def find_node(self, path: str | list[str]) -> FSTNode | None:
         """Finds a node by its path (string or list of strings)"""
         if isinstance(path, str):
             path = [p for p in path.strip('/').replace('\\', '/').split('/') if p]

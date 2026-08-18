@@ -1,7 +1,7 @@
 from wiithon.formats.yaz0 import Yaz0
 
 
-def main():
+def main() -> None:
     src_path = "../assets/AstroDomeScenario.szs"
     dest_path = "../assets/AstroDomeScenario.arc"
 

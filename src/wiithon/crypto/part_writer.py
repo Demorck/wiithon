@@ -70,7 +70,7 @@ class CryptPartWriter:
 
         return offset_in_data
 
-    def _load_group(self, group: int):
+    def _load_group(self, group: int) -> None:
         self.is_dirty = False
         physical_offset = self.data_offset + (group * GROUP_SIZE)
         self.stream.seek(physical_offset)
@@ -107,7 +107,7 @@ class CryptPartWriter:
                 bytes(self.group_cache[start + BLOCK_HEADER_SIZE: start + BLOCK_SIZE])
             )
 
-    def _flush_group(self):
+    def _flush_group(self) -> None:
         if not self.is_dirty or self.current_group is None:
             return
 
@@ -144,5 +144,5 @@ class CryptPartWriter:
     def tell(self) -> int:
         return self.current_position
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"CryptPartWriter(pos: {self.current_position:X}, group: {self.current_group})"

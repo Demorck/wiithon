@@ -21,9 +21,10 @@ from wiithon.cli._common import (
     select_partitions,
     write_json,
 )
+from wiithon.disc.partition import WiiPartitionInfo
 from wiithon.disc.reader import WiiIsoReader
 from wiithon.disc.structs.partition_entry import WiiPartitionEntry
-from wiithon.fst.node import FSTDirectory, FSTFile
+from wiithon.fst.node import FSTDirectory, FSTFile, FSTNode
 
 iso_app = typer.Typer(help="Operations on Wii ISO files.")
 
@@ -62,7 +63,11 @@ def _render_info(data: dict, name: str) -> Panel:
 
     return Panel(table, title=f"[bold]{name}[/bold]", expand=False)
 
-def _find_in_partitions(reader, entries, path: str):
+def _find_in_partitions(
+        reader: WiiIsoReader,
+        entries: list[WiiPartitionEntry],
+        path: str
+) -> tuple[WiiPartitionInfo, FSTNode]:
     """Return (partition, node) for the first partition containing path"""
     for entry in entries:
         partition = reader.open_partition(entry)
@@ -72,7 +77,7 @@ def _find_in_partitions(reader, entries, path: str):
 
     abort(f"{path} not found in the selected partition(s).")
 
-def _extract_node(partition, node, path: str, dest: Path) -> int:
+def _extract_node(partition: WiiPartitionInfo, node: FSTNode, path: str, dest: Path) -> int:
     """Write node under dest, rooted at its own name. Return the file count"""
     if isinstance(node, FSTFile):
         out = dest / node.name

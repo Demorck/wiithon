@@ -8,7 +8,7 @@ from wiithon.exceptions import CorruptedDataError, InvalidFormatError
 
 
 class Yaz0:
-    def __init__(self):
+    def __init__(self) -> None:
         self.size: int = 0
         self.magic_word: str = ""
         self.data: bytes = b""
@@ -38,7 +38,7 @@ class Yaz0:
         obj.data = data
         return obj
 
-    def write(self, stream: BinaryIO):
+    def write(self, stream: BinaryIO) -> None:
         self.size = len(self.data)
         writer = BinaryWriter(stream)
         writer.string(self.magic_word, encoding='ascii')
@@ -91,9 +91,9 @@ class Yaz0:
         size = len(data)
         dest_buffer = bytearray()
         
-        current_group_items = []
+        current_group_items: list[tuple[int, int]] = []
         
-        def flush_group():
+        def flush_group() -> None:
             nonlocal dest_buffer, current_group_items
             if not current_group_items:
                 return
@@ -125,25 +125,25 @@ class Yaz0:
             
             current_group_items.clear()
 
-        def add_literal(byte_val):
+        def add_literal(byte_val: int) -> None:
             current_group_items.append((1, byte_val))
             if len(current_group_items) == 8:
                 flush_group()
                 
-        def add_reference(length, distance):
+        def add_reference(length: int, distance: int) -> None:
             current_group_items.append((0, length, distance))
             if len(current_group_items) == 8:
                 flush_group()
 
         occurrences = {}
         
-        def add_to_dict(pos):
+        def add_to_dict(pos: int) -> None:
             if pos + 2 < size:
                 sub3 = data[pos : pos + 3]
                 valid_occs = occurrences.setdefault(sub3, deque())
                 valid_occs.append(pos)
 
-        def find_match(pos):
+        def find_match(pos: int) -> tuple[int, int]:
             limit = min(273, size - pos)
             if limit < 3:
                 return 0, -1

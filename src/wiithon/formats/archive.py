@@ -2,11 +2,13 @@ from collections.abc import Callable
 from io import BytesIO
 from typing import BinaryIO, Protocol, runtime_checkable
 
+from wiithon import WiiIsoPatcher
 from wiithon.exceptions import FstFileNotFoundError, InvalidFormatError
 from wiithon.formats.lz77 import Lz77
 from wiithon.formats.rarc import RARC_MAGIC_WORD, Rarc, RarcFileEntry
 from wiithon.formats.u8 import U8, U8_MAGIC_WORD
 from wiithon.formats.yaz0 import Yaz0
+from wiithon.fst.tree import FST
 
 
 @runtime_checkable
@@ -46,7 +48,7 @@ _ARCHIVES: dict[bytes, type] = {
 }
 
 
-def _split_path(fst, path: str) -> tuple[str, list[str]]:
+def _split_path(fst: FST, path: str) -> tuple[str, list[str]]:
     parts = [p for p in path.split("/") if p]
     for i in range(len(parts), 0, -1):
         node = fst.find_node(parts[:i])
@@ -80,7 +82,7 @@ def _serialize_archive(archive: Archive, containers: list[Container]) -> bytes:
     return data
 
 
-def resolve_read(patcher, path: str) -> bytes:
+def resolve_read(patcher: WiiIsoPatcher, path: str) -> bytes:
     fst_path, archive_parts = _split_path(patcher.data_partition.fst, path)
     data = patcher.read_file(fst_path)
     if not archive_parts:
@@ -89,7 +91,7 @@ def resolve_read(patcher, path: str) -> bytes:
     result = arc.get_file("/".join(archive_parts))
     return result.data if isinstance(result, RarcFileEntry) else result
 
-def resolve_write(patcher, path: str, new_data: bytes) -> None:
+def resolve_write(patcher: WiiIsoPatcher, path: str, new_data: bytes) -> None:
     fst_path, archive_parts = _split_path(patcher.data_partition.fst, path)
     if not archive_parts:
         patcher.replace_file(fst_path, new_data)

@@ -150,16 +150,16 @@ def bcl(bo: int, bi: int, target: int, from_addr: int) -> bytes:
 def _fmt_xl(opcode: int, bt: int, ba_: int, bb: int, subopcode: int, lk: int = 0) -> bytes:
     return _pack((opcode << 26) | (bt << 21) | (ba_ << 16) | (bb << 11) | (subopcode << 1) | lk)
 
-def bclr(bo: int, bi: int):
+def bclr(bo: int, bi: int) -> bytes:
     return _fmt_xl(19, bo, bi,0, 16)
 
-def bclrl(bo: int, bi: int):
+def bclrl(bo: int, bi: int) -> bytes:
     return _fmt_xl(19, bo, bi, 0, 16, lk=1)
 
-def blr():
+def blr() -> bytes:
     return bclr(20, 0)
 
-def blrl():
+def blrl() -> bytes:
     return bclrl(20, 0)
 # ---------------------------------------------------------------------------
 # Compare instructions
@@ -313,7 +313,7 @@ def ori(rA: int, rS: int, imm: int) -> bytes:
     return _fmt_d_unsigned(24, rS, rA, imm)
 
 
-def oris(rA: int, rS: int, imm: int):
+def oris(rA: int, rS: int, imm: int) -> bytes:
     """oris rA, rS, imm  - bitwise OR with unsigned 16-bit immediate shifted"""
     return _fmt_d_unsigned(0x19, rS, rA, imm)
 

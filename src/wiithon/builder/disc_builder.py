@@ -5,6 +5,7 @@ from collections.abc import Callable
 from io import BytesIO
 from typing import BinaryIO
 
+from wiithon import FSTNode
 from wiithon.binary.align import align
 from wiithon.builder.source import PartitionSource
 from wiithon.crypto.layout import GROUP_DATA_SIZE, GROUP_SIZE, SHA1_SIZE
@@ -57,7 +58,7 @@ def fakesign_tmd(tmd_bytes: bytearray, h3: bytes, data_size: int) -> None:
             break
 
 class WiiDiscBuilder:
-    def __init__(self, header: DiscHeader, region: bytes):
+    def __init__(self, header: DiscHeader, region: bytes) -> None:
         self.header: DiscHeader = header
         self.region: bytes = region
         self.partitions: list[tuple] = []
@@ -78,7 +79,7 @@ class WiiDiscBuilder:
         files = []
         total_bytes = 0
 
-        def collect(paths, node):
+        def collect(paths: list[str], node: FSTNode) -> None:
             nonlocal total_bytes
             files.append((paths, node))
             if isinstance(node, FSTFile):

@@ -19,7 +19,7 @@ class NodeAttribute(IntFlag):
     YAZO_COMPRESSED = 0x80
 
 class RarcNode:
-    def __init__(self):
+    def __init__(self) -> None:
         self.type: str = ""
         self.name_offset: int = 0
         self.name_hash: int = 0
@@ -29,7 +29,7 @@ class RarcNode:
 
 
 class RarcFileEntry:
-    def __init__(self):
+    def __init__(self) -> None:
         self.file_id: int = 0
         self.name_hash: int = 0
         self.attributes: int = 0
@@ -51,7 +51,7 @@ class RarcFileEntry:
 
 
 class Rarc:
-    def __init__(self):
+    def __init__(self) -> None:
         # Header
         self.base_offset: int = 0
         self.magic_word: bytes = b""
@@ -187,13 +187,13 @@ class Rarc:
         reader.seek(obj.base_offset + obj.file_length)
         return obj
 
-    def extract_to(self, output_dir: str):
+    def extract_to(self, output_dir: str) -> None:
         if not self.nodes:
             return
         
         self._extract_node(self.nodes[0], output_dir)
 
-    def _extract_node(self, node: RarcNode, current_dir: str):
+    def _extract_node(self, node: RarcNode, current_dir: str) -> None:
         os.makedirs(current_dir, exist_ok=True)
 
         for i in range(node.entry_count):
@@ -213,7 +213,7 @@ class Rarc:
                 with open(path, "wb") as f:
                     f.write(entry.data)
                     
-    def write(self, stream: BinaryIO):
+    def write(self, stream: BinaryIO) -> None:
         string_table_bytes = bytearray()
         string_map = {}
         writer = BinaryWriter(stream)

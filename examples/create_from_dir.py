@@ -7,7 +7,7 @@ from wiithon.disc.structs.disc_header import DiscHeader
 
 
 # May adding all this logic into one file maybe ?
-def main():
+def main() -> None:
     src_dir = "../src_dir/DATA"
     
     # Reading header & region

@@ -61,7 +61,7 @@ class TMD:
             boot_index         : Startup content index
             contents           : List of TMDContent
         """
-    def __init__(self):
+    def __init__(self) -> None:
         self.signature_type: SignatureType = SignatureType.NONE
         self.signature: bytes = b'\x00' * 0x100
         self.signature_issuer: bytes = b'\x00' * 0x40

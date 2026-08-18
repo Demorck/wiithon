@@ -19,7 +19,7 @@ T = TypeVar("T")
 
 # TODO: Currently patch only data partition
 class WiiIsoPatcher:
-    def __init__(self, src_path: str):
+    def __init__(self, src_path: str) -> None:
         self.src_path = src_path
         self.reader: WiiIsoReader | None = None
 
@@ -48,7 +48,7 @@ class WiiIsoPatcher:
 
         return self
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args: int) -> None:
         if self.reader:
             self.reader.__exit__(*args)
 
@@ -78,7 +78,7 @@ class WiiIsoPatcher:
         return self.data_partition.read_file(path)
 
     @contextmanager
-    def edit_as(self, path: str, cls: type[T], **kwargs) -> Iterator[T]:
+    def edit_as(self, path: str, cls: type[T], **kwargs: int) -> Iterator[T]:
         data = resolve_read(self, path)
         obj = cls.read(BytesIO(data), **kwargs)
         yield obj
@@ -110,7 +110,7 @@ class WiiIsoPatcher:
     def modify_title(self, new_title: str) -> None:
         self.reader.disc_header.game_title = new_title
 
-    def modify_title_id(self, new_id: str):
+    def modify_title_id(self, new_id: str) -> None:
         b = new_id.encode("ascii")
         if len(b) != 0x06:
             raise RuntimeError(f"Title ID needs to be 6 bytes length, got: {len(b)} with {b}")
@@ -118,7 +118,7 @@ class WiiIsoPatcher:
         self.reader.disc_header.game_id = b
         self.data_partition.header.ticket.title_id = b'\x00\x01\x00\x00' + b[:4]
 
-    def build(self, output_path: str, progress_cb=None) -> None:
+    def build(self, output_path: str, progress_cb: Callable | None = None) -> None:
         builder = WiiDiscBuilder(self.reader.disc_header, self.reader.region)
 
         with open(output_path, "w+b") as dest:

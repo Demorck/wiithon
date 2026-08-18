@@ -123,7 +123,12 @@ class Lz77:
         return bytes(dest_buffer)
 
     @staticmethod
-    def _find_longest_match(data, current_position, buffer_size, window_size):
+    def _find_longest_match(
+            data: bytes,
+            current_position: int,
+            buffer_size: int,
+            window_size: int
+    ) -> tuple[int, int] | None:
         cp = current_position
         if cp + 3 > len(data):
             return None

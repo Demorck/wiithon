@@ -56,7 +56,10 @@ line-length = 120
 src = ["src"]
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "B", "SIM", "I", "ERA"]
+select = ["E", "F", "UP", "B", "SIM", "I", "ERA", "ANN"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ANN"]
 
 [tool.mypy]
 python_version = "3.11"

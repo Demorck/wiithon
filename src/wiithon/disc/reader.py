@@ -91,5 +91,5 @@ class WiiIsoReader:
     def __enter__(self) -> "WiiIsoReader":
         return self
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args: int) -> None:
         self.close()

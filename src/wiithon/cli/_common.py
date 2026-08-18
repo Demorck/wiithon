@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Annotated, Any, NoReturn
 
 import typer
-from rich.console import Console
+from rich.console import Console, ConsoleRenderable, RichCast
 from rich.panel import Panel
 from rich.table import Table
 
@@ -58,7 +58,7 @@ def select_partitions(
 
     return candidates
 
-def write_json(data) -> None:
+def write_json(data: Any) -> None: #noqa: ANN401
     sys.stdout.write(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
 
 def render_table(columns: Sequence[str], rows: Iterable[Sequence[str]]) -> Table:
@@ -69,5 +69,5 @@ def render_table(columns: Sequence[str], rows: Iterable[Sequence[str]]) -> Table
 
     return table
 
-def titled_panel(renderable: Any, title: str) -> Panel:
+def titled_panel(renderable: ConsoleRenderable | RichCast | str, title: str) -> Panel:
     return Panel(renderable, title=f"[bold]{title}[/bold]", expand=False)

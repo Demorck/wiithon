@@ -6,7 +6,7 @@ from wiithon.exceptions import BinaryError
 
 
 class BinaryWriter:
-    def __init__(self, stream: BinaryIO, encoding: str = STRING_FORMAT):
+    def __init__(self, stream: BinaryIO, encoding: str = STRING_FORMAT) -> None:
         self.stream = stream
         self.encoding = encoding
 

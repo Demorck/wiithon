@@ -13,12 +13,12 @@ DOL_HEADER_SIZE = 0x100
 
 
 class DOL:
-    def __init__(self):
+    def __init__(self) -> None:
         self.header: DOLHeader = DOLHeader()
         self.text_sections: list[bytes] = [b''] * DOL_TEXT_SECTIONS
         self.data_sections: list[bytes] = [b''] * DOL_DATA_SECTIONS
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'Header: {{ \n  {repr(self.header)} \n }}'
 
     @classmethod
@@ -292,7 +292,7 @@ class DOL:
         results.sort(key=lambda x: x[1])
         return results
 
-    def _is_safe(self, virtual_addr, size):
+    def _is_safe(self, virtual_addr: int, size: int) -> bool:
         for starts, lengths in [
             (self.header.text_starts, self.header.text_length),
             (self.header.data_starts, self.header.data_length),

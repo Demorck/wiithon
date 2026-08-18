@@ -8,7 +8,7 @@ class ApploaderHeader:
     """
 
     """
-    def __init__(self):
+    def __init__(self) -> None:
         self.size1 = 0
         self.size2 = 0
 

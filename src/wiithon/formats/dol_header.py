@@ -8,7 +8,7 @@ class DOLHeader:
     """
     https://wiibrew.org/wiki/DOL
     """
-    def __init__(self):
+    def __init__(self) -> None:
         self.text_offset: list[int] = []
         self.data_offset: list[int] = []
         self.text_starts: list[int] = []
@@ -19,7 +19,7 @@ class DOLHeader:
         self.bss_size: int = 0
         self.entry_point: int = 0
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         lines = []
         for i in range(7):
             if self.text_length[i] > 0:

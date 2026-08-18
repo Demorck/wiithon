@@ -6,7 +6,7 @@ from wiithon.formats.bnr import BNR
 ISO_PATH = "../assets/smg.iso"
 OUT_PATH = "../assets/game_patched.iso"
 
-def main():
+def main() -> None:
     with WiiIsoPatcher(ISO_PATH) as patcher:
         bnr_bytes = patcher.read_file("opening.bnr")
         bnr = BNR.read(BytesIO(bnr_bytes))

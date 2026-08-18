@@ -1,7 +1,7 @@
 from wiithon.disc.reader import WiiIsoReader
 
 
-def main():
+def main() -> None:
     # Opening the iso with WiiIsoReader
     with WiiIsoReader("../assets/smg.iso") as reader:
         print(f"Game: {reader.disc_header.game_title}")
