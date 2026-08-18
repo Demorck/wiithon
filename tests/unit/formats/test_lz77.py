@@ -75,7 +75,7 @@ class TestLz77Compress(unittest.TestCase):
 
     def test_roundtrip_short_inputs(self):
         # Below 3 bytes no match can be encoded, above it the encoder switches
-        for size in range(0, 12):
+        for size in range(12):
             with self.subTest(size=size):
                 original = b"ab" * size
                 compressed = Lz77.compress(original)

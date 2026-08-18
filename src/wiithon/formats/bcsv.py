@@ -26,7 +26,6 @@ class BCSVKey(ABC):
         Returns:
             str: key to be used in a BCSVEntry.
         """
-        pass
 
     @staticmethod
     def create(key: Union[str, int, 'BCSVField']) -> 'BCSVKey':
@@ -38,15 +37,14 @@ class BCSVKey(ABC):
         """
         if isinstance(key, str):
             return BCSVNameKey(key)
-        elif isinstance(key, int):
+        if isinstance(key, int):
             return BCSVHashKey(key)
-        elif isinstance(key, BCSVField): 
+        if isinstance(key, BCSVField): 
             return BCSVFieldKey(key)
-        else:
-            raise TypeError(
-                f"Unsupported key type: '{type(key).__name__}'.\n"
-                f"Please use one of the following: {', '.join(['str', 'int', 'BCSVField'])}"
-            )
+        raise TypeError(
+            f"Unsupported key type: '{type(key).__name__}'.\n"
+            f"Please use one of the following: {', '.join(['str', 'int', 'BCSVField'])}"
+        )
 
 
 class BCSVNameKey(BCSVKey):
@@ -637,7 +635,7 @@ class BCSV:
         """
         if not self.fields:
             raise KeyError("Cannot add a BCSVEntry to a BCSV with no defined fields.")
-        elif bcsv_entry is None or len(bcsv_entry.keys()) == 0:
+        if bcsv_entry is None or len(bcsv_entry.keys()) == 0:
             raise ValueError("Cannot add an empty BCSVEntry to the BCSV.")
 
         self.entries.append(bcsv_entry)
