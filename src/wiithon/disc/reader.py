@@ -63,9 +63,7 @@ class WiiIsoReader:
 
         # Reading certificates
         self.file.seek(offset + header.certificate_chain_offset)
-        certificates: list[Certificate] = []
-        for _ in range(3):
-            certificates.append(Certificate.read(self.file))
+        certificates: list[Certificate] = [Certificate.read(self.file) for _ in range(3)]
 
         # Crypto header for decrypted data
         data_offset = offset + header.data_offset

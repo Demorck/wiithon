@@ -108,7 +108,10 @@ select = [
 #    "C90"
 
     # PEP8 naming - Excluded: ppc
-    "N"
+    "N",
+
+    # Changing stuff that lower performance
+    "PERF"
 ]
 
 [tool.ruff.lint.per-file-ignores]

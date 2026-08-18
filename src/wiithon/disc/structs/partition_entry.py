@@ -65,7 +65,6 @@ def read_parts(stream: BinaryIO) -> list[WiiPartitionEntry]:
         if count == 0:
             continue
         reader.seek(offset)
-        for _ in range(count):
-            entries.append(WiiPartitionEntry.read(stream))
+        entries.extend(WiiPartitionEntry.read(stream) for _ in range(count))
 
     return entries

@@ -49,8 +49,7 @@ class U8:
         total_nodes = struct.unpack_from(">I", raw_root_node, 8)[0]
         raw_nodes = [raw_root_node]
 
-        for _ in range(total_nodes - 1):
-            raw_nodes.append(reader.raw(NODE_SIZE))
+        raw_nodes.extend(reader.raw(NODE_SIZE) for _ in range(total_nodes - 1))
 
         string_table = reader.raw(header_size - total_nodes * NODE_SIZE)
 

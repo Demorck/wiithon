@@ -19,8 +19,7 @@ class FST:
         root = RawFSTNode.read(stream)
         total_nodes = root.length
         nodes: list[RawFSTNode] = [root]
-        for _ in range(total_nodes - 1):
-            nodes.append(RawFSTNode.read(stream))
+        nodes.extend(RawFSTNode.read(stream) for _ in range(total_nodes - 1))
 
         string_offset = reader.tell()
         obj.entries, _ = _build_tree(reader, string_offset, nodes,
