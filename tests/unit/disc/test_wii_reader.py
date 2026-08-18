@@ -1,9 +1,8 @@
-import builtins
 import os
-from pathlib import Path
 import shutil
 import tempfile
 import unittest
+from pathlib import Path
 from typing import BinaryIO
 from unittest import mock
 

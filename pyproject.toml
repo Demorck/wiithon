@@ -107,7 +107,7 @@ select = [
     # Complexe structure, probably need a refactor
 #    "C90"
 
-    # PEP8 naming - Excluded: ppc
+    # PEP8 naming - Excluded: ppc, tests
     "N",
 
     # Changing stuff that lower performance
@@ -125,7 +125,7 @@ select = [
 "examples/*"        = ["BLE", "T20", "PTH"]
 "src/wiithon/cli/*" = ["FBT"]
 "src/wiithon/ppc/*" = ["N", "PLR"]
-"tests/*"           = ["ANN", "FBT", "ISC", "SLF", "ARG", "PTH"]
+"tests/*"           = ["ANN", "FBT", "ISC", "SLF", "ARG", "PTH", "N"]
 "tests/iso/*"       = ["S101"]
 
 [tool.ruff.lint.mccabe]
