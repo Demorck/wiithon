@@ -19,7 +19,7 @@ class IMD5:
         reader = BinaryReader(stream)
         magic_word = reader.string(4)
 
-        if magic_word != "IMD5": #TODO: Constant HERE
+        if magic_word != "IMD5":
             raise InvalidFormatError("Magic word is not IMD5")
 
         filesize = reader.u32()

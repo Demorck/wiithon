@@ -17,13 +17,12 @@ from wiithon.fst.tree import FST
 
 T = TypeVar("T")
 
-# TODO: Currently patch only data partition
 class WiiIsoPatcher:
     def __init__(self, src_path: str) -> None:
         self.src_path = src_path
         self.reader: WiiIsoReader | None = None
 
-        self.data_partition = None # TODO: currently doing for data partition, may need a change
+        self.data_partition = None
         self.dol_modifier: Callable[[DOL], None] | None = None
 
         self.file_replacements: dict[str, bytes] = {}

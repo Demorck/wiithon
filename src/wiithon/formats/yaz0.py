@@ -19,7 +19,7 @@ class Yaz0:
         reader = BinaryReader(stream)
 
         obj.magic_word = reader.string(0x04)
-        if obj.magic_word != "Yaz0": #TODO: Constants here
+        if obj.magic_word != "Yaz0":
             raise InvalidFormatError("Trying to read a non-yaz0 file with the yaz0 struct")
 
         obj.size = reader.u32()

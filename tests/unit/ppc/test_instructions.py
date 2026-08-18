@@ -111,7 +111,7 @@ class TestGhidra(unittest.TestCase):
         self.assertEqual(u32(bl(0x80409b40, 0x8000849c)), 0x484016a5)
 
 
-    # TODO: It seems PowerPC doesn't compile into these mnemonics, so i don't have any tests to do
+    # It seems PowerPC doesn't compile into these mnemonics, so i don't have any tests to do
     def test_bc(self):
         pass
 

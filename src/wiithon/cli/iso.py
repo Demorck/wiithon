@@ -164,7 +164,6 @@ def iso_list(
 
         console.print(f"\n[bold]{len(part['files'])}[/bold] file(s)")
 
-# TODO: Adding an option to extract sys files (dol, bnr, etc.)
 @iso_app.command("extract")
 def iso_extract(
     iso: Annotated[Path, typer.Argument(help="Path to the Wii ISO.")],

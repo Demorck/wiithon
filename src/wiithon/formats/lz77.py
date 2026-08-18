@@ -22,7 +22,7 @@ class Lz77:
 
         reader = BinaryReader(stream)
         obj.magic_word = reader.string(0x04)
-        if obj.magic_word != "LZ77": #TODO Constant here
+        if obj.magic_word != "LZ77":
             raise InvalidFormatError("Trying to read a non-lz77 file with the lz77 struct")
 
         header = reader.u32_le()

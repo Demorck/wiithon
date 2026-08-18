@@ -1,6 +1,5 @@
 import struct
 
-# TODO: Can have constants for some OPCODE ? just to remove numbers in the code
 
 def _pack(word: int) -> bytes:
     """

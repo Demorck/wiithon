@@ -567,7 +567,6 @@ class Rarc:
             raise ArchiveEntryExistsError(f"'{name}' already exists in this directory")
 
         entry = RarcFileEntry()
-         # TODO Test whether both attributes are required or simply having FILE is sufficient
         entry.attributes |= NodeAttribute.FILE | NodeAttribute.PRELOAD_TO_MRAM
         entry.name = name
         entry.data = data
