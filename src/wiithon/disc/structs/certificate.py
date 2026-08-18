@@ -1,8 +1,8 @@
 from typing import BinaryIO
-from wiithon.disc.structs.signature import KeyType, SignatureType
 
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
+from wiithon.disc.structs.signature import KeyType, SignatureType
 
 
 class Certificate:

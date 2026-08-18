@@ -3,8 +3,10 @@ import unittest
 from io import BytesIO
 
 from tests.unit.disc.structs._roundtrip import RoundTripMixin
-from wiithon.disc.structs.tmd import TMD
+
 from wiithon.disc.structs.signature import SignatureType
+from wiithon.disc.structs.tmd import TMD
+
 
 class TestTMD(RoundTripMixin, unittest.TestCase):
     """Unit tests for TMD."""
@@ -91,7 +93,7 @@ class TestTMD(RoundTripMixin, unittest.TestCase):
         self.assertEqual(tmd1.title_id, tmd2.title_id)
         self.assertEqual(tmd1.title_version, tmd2.title_version)
         self.assertEqual(len(tmd1.contents), len(tmd2.contents))
-        for c1, c2 in zip(tmd1.contents, tmd2.contents):
+        for c1, c2 in zip(tmd1.contents, tmd2.contents, strict=True):
             self.assertEqual(c1.id, c2.id)
             self.assertEqual(c1.size, c2.size)
             self.assertEqual(c1.hash, c2.hash)

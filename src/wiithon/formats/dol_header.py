@@ -8,7 +8,7 @@ class DOLHeader:
     """
     https://wiibrew.org/wiki/DOL
     """
-    def __init__(self):
+    def __init__(self) -> None:
         self.text_offset: list[int] = []
         self.data_offset: list[int] = []
         self.text_starts: list[int] = []
@@ -19,18 +19,20 @@ class DOLHeader:
         self.bss_size: int = 0
         self.entry_point: int = 0
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         lines = []
         for i in range(7):
             if self.text_length[i] > 0:
                 end = self.text_starts[i] + self.text_length[i]
-                lines.append(f"  text[{i}]: {self.text_starts[i]:08X} - {end:08X} - Off: {self.text_offset[i]:08X}  (size: {self.text_length[i]:08X})")
+                lines.append(f"  text[{i}]: {self.text_starts[i]:08X} - {end:08X} - "
+                                f"Off: {self.text_offset[i]:08X}  (size: {self.text_length[i]:08X})")
             else:
                 lines.append(f"  text[{i}]: (free)")
         for i in range(11):
             if self.data_length[i] > 0:
                 end = self.data_starts[i] + self.data_length[i]
-                lines.append(f"  data[{i}]: {self.data_starts[i]:08X} - {end:08X} - Off: {self.data_offset[i]:08X}  (size: {self.data_length[i]:08X})")
+                lines.append(f"  data[{i}]: {self.data_starts[i]:08X} - {end:08X} - "
+                                f"Off: {self.data_offset[i]:08X}  (size: {self.data_length[i]:08X})")
             else:
                 lines.append(f"  data[{i}]: (free)")
 

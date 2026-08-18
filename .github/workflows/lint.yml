@@ -15,7 +15,6 @@ jobs:
 
       - name: Ruff
         run: ruff check .
-        continue-on-error: true
 
       - name: MyPy
         run: mypy

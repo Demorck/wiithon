@@ -1,12 +1,12 @@
 import os
-
-import unittest
-from io import BytesIO
 import struct
 import tempfile
+import unittest
+from io import BytesIO
 
+from wiithon.exceptions import ArchiveEntryExistsError, ArchiveFileNotFoundError
 from wiithon.formats.rarc import Rarc, RarcFileEntry
-from wiithon.exceptions import ArchiveFileNotFoundError, ArchiveEntryExistsError
+
 
 class TestRarc(unittest.TestCase):
     def build_mock_rarc(self) -> bytes:
@@ -521,7 +521,7 @@ class TestRarc(unittest.TestCase):
         rarc = Rarc.create_empty()
         rarc.add_node("sub")
         rarc.remove_node("/sub")
-        new_sub = rarc.add_node("sub2")
+        rarc.add_node("sub2")
 
         out_stream = BytesIO()
         rarc.write(out_stream)

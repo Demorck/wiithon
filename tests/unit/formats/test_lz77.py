@@ -1,6 +1,6 @@
+import random
 import unittest
 from io import BytesIO
-import random
 
 from wiithon.exceptions import InvalidFormatError
 from wiithon.formats.lz77 import Lz77
@@ -75,7 +75,7 @@ class TestLz77Compress(unittest.TestCase):
 
     def test_roundtrip_short_inputs(self):
         # Below 3 bytes no match can be encoded, above it the encoder switches
-        for size in range(0, 12):
+        for size in range(12):
             with self.subTest(size=size):
                 original = b"ab" * size
                 compressed = Lz77.compress(original)
@@ -92,8 +92,6 @@ class TestLz77Compress(unittest.TestCase):
         self.assertEqual(Lz77.uncompress(compressed, len(original)), original)
 
     def test_distance_fits_in_12_bits(self):
-        # A match found at the far end of the 4095-byte window must still be
-        # encodable (distance - 1 <= 0xFFF)
         random.seed(7)
         filler = bytes(random.getrandbits(8) for _ in range(4000))
         pattern = b"PATTERN_TO_MATCH"

@@ -3,7 +3,7 @@ from typing import BinaryIO
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
 from wiithon.disc.enums import WiiPartType
-from wiithon.disc.layout import PARTITION_TABLE_OFFSET, PARTITION_GROUP_COUNT
+from wiithon.disc.layout import PARTITION_GROUP_COUNT, PARTITION_TABLE_OFFSET
 
 
 class WiiPartitionEntry:
@@ -32,7 +32,7 @@ class WiiPartitionEntry:
         writer.u32_shifted(self.offset)
         writer.u32(self.part_type)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"WiiPartitionEntry(Offset: {self.offset:X}, Partition_type: {self.part_type})"
 
     def get_readable_part_type(self) -> str:
@@ -65,7 +65,6 @@ def read_parts(stream: BinaryIO) -> list[WiiPartitionEntry]:
         if count == 0:
             continue
         reader.seek(offset)
-        for _ in range(count):
-            entries.append(WiiPartitionEntry.read(stream))
+        entries.extend(WiiPartitionEntry.read(stream) for _ in range(count))
 
     return entries

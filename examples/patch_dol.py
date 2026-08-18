@@ -58,8 +58,8 @@ def patch_iso_dol(src_iso: str, dst_iso: str) -> None:
     with WiiIsoPatcher(src_iso) as patcher:
         patcher.patch_dol(apply_patches)
 
-        # patcher.add_file("file.arc", b"bonjour je suis un fichier")
-        # patcher.remove_file("AudioRes/SMR.szs")
+        patcher.add_file("file.arc", b"bonjour je suis un fichier")
+        patcher.remove_file("AudioRes/SMR.szs") # Removing a file can cause a crash
         patcher.modify_title("Super Mario Galaxy AP Randomizer")
         patcher.modify_title_id("SOUE69")
 
@@ -68,5 +68,4 @@ def patch_iso_dol(src_iso: str, dst_iso: str) -> None:
 
 # This file has been used to test if patching a real dol works (and it is !)
 if __name__ == "__main__":
-    # patch_standalone_dol("../assets/main.dol", "../assets/main_patched.dol")
     patch_iso_dol("../assets/smg.iso", "../assets/yes.iso")

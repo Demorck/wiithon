@@ -38,7 +38,7 @@ class TestAlign(unittest.TestCase):
 
     def test_result_is_always_a_multiple_of_the_boundary(self):
         for boundary in (2, 4, 16, 32, 512, 2048):
-            for value in range(0, 100):
+            for value in range(100):
                 with self.subTest(value=value, boundary=boundary):
                     aligned = align(value, boundary)
                     self.assertEqual(aligned % boundary, 0)

@@ -2,23 +2,24 @@ from __future__ import annotations
 
 import json
 import sys
-import typer
-
-from enum import Enum
+from collections.abc import Iterable, Sequence
+from enum import StrEnum
 from pathlib import Path
-from rich.console import Console
+from typing import Annotated, Any, NoReturn
+
+import typer
+from rich.console import Console, ConsoleRenderable, RichCast
 from rich.panel import Panel
 from rich.table import Table
-from typing import NoReturn, Optional, Annotated, Iterable, Sequence, Any
 
-from wiithon import WiiPartType
-from wiithon import WiiIsoReader
+from wiithon.disc.enums import WiiPartType
+from wiithon.disc.reader import WiiIsoReader
 from wiithon.disc.structs.partition_entry import WiiPartitionEntry
 
 console = Console()
 err_console = Console(stderr=True, style="bold red")
 
-class PartTypeChoice(str, Enum):
+class PartTypeChoice(StrEnum):
     data = "data"
     update = "update"
     channel = "channel"
@@ -26,7 +27,7 @@ class PartTypeChoice(str, Enum):
 JsonOption = Annotated[bool, typer.Option("--json", help="Emit machine-readable JSON on stdout.")]
 
 PartitionTypeOption = Annotated[
-    Optional[PartTypeChoice],
+    PartTypeChoice | None,
     typer.Option("--partition", "-p",
                  help="Choose the partition type to list")
     ]
@@ -44,7 +45,7 @@ def require_file(path: Path) -> None:
 
 def select_partitions(
     reader: WiiIsoReader,
-    partition_type: Optional[PartTypeChoice],
+    partition_type: PartTypeChoice | None,
 ) -> list[WiiPartitionEntry]:
     """Return the partitions matching partition_type, or all of them if None."""
     if partition_type is None:
@@ -57,7 +58,7 @@ def select_partitions(
 
     return candidates
 
-def write_json(data) -> None:
+def write_json(data: Any) -> None: #noqa: ANN401
     sys.stdout.write(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
 
 def render_table(columns: Sequence[str], rows: Iterable[Sequence[str]]) -> Table:
@@ -68,5 +69,5 @@ def render_table(columns: Sequence[str], rows: Iterable[Sequence[str]]) -> Table
 
     return table
 
-def titled_panel(renderable: Any, title: str) -> Panel:
+def titled_panel(renderable: ConsoleRenderable | RichCast | str, title: str) -> Panel:
     return Panel(renderable, title=f"[bold]{title}[/bold]", expand=False)

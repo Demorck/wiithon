@@ -63,7 +63,6 @@ class ArchiveEntryExistsError(ArchiveError, FileExistsError):
 
 class BCSVFileError(InvalidFormatError):
     """Thrown when an error occurs while parsing/writing BCSV data."""
-    pass
 
 
 # DOL
