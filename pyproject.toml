@@ -56,10 +56,36 @@ line-length = 120
 src = ["src"]
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "B", "SIM", "I", "ERA", "ANN"]
+select = [
+    "E",
+    "F",
+    "UP",
+    "B",
+    "SIM",
+    "I",
+    "ERA",
+
+    # Type annotations. Not necessary in test folder
+    "ANN",
+
+    # Using assert in code
+    "S101",
+
+    # Generic exception
+    "BLE",
+
+    # Default Boolean argument needs to be refactored or keyword only arg (LSP)
+    "FBT",
+
+    # Shadowing python builtin
+    "A",
+]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["ANN"]
+"examples/*"        = ["BLE"]
+"src/wiithon/cli/*" = ["FBT"]
+"tests/*"           = ["ANN", "FBT"]
+"tests/iso/*"       = ["S101"]
 
 [tool.mypy]
 python_version = "3.11"

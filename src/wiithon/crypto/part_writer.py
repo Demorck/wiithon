@@ -34,7 +34,7 @@ class CryptPartWriter:
 
         self.h3_table = bytearray(H3_TABLE_SIZE)
 
-    def write(self, data: bytes, directly: bool = False) -> int:
+    def write(self, data: bytes, *, directly: bool = False) -> int:
         bytes_to_write = len(data)
         offset_in_data = 0
 
