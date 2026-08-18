@@ -1,6 +1,6 @@
-import os
 import struct
 from io import BytesIO
+from pathlib import Path
 from typing import BinaryIO
 
 from wiithon.binary.align import align
@@ -194,18 +194,20 @@ class U8:
         self._extract(1, self.nodes[0].size, output_dir)
 
     def _extract(self, start: int, end: int, current_dir: str) -> None:
-        os.makedirs(current_dir, exist_ok=True)
+        target_dir = Path(current_dir)
+        target_dir.mkdir(parents=True, exist_ok=True)
+
         i = start
         while i < end:
             node = self.nodes[i]
-            path = os.path.join(current_dir, node.name)
+            path = target_dir / node.name
+
             if node.is_dir:
                 node_size = node.size
-                self._extract(i + 1, node_size, path)
+                self._extract(i + 1, node_size, str(path))
                 i = node_size
             else:
-                with open(path, "wb") as f:
-                    f.write(node.data)
+                path.write_text(node.data)
                 i += 1
 
     def get_file_by_path(self, path: str) -> bytes:

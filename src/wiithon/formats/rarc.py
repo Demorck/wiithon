@@ -1,6 +1,6 @@
-import os
 from enum import IntFlag
 from io import BytesIO
+from pathlib import Path
 from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
@@ -194,7 +194,7 @@ class Rarc:
         self._extract_node(self.nodes[0], output_dir)
 
     def _extract_node(self, node: RarcNode, current_dir: str) -> None:
-        os.makedirs(current_dir, exist_ok=True)
+        target_dir = Path(current_dir)
 
         for i in range(node.entry_count):
             entry = self.entries[node.first_entry_index + i]
@@ -202,16 +202,15 @@ class Rarc:
             if entry.name in (".", ".."):
                 continue
 
-            path = os.path.join(current_dir, entry.name)
+            path = target_dir / entry.name
 
             if entry.file_id == 0xFFFF or entry.attributes & NodeAttribute.DIRECTORY:
                 # Subdirectory
                 child_node = self.nodes[entry.data_offset_or_idx]
-                self._extract_node(child_node, path)
+                self._extract_node(child_node, str(path))
             else:
                 # File
-                with open(path, "wb") as f:
-                    f.write(entry.data)
+                path.write_bytes(entry.data)
                     
     def write(self, stream: BinaryIO) -> None:
         string_table_bytes = bytearray()

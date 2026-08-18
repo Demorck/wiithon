@@ -1,4 +1,5 @@
 from io import BytesIO
+from pathlib import Path
 from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
@@ -17,8 +18,8 @@ from wiithon.fst.tree import FST
 
 class WiiIsoReader:
     def __init__(self, path: str) -> None:
-        self.path = path
-        self.file: BinaryIO = open(path, "rb") # noqa: SIM115
+        self._path = Path(path)
+        self.file: BinaryIO = self._path.open("rb") # noqa: SIM115
         try:
             self.disc_header: DiscHeader = DiscHeader.read(self.file)
             self.partitions: list[WiiPartitionEntry] = read_parts(self.file)

@@ -1,6 +1,7 @@
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from io import BytesIO
+from pathlib import Path
 from typing import TypeVar
 
 from wiithon.builder.copy_source import CopyPartitionSource
@@ -120,7 +121,8 @@ class WiiIsoPatcher:
     def build(self, output_path: str, progress_cb: Callable | None = None) -> None:
         builder = WiiDiscBuilder(self.reader.disc_header, self.reader.region)
 
-        with open(output_path, "w+b") as dest:
+        output_path = Path(output_path)
+        with output_path.open("w+b") as dest:
             for entry in self.reader.partitions:
                 is_data = entry.part_type == WiiPartType.DATA
                 copy_builder = CopyPartitionSource(

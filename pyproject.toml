@@ -100,12 +100,15 @@ select = [
 
     # Unused arguments - Excluded: tests
     "ARG",
+
+    # Using Pathlib instead of os - Excluded: tests (for now)
+    "PTH"
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"examples/*"        = ["BLE", "T20"]
+"examples/*"        = ["BLE", "T20", "PTH"]
 "src/wiithon/cli/*" = ["FBT"]
-"tests/*"           = ["ANN", "FBT", "ISC", "SLF", "ARG",]
+"tests/*"           = ["ANN", "FBT", "ISC", "SLF", "ARG", "PTH"]
 "tests/iso/*"       = ["S101"]
 
 [tool.mypy]

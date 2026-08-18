@@ -1,6 +1,6 @@
 import copy
-import os
 from collections.abc import Callable
+from pathlib import Path
 
 from wiithon.builder.source import PartitionSource
 from wiithon.disc.reader import WiiIsoReader
@@ -71,9 +71,9 @@ class CopyPartitionSource(PartitionSource):
         if key in self._file_overrides:
             return self._file_overrides[key]
 
-        node = self.fst.find_node(os.path.join(*path) if path else "")
-            
-        if node and not hasattr(node, "children"): # ie: is a file
+        node = self.fst.find_node(str(Path(*path)) if path else "")
+
+        if node and not hasattr(node, "children"):  # ie: is a file
             data = self.partition_info.crypto.read_at(node.original_offset, node.length)
             return data
 
