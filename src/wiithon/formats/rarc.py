@@ -1,11 +1,11 @@
-from io import BytesIO
-from typing import BinaryIO, List
-import os
 from enum import IntFlag
+from io import BytesIO
+from pathlib import Path
+from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
-from wiithon.exceptions import InvalidFormatError, ArchiveFileNotFoundError, ArchiveEntryExistsError
+from wiithon.exceptions import ArchiveEntryExistsError, ArchiveFileNotFoundError, InvalidFormatError
 
 RARC_MAGIC_WORD: bytes = b'RARC'
 
@@ -19,7 +19,7 @@ class NodeAttribute(IntFlag):
     YAZO_COMPRESSED = 0x80
 
 class RarcNode:
-    def __init__(self):
+    def __init__(self) -> None:
         self.type: str = ""
         self.name_offset: int = 0
         self.name_hash: int = 0
@@ -29,7 +29,7 @@ class RarcNode:
 
 
 class RarcFileEntry:
-    def __init__(self):
+    def __init__(self) -> None:
         self.file_id: int = 0
         self.name_hash: int = 0
         self.attributes: int = 0
@@ -51,7 +51,7 @@ class RarcFileEntry:
 
 
 class Rarc:
-    def __init__(self):
+    def __init__(self) -> None:
         # Header
         self.base_offset: int = 0
         self.magic_word: bytes = b""
@@ -68,8 +68,8 @@ class Rarc:
         self.string_table_offset: int = 0
         self.number_of_files: int = 0
 
-        self.nodes: List[RarcNode] = []
-        self.entries: List[RarcFileEntry] = []
+        self.nodes: list[RarcNode] = []
+        self.entries: list[RarcFileEntry] = []
         self.string_table: bytes = b""
 
     @staticmethod
@@ -187,14 +187,14 @@ class Rarc:
         reader.seek(obj.base_offset + obj.file_length)
         return obj
 
-    def extract_to(self, output_dir: str):
+    def extract_to(self, output_dir: str) -> None:
         if not self.nodes:
             return
         
         self._extract_node(self.nodes[0], output_dir)
 
-    def _extract_node(self, node: RarcNode, current_dir: str):
-        os.makedirs(current_dir, exist_ok=True)
+    def _extract_node(self, node: RarcNode, current_dir: str) -> None:
+        target_dir = Path(current_dir)
 
         for i in range(node.entry_count):
             entry = self.entries[node.first_entry_index + i]
@@ -202,18 +202,17 @@ class Rarc:
             if entry.name in (".", ".."):
                 continue
 
-            path = os.path.join(current_dir, entry.name)
+            path = target_dir / entry.name
 
             if entry.file_id == 0xFFFF or entry.attributes & NodeAttribute.DIRECTORY:
                 # Subdirectory
                 child_node = self.nodes[entry.data_offset_or_idx]
-                self._extract_node(child_node, path)
+                self._extract_node(child_node, str(path))
             else:
                 # File
-                with open(path, "wb") as f:
-                    f.write(entry.data)
+                path.write_bytes(entry.data)
                     
-    def write(self, stream: BinaryIO):
+    def write(self, stream: BinaryIO) -> None:
         string_table_bytes = bytearray()
         string_map = {}
         writer = BinaryWriter(stream)
@@ -567,7 +566,6 @@ class Rarc:
             raise ArchiveEntryExistsError(f"'{name}' already exists in this directory")
 
         entry = RarcFileEntry()
-         # TODO Test whether both attributes are required or simply having FILE is sufficient
         entry.attributes |= NodeAttribute.FILE | NodeAttribute.PRELOAD_TO_MRAM
         entry.name = name
         entry.data = data

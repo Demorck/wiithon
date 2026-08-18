@@ -3,8 +3,9 @@ import unittest
 from io import BytesIO
 
 from tests.unit.disc.structs._roundtrip import RoundTripMixin
+
 from wiithon.disc.structs.certificate import Certificate
-from wiithon.disc.structs.signature import SignatureType, KeyType
+from wiithon.disc.structs.signature import KeyType, SignatureType
 
 
 class TestCertificate(RoundTripMixin, unittest.TestCase):

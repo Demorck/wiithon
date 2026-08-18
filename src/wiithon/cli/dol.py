@@ -1,18 +1,26 @@
 from __future__ import annotations
-import typer
 
 from pathlib import Path
-from typing import Annotated, List
-from wiithon.disc.structs.partition_entry import WiiPartitionEntry
+from typing import Annotated
 
+import typer
+
+from wiithon.cli._common import (
+    JsonOption,
+    PartitionTypeOption,
+    console,
+    render_table,
+    require_file,
+    select_partitions,
+    titled_panel,
+    write_json,
+)
 from wiithon.disc.reader import WiiIsoReader
-
-from wiithon.cli._common import console, require_file, select_partitions, JsonOption, \
-    PartitionTypeOption, write_json, render_table, titled_panel
+from wiithon.disc.structs.partition_entry import WiiPartitionEntry
 
 dol_app = typer.Typer(help="Operations on DOL files.")
 
-def _collect_caves(reader: WiiIsoReader, entries: List[WiiPartitionEntry], min_size: int) -> list[dict]:
+def _collect_caves(reader: WiiIsoReader, entries: list[WiiPartitionEntry], min_size: int) -> list[dict]:
     result = []
     for entry in entries:
         dol = reader.open_partition(entry).read_dol()

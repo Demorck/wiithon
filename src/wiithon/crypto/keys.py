@@ -2,7 +2,6 @@ from Crypto.Cipher import AES
 
 from wiithon.disc.structs.signature import KeyType
 
-
 # "Normal" Common key. Used by the majority of Wii games
 # 16 bytes AES-128 key, index 0 in the Ticket
 COMMON_KEY_NORMAL = bytes([

@@ -1,5 +1,6 @@
 from io import BytesIO
-from typing import BinaryIO, List
+from typing import BinaryIO
+
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
 from wiithon.disc.structs.signature import SignatureType
@@ -60,7 +61,7 @@ class TMD:
             boot_index         : Startup content index
             contents           : List of TMDContent
         """
-    def __init__(self):
+    def __init__(self) -> None:
         self.signature_type: SignatureType = SignatureType.NONE
         self.signature: bytes = b'\x00' * 0x100
         self.signature_issuer: bytes = b'\x00' * 0x40
@@ -77,7 +78,7 @@ class TMD:
         self.title_version: int = 0
         self.num_contents: int = 0
         self.boot_index: int = 0
-        self.contents: List[TMDContent] = []
+        self.contents: list[TMDContent] = []
 
     def __eq__(self, other: "TMD") -> bool:
         buffer_self = BytesIO()

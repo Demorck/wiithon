@@ -3,6 +3,7 @@ import unittest
 from io import BytesIO
 
 from tests.unit.disc.structs._roundtrip import RoundTripMixin
+
 from wiithon.disc.structs.signature import SignatureType
 from wiithon.disc.structs.ticket import Ticket
 

@@ -1,22 +1,40 @@
+import hashlib
 import itertools
 import struct
-import hashlib
+from collections.abc import Callable
 from io import BytesIO
-from typing import List, BinaryIO, Callable, Optional
+from typing import BinaryIO
 
 from wiithon.binary.align import align
 from wiithon.builder.source import PartitionSource
+from wiithon.crypto.layout import GROUP_DATA_SIZE, GROUP_SIZE, SHA1_SIZE
 from wiithon.crypto.part_writer import CryptPartWriter
-from wiithon.disc.layout import FIRST_PARTITION_OFFSET, BI2_OFFSET, APPLOADER_OFFSET, PARTITION_TABLE_OFFSET, \
-    PARTITION_TABLE_ENTRIES, REGION_OFFSET, MAGIC_WORD_OFFSET, WII_MAGIC_WORD, PART_TMD_OFFSET, PART_DATA_OFFSET, \
-    PART_H3_OFFSET, TMD_H3_HASH_OFFSET, TMD_DATA_SIZE_OFFSET, TMD_SIGNATURE_SIZE, TMD_FAKESIGN_PADDING, \
-    TMD_SIGNED_START, TMD_SIGNATURE_OFFSET, SECTION_ALIGNMENT, FILE_ALIGNMENT
-from wiithon.fst.serializer import FSTToBytes
-from wiithon.fst.node import FSTFile
-from wiithon.crypto.layout import GROUP_SIZE, GROUP_DATA_SIZE, SHA1_SIZE
+from wiithon.disc.layout import (
+    APPLOADER_OFFSET,
+    BI2_OFFSET,
+    FILE_ALIGNMENT,
+    FIRST_PARTITION_OFFSET,
+    MAGIC_WORD_OFFSET,
+    PART_DATA_OFFSET,
+    PART_H3_OFFSET,
+    PART_TMD_OFFSET,
+    PARTITION_TABLE_ENTRIES,
+    PARTITION_TABLE_OFFSET,
+    REGION_OFFSET,
+    SECTION_ALIGNMENT,
+    TMD_DATA_SIZE_OFFSET,
+    TMD_FAKESIGN_PADDING,
+    TMD_H3_HASH_OFFSET,
+    TMD_SIGNATURE_OFFSET,
+    TMD_SIGNATURE_SIZE,
+    TMD_SIGNED_START,
+    WII_MAGIC_WORD,
+)
 from wiithon.disc.structs.disc_header import DiscHeader
 from wiithon.disc.structs.partition_entry import WiiPartitionEntry
 from wiithon.disc.structs.partition_header import WiiPartitionHeader
+from wiithon.fst.node import FSTFile, FSTNode
+from wiithon.fst.serializer import FSTToBytes
 
 U64_SIZE: int = 8
 
@@ -39,10 +57,10 @@ def fakesign_tmd(tmd_bytes: bytearray, h3: bytes, data_size: int) -> None:
             break
 
 class WiiDiscBuilder:
-    def __init__(self, header: DiscHeader, region: bytes):
+    def __init__(self, header: DiscHeader, region: bytes) -> None:
         self.header: DiscHeader = header
         self.region: bytes = region
-        self.partitions: List[tuple] = []
+        self.partitions: list[tuple] = []
         self.current_data_offset = FIRST_PARTITION_OFFSET
 
     def _write_certificate_chain(self, stream: BinaryIO, part_data_off: int,
@@ -60,7 +78,7 @@ class WiiDiscBuilder:
         files = []
         total_bytes = 0
 
-        def collect(paths, node):
+        def collect(paths: list[str], node: FSTNode) -> None:
             nonlocal total_bytes
             files.append((paths, node))
             if isinstance(node, FSTFile):
@@ -92,14 +110,12 @@ class WiiDiscBuilder:
 
     @staticmethod
     def _write_file_data(crypt_writer: CryptPartWriter, files: list, source: PartitionSource,
-                         total_bytes: int, progress_cb: Optional[Callable]) -> None:
+                         total_bytes: int, progress_cb: Callable | None) -> None:
         crypt_writer.seek(align(crypt_writer.current_position, FILE_ALIGNMENT))
         by_bytes = total_bytes > 0
-        processed_files = 0
         processed_bytes = 0
 
-        for paths, node in files:
-            processed_files += 1
+        for processed_files, (paths, node) in enumerate(files, start=1):
             node.offset = crypt_writer.current_position
             file_data = source.get_file_data(paths + [node.name])
             node.length = len(file_data)
@@ -117,7 +133,7 @@ class WiiDiscBuilder:
             if not by_bytes and progress_cb:
                 progress_cb(int((processed_files / len(files)) * 100))
 
-    def add_partition(self, stream: BinaryIO, new_partition: PartitionSource, progress_cb: Optional[Callable]) -> None:
+    def add_partition(self, stream: BinaryIO, new_partition: PartitionSource, progress_cb: Callable | None) -> None:
         """
         :param stream:
         :param new_partition:

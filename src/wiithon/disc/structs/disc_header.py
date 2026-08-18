@@ -1,8 +1,9 @@
-from typing import BinaryIO
 from io import BytesIO
+from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
+
 
 class DiscHeader:
     """
@@ -10,7 +11,7 @@ class DiscHeader:
     and
     https://wiibrew.org/wiki/Wii_disc#Decrypted
     """
-    def __init__(self):
+    def __init__(self) -> None:
         self.game_id: bytes = b'\x00' * 0x06
         self.disc_num: int = 0
         self.disc_version: int = 0
@@ -33,7 +34,7 @@ class DiscHeader:
         self.user_position: int = 0
         self.user_size: int = 0
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"""
 Disc Header:
     game_id: {self.game_id}

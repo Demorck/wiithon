@@ -1,6 +1,5 @@
 import struct
 
-# TODO: Can have constants for some OPCODE ? just to remove numbers in the code
 
 def _pack(word: int) -> bytes:
     """
@@ -150,16 +149,16 @@ def bcl(bo: int, bi: int, target: int, from_addr: int) -> bytes:
 def _fmt_xl(opcode: int, bt: int, ba_: int, bb: int, subopcode: int, lk: int = 0) -> bytes:
     return _pack((opcode << 26) | (bt << 21) | (ba_ << 16) | (bb << 11) | (subopcode << 1) | lk)
 
-def bclr(bo: int, bi: int):
+def bclr(bo: int, bi: int) -> bytes:
     return _fmt_xl(19, bo, bi,0, 16)
 
-def bclrl(bo: int, bi: int):
+def bclrl(bo: int, bi: int) -> bytes:
     return _fmt_xl(19, bo, bi, 0, 16, lk=1)
 
-def blr():
+def blr() -> bytes:
     return bclr(20, 0)
 
-def blrl():
+def blrl() -> bytes:
     return bclrl(20, 0)
 # ---------------------------------------------------------------------------
 # Compare instructions
@@ -169,23 +168,23 @@ def blrl():
 # L=0 for 32-bit comparison (always the case on 32-bit PowerPC / Wii).
 # ---------------------------------------------------------------------------
 
-def cmp(crfD: int, rA: int, rB: int, l: int = 0) -> bytes:
+def cmp(crfD: int, rA: int, rB: int, length: int = 0) -> bytes:
     """cmp crfD, rA, rB  - signed integer compare; result written to CR field crfD"""
     _check_crf(crfD, "crfD")
     _check_reg(rA, "rA")
     _check_reg(rB, "rB")
 
     # bits 25:21 = [BF:3][0:1][L:1]
-    field = (crfD << 2) | (l & 1)
+    field = (crfD << 2) | (length & 1)
     return _pack((31 << 26) | (field << 21) | (rA << 16) | (rB << 11) | (0 << 1) | 0)
 
 
-def cmpi(crfD: int, rA: int, imm: int, l: int = 0) -> bytes:
+def cmpi(crfD: int, rA: int, imm: int, length: int = 0) -> bytes:
     """cmpi crfD, rA, imm  - signed compare immediate; result written to CR field crfD"""
     _check_crf(crfD, "crfD")
     _check_reg(rA, "rA")
     _check_signed_imm16(imm)
-    field = (crfD << 2) | (l & 1)
+    field = (crfD << 2) | (length & 1)
     return _pack((11 << 26) | (field << 21) | (rA << 16) | (imm & 0xFFFF))
 
 
@@ -313,7 +312,7 @@ def ori(rA: int, rS: int, imm: int) -> bytes:
     return _fmt_d_unsigned(24, rS, rA, imm)
 
 
-def oris(rA: int, rS: int, imm: int):
+def oris(rA: int, rS: int, imm: int) -> bytes:
     """oris rA, rS, imm  - bitwise OR with unsigned 16-bit immediate shifted"""
     return _fmt_d_unsigned(0x19, rS, rA, imm)
 

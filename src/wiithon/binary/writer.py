@@ -1,12 +1,12 @@
 import struct
-from typing import BinaryIO, List
+from typing import BinaryIO
 
 from wiithon.binary.common import STRING_FORMAT
 from wiithon.exceptions import BinaryError
 
 
 class BinaryWriter:
-    def __init__(self, stream: BinaryIO, encoding: str = STRING_FORMAT):
+    def __init__(self, stream: BinaryIO, encoding: str = STRING_FORMAT) -> None:
         self.stream = stream
         self.encoding = encoding
 
@@ -58,7 +58,7 @@ class BinaryWriter:
         self._write_number(data, '>f')
 
 
-    def list_u32(self, numbers: List[int]) -> None:
+    def list_u32(self, numbers: list[int]) -> None:
         for num in numbers:
             self.u32(num)
 
@@ -73,7 +73,7 @@ class BinaryWriter:
 
 
     def string(self, value: str, size: int | None = None, padding: bytes = b'\x00',
-               encoding: str | None = None, add_null_byte: bool = False) -> None:
+               encoding: str | None = None, *, add_null_byte: bool = False) -> None:
         encoded = value.encode(encoding or self.encoding)
         size = size or len(value)
         if len(encoded) > size:

@@ -6,9 +6,9 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from wiithon.disc.patcher import WiiIsoPatcher
-from wiithon.fst.node import FSTFile, FSTDirectory
 from wiithon.disc.enums import WiiPartType
+from wiithon.disc.patcher import WiiIsoPatcher
+from wiithon.fst.node import FSTDirectory, FSTFile
 
 
 def _make_patcher():
@@ -237,7 +237,7 @@ class TestBuildFstModifier(unittest.TestCase):
         self.assertNotIn("second.bin", names)
 
 
-# build()
+# build
 class TestBuildIntegration(unittest.TestCase):
 
     def _make_reader_mock(self):
