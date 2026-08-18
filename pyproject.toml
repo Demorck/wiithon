@@ -111,13 +111,20 @@ select = [
     "N",
 
     # Changing stuff that lower performance
-    "PERF"
+    "PERF",
+
+    # Docstring,
+#    "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107",
+#    "D414", "D416", "D417", "D419",
+
+    # Magic number in comparison - Excluded: ppc
+#    "PLR2004"
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "examples/*"        = ["BLE", "T20", "PTH"]
 "src/wiithon/cli/*" = ["FBT"]
-"src/wiithon/ppc/*" = ["N"]
+"src/wiithon/ppc/*" = ["N", "PLR"]
 "tests/*"           = ["ANN", "FBT", "ISC", "SLF", "ARG", "PTH"]
 "tests/iso/*"       = ["S101"]
 
