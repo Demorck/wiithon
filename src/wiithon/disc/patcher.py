@@ -1,10 +1,8 @@
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from typing import Callable, Optional, TypeVar, Iterator, Concatenate, ParamSpec
-
 from io import BytesIO
 from pathlib import Path
-from typing import TypeVar
+from typing import Concatenate, ParamSpec, TypeVar
 
 from wiithon.builder.copy_source import CopyPartitionSource
 from wiithon.builder.disc_builder import WiiDiscBuilder
