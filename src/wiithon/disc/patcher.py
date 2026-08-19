@@ -9,7 +9,7 @@ from wiithon.builder.disc_builder import WiiDiscBuilder
 from wiithon.disc.enums import WiiPartType
 from wiithon.disc.reader import WiiIsoReader
 from wiithon.exceptions import NoDataPartitionError
-from wiithon.formats.archive import resolve_read, resolve_write
+from wiithon.formats.archive import Archive, Container, flush_archive_cache, resolve_read, resolve_write
 from wiithon.formats.bnr import BNR
 from wiithon.formats.dol import DOL
 from wiithon.fst.node import FSTFile
@@ -31,6 +31,8 @@ class WiiIsoPatcher:
         self.fst_modifier: Callable[[FST], None] | None = None
         self.files_to_add: dict[str, bytes] = {}
         self.files_to_remove: list[str] = []
+
+        self.cached_archive: tuple[str, Archive, list[Container]] | None = None
 
     def __enter__(self) -> "WiiIsoPatcher":
         self.reader = WiiIsoReader(self.src_path)
@@ -70,7 +72,11 @@ class WiiIsoPatcher:
             self.files_to_remove.append(key)
 
     def replace_file(self, path: str, data: bytes) -> None:
-        self.file_replacements[path.strip("/")] = data
+        key = path.strip('/')
+        if self.cached_archive is not None and self.cached_archive[0] == key:
+            self.cached_archive = None
+
+        self.file_replacements[key] = data
 
     def list_files(self) -> list[str]:
         return self.data_partition.list_files()
@@ -121,6 +127,7 @@ class WiiIsoPatcher:
         self.data_partition.header.ticket.title_id = b'\x00\x01\x00\x00' + b[:4]
 
     def build(self, output_path: str, progress_cb: Callable | None = None) -> None:
+        flush_archive_cache(self)
         builder = WiiDiscBuilder(self.reader.disc_header, self.reader.region)
 
         output_path = Path(output_path)
