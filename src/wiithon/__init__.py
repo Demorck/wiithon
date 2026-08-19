@@ -38,7 +38,7 @@ from wiithon.formats.yaz0 import Yaz0
 from wiithon.fst.node import FSTDirectory, FSTFile, FSTNode
 from wiithon.fst.tree import FST
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 __all__ = [
     # Exceptions

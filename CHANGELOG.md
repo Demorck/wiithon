@@ -7,16 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.2] - 2026-08-09
+## [0.1.2] - 2026-08-19
 
 ### Fixed
 
 - Wrong magic word for wii disc. Used the system magic word one
+- `edit_as` uses multiple times on the same file will retrieve bytes from file already modified
 
 ### Added
 
 - A `Changelog` link in the project URLs
 - AI Disclosure to README.md file
+- `edit_as` now has a cache. So if it's used in a loop, it does not need to uncompress/compress everytime
+- `patch_dol` can have *args and **kwargs for the function that is used to patch
+- `patch_dol` can be use multiple times. Functions will be runs one after another, in order
+- Ruff rules
+- 7 new PowerPC instructions: `lwzu`, `stwu`, `lbzu`, `stbu`, `lhzu`, `sthu`, `lbzx`
 
 ## [0.1.1] - 2026-08-06
 
