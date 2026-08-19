@@ -99,18 +99,18 @@ class TestCopyBuilderFSTModifier(unittest.TestCase):
 class TestCopyBuilderDOLModifier(unittest.TestCase):
     def test_modifier_is_called_at_construction(self):
         called = []
-        _make_copy_builder(dol_modifier=lambda dol: called.append(True))
+        _make_copy_builder(dol_modifiers=[lambda dol: called.append(True)])
         self.assertTrue(called)
 
     def test_modifier_receives_dol_object(self):
         received = []
         cb, info = _make_copy_builder(
-            dol_modifier=lambda dol: received.append(dol)
+            dol_modifiers=[lambda dol: received.append(dol)]
         )
         self.assertIs(received[0], info.read_dol.return_value)
 
     def test_none_modifier_does_not_crash(self):
-        _make_copy_builder(dol_modifier=None)
+        _make_copy_builder(dol_modifiers=[])
 
 
 #  get_file_data
