@@ -274,6 +274,18 @@ class TestBuildIntegration(unittest.TestCase):
         _, kwargs = MockCopyBuilder.call_args
         self.assertIsNone(kwargs.get("fst_modifier"))
 
+    @patch("wiithon.disc.patcher.WiiDiscBuilder")
+    @patch("wiithon.disc.patcher.CopyPartitionSource")
+    @patch("wiithon.disc.patcher.flush_archive_cache")
+    def test_build_flushes_the_archive_cache(self, mock_flush, *_):
+        p = WiiIsoPatcher("dummy.iso")
+        p.reader = self._make_reader_mock()
+        p.data_partition = MagicMock()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            p.build(os.path.join(tmp, "out.iso"))
+
+        mock_flush.assert_called_once_with(p)
 
 if __name__ == "__main__":
     unittest.main()
