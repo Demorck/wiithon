@@ -7,16 +7,15 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
-from typing import Concatenate, ParamSpec, TypeVar, Optional
+from typing import Concatenate, ParamSpec, TypeVar
 
+from wiithon import NoDataPartitionError
 from wiithon.builder.copy_source import CopyPartitionSource
 from wiithon.builder.disc_builder import WiiDiscBuilder
 from wiithon.disc.enums import WiiPartType
+from wiithon.disc.partition import WiiPartitionInfo
 from wiithon.disc.reader import WiiIsoReader
 from wiithon.formats.archive import Archive, Container, flush_archive_cache, resolve_read, resolve_write
-from wiithon.disc.partition import WiiPartitionInfo
-
-from wiithon import NoDataPartitionError
 from wiithon.formats.bnr import BNR
 from wiithon.formats.dol import DOL
 from wiithon.fst.node import FSTFile
@@ -30,7 +29,8 @@ class WiiIsoPatcher:
     """
     Collects modifications to a wii ISO and writes a new one
 
-    Nothing is applied as you go. Every call records an intent and the whole set is replayed when :meth:`build` is called
+    Nothing is applied as you go.
+    Every call records an intent and the whole set is replayed when :meth:`build` is called
     The source ISO is opened read only and never written to
 
     Warning:
@@ -55,19 +55,19 @@ class WiiIsoPatcher:
         self.src_path: str = src_path
 
         #: WiiIsoReader. Used internally
-        self.reader: Optional[WiiIsoReader] = None
+        self.reader: WiiIsoReader | None = None
 
         #: The opened data partition
-        self.data_partition: Optional[WiiPartitionInfo] = None # TODO: currently doing for data partition, may need a change
+        self.data_partition: WiiPartitionInfo | None = None
 
         #: A callback function that runs when build is called. Used for modifying the DOL
-        self.dol_modifier: Optional[Callable[[DOL], None]] = None
+        self.dol_modifier: Callable[[DOL], None] | None = None
 
         #: A dictionnary that map files to their data
         self.file_replacements: dict[str, bytes] = {}
 
         #: Callback applied to the FST at build time, set by :meth:`modify_fst`
-        self.fst_modifier: Optional[Callable[[FST], None]] = None
+        self.fst_modifier: Callable[[FST], None] | None = None
 
         #: A dictionnary that map new files to their data
         self.files_to_add: dict[str, bytes] = {}
@@ -145,7 +145,8 @@ class WiiIsoPatcher:
         """
         Queue a new file for deletion
 
-        If ``path`` was queued by :meth:`add_file` earlier that pending addition is cancelled instead of scheduling a removal
+        If ``path`` was queued by :meth:`add_file` earlier that pending addition
+        is cancelled instead of scheduling a removal
 
         Args:
             path: Destination path inside the DATA partition. Leading and trailing slashes are stripped

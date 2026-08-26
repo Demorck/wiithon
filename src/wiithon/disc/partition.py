@@ -45,7 +45,8 @@ class WiiPartitionInfo:
         #: The partition certificate chain
         self.certificates: list[Certificate] = certificates
 
-        #: Disc header found at offset ``0x000`` of the decrypted data, also known as ``boot.bin``. This is where the DOL and FST offsets live
+        #: Disc header found at offset ``0x000`` of the decrypted data, also known as ``boot.bin``
+        #: This is where the DOL and FST offsets live
         self.internal_header: DiscHeader = internal_header
 
         #: Parsed file system table
@@ -91,7 +92,7 @@ class WiiPartitionInfo:
 		the header itself
 
 		Returns:
-		    The complete apploader, header included
+            The complete apploader, header included
 		"""
 
         apploader_offset = APPLOADER_OFFSET
@@ -109,7 +110,7 @@ class WiiPartitionInfo:
 		of any text or data section declared in its header
 
 		Returns:
-		    The parsed :class:`~wiithon.formats.dol.DOL`
+            The parsed :class:`~wiithon.formats.dol.DOL`
 		"""
         dol_offset = self.internal_header.DOL_offset
         header_data = self.crypto.read_at(dol_offset, DOL_HEADER_SIZE)
@@ -130,7 +131,7 @@ class WiiPartitionInfo:
 		Read ``bi2.bin``, the disc configuration block that follows the header
 
 		Returns:
-		    The raw block, read at its fixed offset and size
+            The raw block, read at its fixed offset and size
 		"""
         bi2_offset = BI2_OFFSET
         bi2_size = BI2_SIZE

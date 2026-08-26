@@ -2,12 +2,11 @@
 Building a partition from one already present in an ISO
 """
 import copy
+from collections.abc import Callable
 from pathlib import Path
 
-from typing import Callable, List
-
-from wiithon.disc.partition import WiiPartitionInfo
 from wiithon.builder.source import PartitionSource
+from wiithon.disc.partition import WiiPartitionInfo
 from wiithon.disc.reader import WiiIsoReader
 from wiithon.disc.structs.certificate import Certificate
 from wiithon.disc.structs.disc_header import DiscHeader
@@ -76,7 +75,7 @@ class CopyPartitionSource(PartitionSource):
         self.tmd: TMD = self.partition_info.tmd
 
         #: Certificate chain of the source partition
-        self.certificates: List[Certificate] = self.partition_info.certificates
+        self.certificates: list[Certificate] = self.partition_info.certificates
 
         #: File system table, already modified if a ``fst_modifier`` was given
         self.fst: FST = copy.copy(self.partition_info.fst)

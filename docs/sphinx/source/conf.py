@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 
 from wiithon import __version__
 
+
 def _skip_imported_members(app, what, name, obj, skip, options):
     """Only document members actually defined in the module being processed."""
     if what != "module":
