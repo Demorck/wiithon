@@ -86,15 +86,14 @@ class WiiPartitionInfo:
 
     def read_apploader(self) -> bytes:
         """
-		Read the apploader, the code that boots the game
+        Read the apploader, the code that boots the game
 
-		The apploader header declares two payload sizes. Both are read along with
-		the header itself
+        The apploader header declares two payload sizes. Both are read along with
+        the header itself
 
-		Returns:
+        Returns:
             The complete apploader, header included
-		"""
-
+        """
         apploader_offset = APPLOADER_OFFSET
         header_data = self.crypto.read_at(apploader_offset, APPLOADER_HEADER_SIZE)
         apploader_header = ApploaderHeader.read(BytesIO(header_data))
@@ -104,14 +103,14 @@ class WiiPartitionInfo:
 
     def read_dol(self) -> DOL:
         """
-		Read and parse the main executable
+        Read and parse the main executable
 
-		The DOL has no explicit size on disc, so it is computed as the furthest end
-		of any text or data section declared in its header
+        The DOL has no explicit size on disc, so it is computed as the furthest end
+        of any text or data section declared in its header
 
-		Returns:
+        Returns:
             The parsed :class:`~wiithon.formats.dol.DOL`
-		"""
+        """
         dol_offset = self.internal_header.DOL_offset
         header_data = self.crypto.read_at(dol_offset, DOL_HEADER_SIZE)
         header = DOLHeader.read(BytesIO(header_data))
@@ -128,11 +127,11 @@ class WiiPartitionInfo:
 
     def read_bi2(self) -> bytes:
         """
-		Read ``bi2.bin``, the disc configuration block that follows the header
+        Read ``bi2.bin``, the disc configuration block that follows the header
 
-		Returns:
+        Returns:
             The raw block, read at its fixed offset and size
-		"""
+        """
         bi2_offset = BI2_OFFSET
         bi2_size = BI2_SIZE
 
