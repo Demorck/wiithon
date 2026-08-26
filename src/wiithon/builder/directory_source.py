@@ -87,7 +87,7 @@ class DirectoryPartitionSource(PartitionSource):
         sys_folder = base_path / "sys"
         #: Folder holding the game files, mirrored by the file system table
         self.files_dir = str(base_path / "files")
-        
+
         with (sys_folder / 'boot.bin').open('rb') as f:
             #: Internal disc header, with encryption and hash verification forced on
             self.encrypted_header = DiscHeader.read(f)

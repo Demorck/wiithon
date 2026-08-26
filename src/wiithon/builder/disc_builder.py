@@ -88,6 +88,7 @@ class WiiDiscBuilder:
     See Also:
         :class:`~wiithon.disc.patcher.WiiIsoPatcher` drives this class for you when patching an existing disc
     """
+
     def __init__(self, header: DiscHeader, region: bytes) -> None:
         self.header: DiscHeader = header
 

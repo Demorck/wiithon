@@ -13,7 +13,6 @@ from wiithon.builder.copy_source import CopyPartitionSource
 from wiithon.builder.disc_builder import WiiDiscBuilder
 from wiithon.disc.enums import WiiPartType
 from wiithon.disc.reader import WiiIsoReader
-from wiithon.exceptions import NoDataPartitionError
 from wiithon.formats.archive import Archive, Container, flush_archive_cache, resolve_read, resolve_write
 from wiithon.disc.partition import WiiPartitionInfo
 
@@ -43,6 +42,7 @@ class WiiIsoPatcher:
         ...     patcher.modify_title("My super game")
         ...     patcher.build("output/iso")
     """
+
     def __init__(self, src_path: str) -> None:
         """
         Nothing is opened in the constructor
