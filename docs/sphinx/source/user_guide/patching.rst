@@ -69,6 +69,18 @@ during ``build()``, not immediately.
 
     patcher.patch_dol(my_patch)
 
+``patch_dol`` can be called several times. The callbacks run in the order you registered them. Each seeing the
+DOL as the previous one left it which lets you keep one function per patch instead of one big one.
+
+Extra arguments are forwarded, so a patch can be parameterised:
+
+..  code-block:: python
+
+    def set_lives(dol: DOL, address: int, count: int) -> None:
+        dol.write_at(address, ppc.li(3, count))
+
+    patcher.patch_dol(set_lives, 0x80123456, count=99)
+
 ``write_at`` takes a virtual address and raw bytes. To read back:
 
 ..  code-block:: python

@@ -175,8 +175,8 @@ M
     :sorted:
 
     Magic word
-        A sequence of bytes that identifies the file type . ``0x5D1C9EA3`` at offset
-        ``0x18`` marks a Wii :term:`Disc header` for example
+        A sequence of bytes that identifies the file type. ``0x5D1C9EA3`` at offset ``0x18`` marks a Wii
+        :term:`Disc header` for example.
 
     Merkle tree
         A tree in which every non-leaf node is a hash of its children. The Wii partition hash tree is one of it and
