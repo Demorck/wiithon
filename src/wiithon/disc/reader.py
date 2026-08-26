@@ -14,10 +14,10 @@ from wiithon.crypto.part_reader import CryptPartReader
 from wiithon.disc.enums import WiiPartType
 from wiithon.disc.layout import (
     DISC_HEADER_SIZE,
+    MAGIC_WORD_OFFSET,
     REGION_OFFSET,
     REGION_SIZE,
-    SYSTEM_MAGIC_WORD,
-    SYSTEM_MAGIC_WORD_OFFSET, MAGIC_WORD_OFFSET, WII_MAGIC_WORD,
+    WII_MAGIC_WORD,
 )
 from wiithon.disc.partition import WiiPartitionInfo
 from wiithon.disc.structs.certificate import Certificate
