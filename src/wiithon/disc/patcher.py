@@ -9,12 +9,12 @@ from io import BytesIO
 from pathlib import Path
 from typing import Concatenate, ParamSpec, TypeVar
 
-from wiithon import NoDataPartitionError
 from wiithon.builder.copy_source import CopyPartitionSource
 from wiithon.builder.disc_builder import WiiDiscBuilder
 from wiithon.disc.enums import WiiPartType
 from wiithon.disc.partition import WiiPartitionInfo
 from wiithon.disc.reader import WiiIsoReader
+from wiithon.exceptions import NoDataPartitionError
 from wiithon.formats.archive import Archive, Container, flush_archive_cache, resolve_read, resolve_write
 from wiithon.formats.bnr import BNR
 from wiithon.formats.dol import DOL
@@ -61,7 +61,7 @@ class WiiIsoPatcher:
         self.data_partition: WiiPartitionInfo | None = None
 
         #: A callback function that runs when build is called. Used for modifying the DOL
-        self.dol_modifier: Callable[[DOL], None] | None = None
+        self.dol_modifiers: list[Callable[[DOL], None]] = []
 
         #: A dictionnary that map files to their data
         self.file_replacements: dict[str, bytes] = {}
@@ -172,7 +172,11 @@ class WiiIsoPatcher:
             path: Path inside the DATA partition
             data: Replacement contents
         """
-        self.file_replacements[path.strip("/")] = data
+        key = path.strip('/')
+        if self.cached_archive is not None and self.cached_archive[0] == key:
+            self.cached_archive = None
+
+        self.file_replacements[key] = data
 
     def list_files(self) -> list[str]:
         """

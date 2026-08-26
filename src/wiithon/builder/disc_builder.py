@@ -28,6 +28,8 @@ from wiithon.disc.layout import (
     PARTITION_TABLE_OFFSET,
     REGION_OFFSET,
     SECTION_ALIGNMENT,
+    SYSTEM_MAGIC_WORD,
+    SYSTEM_MAGIC_WORD_OFFSET,
     TMD_DATA_SIZE_OFFSET,
     TMD_FAKESIGN_PADDING,
     TMD_H3_HASH_OFFSET,
@@ -286,6 +288,10 @@ class WiiDiscBuilder:
 
         stream.seek(REGION_OFFSET)
         stream.write(self.region)
+
+
+        stream.seek(SYSTEM_MAGIC_WORD_OFFSET)
+        stream.write(struct.pack(">I", SYSTEM_MAGIC_WORD))
 
         stream.seek(MAGIC_WORD_OFFSET)
         stream.write(struct.pack(">I", WII_MAGIC_WORD))
