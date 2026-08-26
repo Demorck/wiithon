@@ -2,21 +2,20 @@
 Building a partition from one already present in an ISO
 """
 import copy
-import os
+from pathlib import Path
 
-from typing import Callable, List, Optional
+from typing import Callable, List
 
 from wiithon.disc.partition import WiiPartitionInfo
+from wiithon.builder.source import PartitionSource
+from wiithon.disc.reader import WiiIsoReader
 from wiithon.disc.structs.certificate import Certificate
 from wiithon.disc.structs.disc_header import DiscHeader
-from wiithon.disc.structs.tmd import TMD
-from wiithon.disc.structs.ticket import Ticket
 from wiithon.disc.structs.partition_entry import WiiPartitionEntry
+from wiithon.disc.structs.ticket import Ticket
+from wiithon.disc.structs.tmd import TMD
 from wiithon.exceptions import FstFileNotFoundError
 from wiithon.formats.dol import DOL
-
-from wiithon.disc.reader import WiiIsoReader
-from wiithon.builder.source import PartitionSource
 from wiithon.fst.tree import FST
 
 
@@ -39,8 +38,8 @@ class CopyPartitionSource(PartitionSource):
         ...     source = CopyPartitionSource(reader, entry, file_overrides={"opening.bnr": new_banner})
     """
     def __init__(self, reader: WiiIsoReader, partition: WiiPartitionEntry,
-                 fst_modifier: Optional[Callable[[FST], None]] = None,
-                 dol_modifier: Optional[Callable[[DOL], None]] = None,
+                 fst_modifier: Callable[[FST], None] | None = None,
+                 dol_modifiers: list[Callable[[DOL], None]] | None = None,
                  file_overrides: dict[str, bytes] | None = None) -> None:
         """
         Open the source partition and apply the modifications
@@ -91,8 +90,11 @@ class CopyPartitionSource(PartitionSource):
         if fst_modifier is not None:
             fst_modifier(self.fst)
 
-        if dol_modifier is not None:
-            dol_modifier(self.dol)
+        if dol_modifiers is None:
+            dol_modifiers = []
+
+        for modifier in dol_modifiers:
+            modifier(self.dol)
 
         self._file_overrides: dict[str, bytes] = file_overrides or {}
 
@@ -105,7 +107,7 @@ class CopyPartitionSource(PartitionSource):
     def get_tmd(self) -> TMD:
         return self.tmd
 
-    def get_certificates(self) -> List[Certificate]:
+    def get_certificates(self) -> list[Certificate]:
         return self.certificates
 
     def get_encrypted_header(self) -> DiscHeader:
@@ -129,7 +131,7 @@ class CopyPartitionSource(PartitionSource):
     def get_fst(self) -> FST:
         return self.fst
 
-    def get_file_data(self, path: List[str]) -> bytes:
+    def get_file_data(self, path: list[str]) -> bytes:
         """
         Return the content of one file, from the overrides or from the source disc
 
@@ -150,9 +152,9 @@ class CopyPartitionSource(PartitionSource):
         if key in self._file_overrides:
             return self._file_overrides[key]
 
-        node = self.fst.find_node(os.path.join(*path) if path else "")
-            
-        if node and not hasattr(node, "children"): # ie: is a file
+        node = self.fst.find_node(str(Path(*path)) if path else "")
+
+        if node and not hasattr(node, "children"):  # ie: is a file
             data = self.partition_info.crypto.read_at(node.original_offset, node.length)
             return data
 

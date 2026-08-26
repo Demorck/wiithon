@@ -1,105 +1,140 @@
 # Wiithon
 
-A Python library for reading, extracting, and rebuilding Nintendo Wii ISO files. 
+A Python library for reading, patching and rebuilding Nintendo Wii disc images.
 
-## Features
+[![PyPI](https://img.shields.io/pypi/v/wiithon)](https://pypi.org/project/wiithon/)
+[![Python](https://img.shields.io/pypi/pyversions/wiithon)](https://pypi.org/project/wiithon/)
+[![License](https://img.shields.io/pypi/l/wiithon)](https://github.com/Demorck/wiithon/blob/master/LICENSE.md)
 
-* Parse and extract files from standard Wii ISOs.
-* Read the Wii File System Table (FST) and reconstruct the directory tree.
-* On-the-fly decryption and encryption of Wii data clusters.
-* Rebuild and master new Wii ISOs from extracted or modified files.
-* Hash calculation and Merkle tree generation for partition integrity. (doesn't work great atm)
+## Installation
 
-## Documentation
+```bash
+pip install wiithon
+```
 
-For comprehensive guides, internal architecture details, and references, please refer to the [docs/](docs/) directory.
+Requires Python 3.11 or later. Type annotations are shipped (PEP 561).
 
-## Examples
+## Quick start
 
-For some examples, you can refer to the [examples/](examples/) directory.
-
-## Overview
-
-The library is divided into two main components: reading existing ISOs and building new ones.
-
-### Reading and Extracting
-
-To read an ISO, initialize the `WiiIsoReader` with a binary stream. You can iterate through the partitions and access the decrypted file data using the FST offsets.
-(currently just copied/paste the examples in the above directory)
+Read a disc image:
 
 ```python
-from wiithon.disc.WiiIsoReader import WiiIsoReader
+from wiithon import WiiIsoReader
 
-# Opening the ISO
-with WiiIsoReader("your_iso_file.iso") as reader:
-    print(f"Game: {reader.disc_header.game_title}")
+with WiiIsoReader("game.iso") as reader:
+    print(reader.disc_header.game_title)
 
-    data = reader.get_data_partition()
-    partition = reader.open_partition(data)
-
+    partition = reader.open_partition(reader.get_data_partition())
     for path in partition.list_files():
         print(path)
 
-    print(f"Number of files: {len(partition.list_files())}")
+    data = partition.read_file("opening.bnr")
 ```
 
-### Building
-To build an ISO, you can use some interfaces. Each interface has their specificities like copying an ISO, patching an ISO or building from a folder from your explorer.
-Currently, only the copy one exists.
+Patch it and write a new image:
 
 ```python
-from wiithon.builder.CopyBuilder import CopyBuilder
-from wiithon.disc.WiiIsoReader import WiiIsoReader
-from wiithon.builder.WiiDiscBuilder import WiiDiscBuilder
+from wiithon import WiiIsoPatcher
 
-SOURCE_PATH = "your_iso_file.iso"
-DEST_PATH = "output_iso.iso"
-
-print(f"Source : {SOURCE_PATH}")
-print(f"Dest   : {DEST_PATH}")
-
-# Open the original ISO
-with WiiIsoReader(SOURCE_PATH) as reader:
-    print(f"Game   : {reader.disc_header.game_title.strip()}")
-    print(f"ID     : {reader.disc_header.game_id.decode()}")
-
-    # The main builder
-    builder = WiiDiscBuilder(reader.disc_header, reader.region)
-
-    with open(DEST_PATH, 'w+b') as dest:
-        # For each partition from the original ISO
-        for entry in reader.partitions:
-            # Copying and build into the new one
-            copy_builder = CopyBuilder(reader, entry, None)
-            builder.add_partition(dest, copy_builder, None)
-
-        # To write the header and partitions datas 
-        builder.finish(dest)
+with WiiIsoPatcher("game.iso") as patcher:
+    patcher.modify_banner_title("My Hack")
+    patcher.replace_file("StageData/Foo.arc", new_bytes)
+    patcher.add_file("custom/data.bin", b"...")
+    patcher.build("patched.iso")
 ```
 
-## TODO
-### Done
-- [x] Fixing the H3 table (Dolphin says that is not correct :( ) 
-- [x] Fixing a thing that dolphin says: some block are incorrect but unused
-- [x] Adding more WiiPartitionInterface from dir
-- [x] Some docs about building and so on
-- [x] Adding some tools like Yaz0, RARC
-- [x] Writing asm easily
-- [x] Patching DOL
-- [x] Adding, modifying, removing files
-- [x] Wrapper for modifying rarc file
----
-### Next to do
-- [ ] Searching empty addresses in dol to add instructions and adding text/data sections
-- [ ] Refactor/adding constants to avoid magic numbers
-- [ ] Comment all functions (and inside of it)
-- [ ] BCSV editor
-- [ ] BMD - BDL editor
----
-### Next after next (not ordered)
-- [ ] Patcher !! (will be available with tools maybe ?)
-- [ ] Some refactorization (like big break big function into smaller ones)
-- [ ] Add more unit tests (and change some)
-- [ ] Improve exception handling for invalid or corrupted ISO headers
-- [ ] Add a CLI for standard extraction and building
-- [ ] Adding everything we need to proper have a PyPi page
+Edit a file *inside* an archive, without unpacking anything by hand:
+
+```python
+from wiithon import WiiIsoPatcher, BCSV
+
+with WiiIsoPatcher("game.iso") as patcher:
+    path = "StageData/CannonFleetGalaxy/CannonFleetGalaxyScenario.arc/scenariodata.bcsv"
+    with patcher.edit_as(path, BCSV, str_fmt="shift_jis") as bcsv:
+        for entry in bcsv.entries:
+            entry["LuigiModeTimer"] = 0
+
+    patcher.build("patched.iso")
+```
+
+Patch the executable:
+
+```python
+from wiithon import WiiIsoPatcher, DOL
+
+def patch(dol: DOL) -> None:
+    dol.write_at(0x80123456, b"\x60\x00\x00\x00")        # nop
+    print(dol.read_until_null_at(0x805A1234).decode("shift_jis"))
+
+with WiiIsoPatcher("game.iso") as patcher:
+    patcher.patch_dol(patch)
+    patcher.build("patched.iso")
+```
+
+## What it does
+
+**Discs** parses the disc header, partition table and File System Table.
+Partition data is decrypted on the fly, so reading one file does not mean decrypting the whole partition. 
+Rebuilding handles re-encryption, the full H0–H3 Merkle tree and TMD fakesigning, so the result boots in Dolphin.
+
+**Building** master a new image by copying an existing one, or from an
+extracted `sys/` + `files/` directory tree. The `PartitionSource` interface
+lets you plug in your own.
+
+**File formats** DOL, BCSV, RARC, U8, Yaz0, LZ77, BNR with IMET titles. 
+Compressed archives are resolved transparently: a path may cross into an archive, and into a Yaz0 layer wrapping it.
+
+**DOL patching** read and write at virtual addresses, add text or data
+sections, find code caves, locate and patch the `arenaLo` setter, inject
+code above the arena. A PowerPC instruction encoder is included.
+
+## Command line
+
+```bash
+wiithon iso info game.iso
+wiithon iso list game.iso
+wiithon iso extract game.iso ./out
+wiithon iso cat game.iso opening.bnr
+
+wiithon rarc info archive.arc
+wiithon rarc extract archive.arc ./out
+
+wiithon dol caves main.dol
+```
+
+## Errors
+
+Anything raised because of malformed data derives from `WiithonError`:
+
+```python
+from wiithon import WiiIsoReader, InvalidDiscError, FstFileNotFoundError
+
+try:
+    with WiiIsoReader("maybe.iso") as reader:
+        ...
+except InvalidDiscError:
+    print("not a Wii disc image")
+```
+
+The "not found" variants also inherit from the matching builtin, so
+`except FileNotFoundError` keeps working. Invalid *arguments* still raise
+the usual `ValueError` and `TypeError`.
+
+## Documentation
+
+- [Guides and internals](https://demorck.github.io/wiithon/)
+- [Examples](https://github.com/Demorck/wiithon/tree/master/examples)
+
+## License
+
+MIT see [LICENSE.md](https://github.com/Demorck/wiithon/blob/master/LICENSE.md).
+
+## AI Disclosure
+Some people can be concerned about AI in project. So for transparency, this section will explain when and what is AI-generated. 
+Everything is reread by me.
+- English is not my mother tongue, i used AI for documentation. I'm writing a first documentation in english/french locally and i'm using AI to translate it and fix my spell mistakes. I'm doing also that for long docstring (because it's written in the API documentation) ;
+- I used generative AI for some mock helper function in unit tests, because it's faster and i tested the mocking stuff by hand before adding them. It's the **only** code generated by an AI. Everything else that i wrote is not generated by AI ;
+- I used AI personally when i struggle to understand some documentation when 3 websites says 3 differents things for one format (like rarc files, omg).
+
+It's impossible to know if some people used AI in their pull request. I'm not banning AI in pull request but for the base code, i'm suggering to not use it. 
+I put a lot of time to understand everything and i probably forgot some stuff about the beginning but i love so much understanding such things. If you think it's to much AI, it's completely up to you and i understand your position, really ! 

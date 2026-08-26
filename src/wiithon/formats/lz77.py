@@ -22,7 +22,7 @@ class Lz77:
 
         reader = BinaryReader(stream)
         obj.magic_word = reader.string(0x04)
-        if obj.magic_word != "LZ77": #TODO Constant here
+        if obj.magic_word != "LZ77":
             raise InvalidFormatError("Trying to read a non-lz77 file with the lz77 struct")
 
         header = reader.u32_le()
@@ -123,7 +123,12 @@ class Lz77:
         return bytes(dest_buffer)
 
     @staticmethod
-    def _find_longest_match(data, current_position, buffer_size, window_size):
+    def _find_longest_match(
+            data: bytes,
+            current_position: int,
+            buffer_size: int,
+            window_size: int
+    ) -> tuple[int, int] | None:
         cp = current_position
         if cp + 3 > len(data):
             return None

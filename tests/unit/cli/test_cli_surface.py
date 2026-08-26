@@ -4,8 +4,8 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from wiithon.cli import app
 from wiithon import __version__
+from wiithon.cli import app
 
 COMMANDS = [
     ["iso", "info"], ["iso", "list"], ["iso", "extract"], ["iso", "cat"],

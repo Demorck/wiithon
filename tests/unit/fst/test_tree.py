@@ -2,8 +2,8 @@ import struct
 import unittest
 from io import BytesIO
 
+from wiithon.fst.node import FSTDirectory, FSTFile
 from wiithon.fst.tree import FST
-from wiithon.fst.node import FSTFile, FSTDirectory
 
 
 class TestFST(unittest.TestCase):
@@ -133,7 +133,7 @@ class TestFST(unittest.TestCase):
     def _compare_nodes(self, a: list, b: list) -> None:
         """Recursively compare two lists of FSTNodes."""
         self.assertEqual(len(a), len(b))
-        for na, nb in zip(a, b):
+        for na, nb in zip(a, b, strict=True):
             self.assertEqual(na.name, nb.name)
             self.assertEqual(type(na), type(nb))
             if isinstance(na, FSTFile):

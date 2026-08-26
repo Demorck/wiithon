@@ -206,7 +206,7 @@ class TestString(unittest.TestCase):
         self.assertEqual(reader(b"ok\x00\xFF\xFF\xFF").string(6), "ok")
 
     def test_default_encoding_is_utf8(self):
-        self.assertEqual(reader("héllo".encode("utf-8")).string(6), "héllo")
+        self.assertEqual(reader("héllo".encode()).string(6), "héllo")
 
     def test_encoding_from_the_constructor(self):
         binary_reader = reader(b"caf\xE9", encoding="latin-1")
@@ -257,7 +257,7 @@ class TestStringUntilNull(unittest.TestCase):
         self.assertEqual(binary_reader.string_until_null(), "world")
 
     def test_multibyte_utf8(self):
-        self.assertEqual(reader("héllo".encode("utf-8") + b"\x00").string_until_null(), "héllo")
+        self.assertEqual(reader("héllo".encode() + b"\x00").string_until_null(), "héllo")
 
     def test_encoding_override_per_call(self):
         self.assertEqual(reader(b"caf\xE9\x00").string_until_null(encoding="latin-1"), "café")

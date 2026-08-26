@@ -1,11 +1,10 @@
 """The contract a partition must fulfil to be written by the builder"""
 from abc import ABC, abstractmethod
-from typing import List
 
 from wiithon.disc.structs.certificate import Certificate
 from wiithon.disc.structs.disc_header import DiscHeader
-from wiithon.disc.structs.tmd import TMD
 from wiithon.disc.structs.ticket import Ticket
+from wiithon.disc.structs.tmd import TMD
 from wiithon.fst.tree import FST
 
 
@@ -51,7 +50,7 @@ class PartitionSource(ABC):
         """
     
     @abstractmethod
-    def get_certificates(self) -> List[Certificate]:
+    def get_certificates(self) -> list[Certificate]:
         """
         Return the certificate chain of the partition
 
@@ -124,7 +123,7 @@ class PartitionSource(ABC):
         """
     
     @abstractmethod
-    def get_file_data(self, path: List[str]) -> bytes:
+    def get_file_data(self, path: list[str]) -> bytes:
         """
         Return the content of one file
 

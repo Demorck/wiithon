@@ -1,25 +1,26 @@
-"""Read-only access to a Wii disc image
+"""
+Read-only access to a Wii disc image
 
 This module exposes :class:`WiiIsoReader`, the entry point for inspecting an ISO
 without modifying it. To modify one, see :mod:`wiithon.disc.patcher`
 """
 
 from io import BytesIO
-from typing import BinaryIO, List, Optional
+from pathlib import Path
+from typing import BinaryIO
 
-from wiithon.disc.enums import WiiPartType
-from wiithon.disc.partition import WiiPartitionInfo
-from wiithon.crypto.part_reader import CryptPartReader
-from wiithon.exceptions import InvalidDiscError
-from wiithon.fst.tree import FST
 from wiithon.binary.reader import BinaryReader
+from wiithon.crypto.part_reader import CryptPartReader
+from wiithon.disc.enums import WiiPartType
+from wiithon.disc.layout import DISC_HEADER_SIZE, MAGIC_WORD_OFFSET, REGION_OFFSET, REGION_SIZE, WII_MAGIC_WORD
+from wiithon.disc.partition import WiiPartitionInfo
 from wiithon.disc.structs.certificate import Certificate
 from wiithon.disc.structs.disc_header import DiscHeader
-from wiithon.disc.structs.tmd import TMD
 from wiithon.disc.structs.partition_entry import WiiPartitionEntry, read_parts
 from wiithon.disc.structs.partition_header import WiiPartitionHeader
-
-from wiithon.disc.layout import WII_MAGIC_WORD, REGION_OFFSET, REGION_SIZE, DISC_HEADER_SIZE, MAGIC_WORD_OFFSET
+from wiithon.disc.structs.tmd import TMD
+from wiithon.exceptions import InvalidDiscError
+from wiithon.fst.tree import FST
 
 
 class WiiIsoReader:
@@ -38,7 +39,7 @@ class WiiIsoReader:
         ...     partition = reader.open_partition(reader.get_data_partition())
         ...     data = partition.read_file("opening.bnr")
     """
-    
+
     def __init__(self, path: str) -> None:
         """
         Open an ISO and parse its header and partition table
@@ -55,18 +56,17 @@ class WiiIsoReader:
             The file handle is closed automatically if parsing fails, so a failed
             construction never leaks a descriptor
         """
-
         #: Path the reader was opened on.
-        self.path: str = path
+        self._path = Path(path)
 
         #: Underlying binary file handle.
-        self.file: BinaryIO = open(path, "rb")
+        self.file: BinaryIO = self._path.open("rb") # noqa: SIM115
         try:
             #: Unencrypted disc header, read from offset ``0x000``.
             self.disc_header: DiscHeader = DiscHeader.read(self.file)
 
             #: Every entry of the partition table, in disc order
-            self.partitions: List[WiiPartitionEntry] = read_parts(self.file)
+            self.partitions: list[WiiPartitionEntry] = read_parts(self.file)
 
             #: Raw region bytes
             self.region: bytes = self.read_region()
@@ -79,7 +79,7 @@ class WiiIsoReader:
             self.file.close()
             raise
 
-    def get_data_partition(self) -> Optional[WiiPartitionEntry]:
+    def get_data_partition(self) -> WiiPartitionEntry | None:
         """
         Return the DATA partition entry, which holds the game itself
 
@@ -88,7 +88,7 @@ class WiiIsoReader:
         """
         return next((p for p in self.partitions if p.part_type == WiiPartType.DATA), None)
 
-    def get_update_partition(self) -> Optional[WiiPartitionEntry]:
+    def get_update_partition(self) -> WiiPartitionEntry | None:
         """
         Return the UPDATE partition entry, which holds a system update
 
@@ -97,7 +97,7 @@ class WiiIsoReader:
         """
         return next((p for p in self.partitions if p.part_type == WiiPartType.UPDATE), None)
 
-    def get_partitions(self) -> List[WiiPartitionEntry]:
+    def get_partitions(self) -> list[WiiPartitionEntry]:
         """
         Return every partition entry listed in the partition table
 
@@ -172,9 +172,7 @@ class WiiIsoReader:
 
         # Reading certificates
         self.file.seek(offset + header.certificate_chain_offset)
-        certificates: List[Certificate] = []
-        for _ in range(3):
-            certificates.append(Certificate.read(self.file))
+        certificates: list[Certificate] = [Certificate.read(self.file) for _ in range(3)]
 
         # Crypto header for decrypted data
         data_offset = offset + header.data_offset
@@ -206,5 +204,5 @@ class WiiIsoReader:
     def __enter__(self) -> "WiiIsoReader":
         return self
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args: int) -> None:
         self.close()

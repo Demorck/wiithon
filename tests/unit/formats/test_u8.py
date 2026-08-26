@@ -2,9 +2,9 @@ import struct
 import unittest
 from io import BytesIO
 
-from wiithon.exceptions import ArchiveIsADirectoryError, ArchiveFileNotFoundError
-from wiithon.formats.u8 import U8, NODE_SIZE, ROOTNODE_OFFSET, U8_MAGIC_WORD
 from wiithon.binary.align import align
+from wiithon.exceptions import ArchiveFileNotFoundError, ArchiveIsADirectoryError
+from wiithon.formats.u8 import NODE_SIZE, ROOTNODE_OFFSET, U8, U8_MAGIC_WORD
 
 
 def _build_u8(files: dict[str, bytes]) -> bytes:

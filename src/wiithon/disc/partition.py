@@ -8,20 +8,19 @@ built directly
 
 from collections.abc import Callable
 from io import BytesIO
-from typing import List, Optional
 
 from wiithon.crypto.part_reader import CryptPartReader
-from wiithon.disc.layout import APPLOADER_OFFSET, APPLOADER_HEADER_SIZE, BI2_OFFSET, BI2_SIZE
-from wiithon.exceptions import FstIsADirectoryError, FstFileNotFoundError
-from wiithon.formats.dol_header import DOLHeader
-from wiithon.fst.tree import FST
-from wiithon.fst.node import FSTNode, FSTDirectory, FSTFile
+from wiithon.disc.layout import APPLOADER_HEADER_SIZE, APPLOADER_OFFSET, BI2_OFFSET, BI2_SIZE
 from wiithon.disc.structs.apploader_header import ApploaderHeader
 from wiithon.disc.structs.certificate import Certificate
 from wiithon.disc.structs.disc_header import DiscHeader
-from wiithon.disc.structs.tmd import TMD
 from wiithon.disc.structs.partition_header import WiiPartitionHeader
-from wiithon.formats.dol import DOL, DOL_HEADER_SIZE, DOL_TEXT_SECTIONS, DOL_DATA_SECTIONS
+from wiithon.disc.structs.tmd import TMD
+from wiithon.exceptions import FstFileNotFoundError, FstIsADirectoryError
+from wiithon.formats.dol import DOL, DOL_DATA_SECTIONS, DOL_HEADER_SIZE, DOL_TEXT_SECTIONS
+from wiithon.formats.dol_header import DOLHeader
+from wiithon.fst.node import FSTDirectory, FSTFile, FSTNode
+from wiithon.fst.tree import FST
 
 
 class WiiPartitionInfo:
@@ -34,9 +33,9 @@ class WiiPartitionInfo:
     decryption
     """
     def __init__(self,  header: WiiPartitionHeader, tmd: TMD,
-		        certificates: List[Certificate], internal_header: DiscHeader,
-		        fst: FST, crypto: CryptPartReader,
-		        partition_offset: int) -> None:
+                        certificates: list[Certificate], internal_header: DiscHeader,
+                        fst: FST, crypto: CryptPartReader,
+                        partition_offset: int) -> None:
         #: Partition header, holding the ticket and the offsets to the TMD, certificates, H3 table and data
         self.header: WiiPartitionHeader = header
 
@@ -44,7 +43,7 @@ class WiiPartitionInfo:
         self.tmd: TMD = tmd
 
         #: The partition certificate chain
-        self.certificates: List[Certificate] = certificates
+        self.certificates: list[Certificate] = certificates
 
         #: Disc header found at offset ``0x000`` of the decrypted data, also known as ``boot.bin``. This is where the DOL and FST offsets live
         self.internal_header: DiscHeader = internal_header
@@ -138,24 +137,24 @@ class WiiPartitionInfo:
 
         return self.crypto.read_at(bi2_offset, bi2_size)
 
-    def list_files(self, node: Optional[FSTNode] = None, prefix: str = "") -> List[str]:
+    def list_files(self, node: FSTNode | None = None, prefix: str = "") -> list[str]:
         """
-		List every file in the partition, recursively
+        List every file in the partition, recursively
 
-		Directories are traversed but not listed. Only files appear in the result
+        Directories are traversed but not listed. Only files appear in the result
 
-		Args:
-		    node: Directory to start from. Defaults to the root of the FST
-		    prefix: Path prefix prepended to each result
+        Args:
+            node: Directory to start from. Defaults to the root of the FST
+            prefix: Path prefix prepended to each result
 
-		Returns:
-		    Full paths, using ``/`` as separator
+        Returns:
+            Full paths, using ``/`` as separator
 
-		Note:
-		    ``node`` and ``prefix`` drive the recursion and are not meant to be
-		    passed by callers. On a large disc the whole list is built in memory,
-		    so prefer :meth:`callback_all_files` when you only need to walk it
-		"""
+        Note:
+            ``node`` and ``prefix`` drive the recursion and are not meant to be
+            passed by callers. On a large disc the whole list is built in memory,
+            so prefer :meth:`callback_all_files` when you only need to walk it
+        """
         paths: list[str] = []
         entries = self.fst.entries if node is None else (
             node.children if isinstance(node, FSTDirectory) else []
@@ -170,20 +169,20 @@ class WiiPartitionInfo:
 
         return paths
 
-    def callback_all_files(self, callback: Callable[[FSTNode], None], node: Optional[FSTNode] = None) -> None:
+    def callback_all_files(self, callback: Callable[[FSTNode], None], node: FSTNode | None = None) -> None:
         """
-		Walk every file in the partition and invoke a callback on each
+        Walk every file in the partition and invoke a callback on each
 
-		Directories are traversed but never passed to the callback
+        Directories are traversed but never passed to the callback
 
-		Args:
-		    callback: Called once per file, with the FST node as its only argument
-		    node: Directory to start from. Defaults to the root of the FST
+        Args:
+            callback: Called once per file, with the FST node as its only argument
+            node: Directory to start from. Defaults to the root of the FST
 
-		Note:
-		    The callback receives the node, not the full path. If you need paths,
-		    use :meth:`list_files`
-		"""
+        Note:
+            The callback receives the node, not the full path. If you need paths,
+            use :meth:`list_files`
+        """
         entries = self.fst.entries if node is None else (
             node.children if isinstance(node, FSTDirectory) else []
         )

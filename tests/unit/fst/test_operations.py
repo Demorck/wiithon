@@ -1,8 +1,8 @@
 import unittest
 
 from wiithon.exceptions import FstError
-from wiithon.fst.node import FSTNode, FSTDirectory, FSTFile
-from wiithon.fst.operations import find_node, remove_node, add_node
+from wiithon.fst.node import FSTDirectory, FSTFile, FSTNode
+from wiithon.fst.operations import add_node, find_node, remove_node
 
 
 class TestFindNode(unittest.TestCase):

@@ -16,7 +16,7 @@ keywords = [
 
 dynamic = ["version"]
 
-classifers = [
+classifiers = [
     "Development Status :: 3 - Alpha",
 
     "Intended Audience :: Developers",
@@ -57,7 +57,80 @@ line-length = 120
 src = ["src"]
 
 [tool.ruff.lint]
-select = ["F"]
+select = [
+    "E",
+    "F",
+    "UP",
+    "B",
+    "SIM",
+    "I",
+    "ERA",
+
+    # Type annotations. Excluded: tests
+    "ANN",
+
+    # Using assert in code
+    "S101",
+
+    # Generic exception
+    "BLE",
+
+    # Default Boolean argument needs to be refactored or keyword only arg (LSP) - Excluded: tests
+    "FBT",
+
+    # Shadowing python builtin
+    "A",
+
+    # Unecessary stuff
+    "C4", "PIE",
+
+    # Removing to-do stuff because no one reads them
+    "FIX", "TD",
+
+    # Impilict string concatenation - Excluded: tests
+    "ISC",
+
+    # Print/pprint found - Excluded: examples
+    "T20",
+
+    # Unecessary branch after return/raises
+    "RET505", "RET506", "RET507", "RET508",
+
+    # Private field access - Excluded: tests
+    "SLF",
+
+    # Unused arguments - Excluded: tests
+    "ARG",
+
+    # Using Pathlib instead of os - Excluded: tests (for now)
+    "PTH",
+
+    # Complexe structure, probably need a refactor
+#    "C90"
+
+    # PEP8 naming - Excluded: ppc, tests
+    "N",
+
+    # Changing stuff that lower performance
+    "PERF",
+
+    # Docstring,
+#    "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107",
+#    "D414", "D416", "D417", "D419",
+
+    # Magic number in comparison - Excluded: ppc
+#    "PLR2004"
+]
+
+[tool.ruff.lint.per-file-ignores]
+"examples/*"        = ["BLE", "T20", "PTH"]
+"src/wiithon/cli/*" = ["FBT"]
+"src/wiithon/ppc/*" = ["N", "PLR"]
+"tests/*"           = ["ANN", "FBT", "ISC", "SLF", "ARG", "PTH", "N"]
+"tests/iso/*"       = ["S101"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 13
 
 [tool.mypy]
 python_version = "3.11"

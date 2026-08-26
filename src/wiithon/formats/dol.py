@@ -1,10 +1,9 @@
-import warnings
+import struct
 from io import BytesIO
 from typing import BinaryIO
-import struct
 
 from wiithon.binary.reader import BinaryReader
-from wiithon.exceptions import DolSectionNotFoundError, DolSectionOverlapError, DolError, DolNoFreeSectionError
+from wiithon.exceptions import DolError, DolNoFreeSectionError, DolSectionNotFoundError, DolSectionOverlapError
 from wiithon.formats.dol_header import DOLHeader
 from wiithon.ppc import instructions as ppc
 
@@ -14,12 +13,12 @@ DOL_HEADER_SIZE = 0x100
 
 
 class DOL:
-    def __init__(self):
+    def __init__(self) -> None:
         self.header: DOLHeader = DOLHeader()
         self.text_sections: list[bytes] = [b''] * DOL_TEXT_SECTIONS
         self.data_sections: list[bytes] = [b''] * DOL_DATA_SECTIONS
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'Header: {{ \n  {repr(self.header)} \n }}'
 
     @classmethod
@@ -66,18 +65,10 @@ class DOL:
         raise DolSectionNotFoundError(f"Virtual address {virtual_addr:#010x} not found in any DOL section")
 
     def has_free_text_section(self) -> bool:
-        for i in range(DOL_TEXT_SECTIONS):
-            if self.header.text_length[i] == 0:
-                return True
-
-        return False
+        return any(self.header.data_length[i] == 0 for i in range(DOL_TEXT_SECTIONS))
 
     def has_free_data_section(self) -> bool:
-        for i in range(DOL_DATA_SECTIONS):
-            if self.header.data_length[i] == 0:
-                return True
-
-        return False
+        return any(self.header.data_length[i] == 0 for i in range(DOL_DATA_SECTIONS))
 
     def read_at(self, virtual_addr: int, size: int) -> bytes:
         stype, i, offset = self._virtual_to_section(virtual_addr)
@@ -238,10 +229,7 @@ class DOL:
             padding_before: int = 0x100,
             reserved_size: int | None = None
     ) -> tuple[int, list[int]]:
-        if manual_arena is None:
-            site = self.find_arena_lo_setter()
-        else:
-            site = manual_arena
+        site = self.find_arena_lo_setter() if manual_arena is None else manual_arena
 
         original_arena = self.read_arena_lo(site)
         original_arena = (original_arena + 0x1F) & ~0x1F
@@ -308,21 +296,17 @@ class DOL:
         results.sort(key=lambda x: x[1])
         return results
 
-    def _is_safe(self, virtual_addr, size):
+    def _is_safe(self, virtual_addr: int, size: int) -> bool:
         for starts, lengths in [
             (self.header.text_starts, self.header.text_length),
             (self.header.data_starts, self.header.data_length),
         ]:
-            for start, length in zip(starts, lengths):
+            for start, length in zip(starts, lengths, strict=True):
                 if length == 0:
                     continue
                 if start < virtual_addr + size and virtual_addr < start + length:
                     return False
 
-
-        bss_end = self.header.bss_start + self.header.bss_size
-        if self.header.bss_start < virtual_addr + size and virtual_addr < bss_end:
-            warnings.warn(f"Warning: {virtual_addr:08X} is in  BSS")
         return True
 
 def _align4(size: int) -> int:

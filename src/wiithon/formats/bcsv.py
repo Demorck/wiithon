@@ -1,11 +1,11 @@
+from abc import ABC, abstractmethod
 from enum import IntEnum
 from io import BytesIO
 from typing import NamedTuple, Union
-from abc import ABC, abstractmethod
 
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
-from wiithon.exceptions import InvalidFormatError, CorruptedDataError, BCSVFileError
+from wiithon.exceptions import BCSVFileError, CorruptedDataError, InvalidFormatError
 
 BCSV_HEADER_SIZE: int = 0x10
 BCSV_FIELD_SIZE: int = 0xC
@@ -26,7 +26,6 @@ class BCSVKey(ABC):
         Returns:
             str: key to be used in a BCSVEntry.
         """
-        pass
 
     @staticmethod
     def create(key: Union[str, int, 'BCSVField']) -> 'BCSVKey':
@@ -38,21 +37,20 @@ class BCSVKey(ABC):
         """
         if isinstance(key, str):
             return BCSVNameKey(key)
-        elif isinstance(key, int):
+        if isinstance(key, int):
             return BCSVHashKey(key)
-        elif isinstance(key, BCSVField): 
+        if isinstance(key, BCSVField): 
             return BCSVFieldKey(key)
-        else:
-            raise TypeError(
-                f"Unsupported key type: '{type(key).__name__}'.\n"
-                f"Please use one of the following: {', '.join(['str', 'int', 'BCSVField'])}"
-            )
+        raise TypeError(
+            f"Unsupported key type: '{type(key).__name__}'.\n"
+            f"Please use one of the following: {', '.join(['str', 'int', 'BCSVField'])}"
+        )
 
 
 class BCSVNameKey(BCSVKey):
     """ BCSVKey that uses the field name directly as an input string. """
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         """
         Args:
             name (str): name directly used to resolve
@@ -72,7 +70,7 @@ class BCSVNameKey(BCSVKey):
 class BCSVHashKey(BCSVKey):
     """ BCSVKey that uses the field hash as the key string. """
 
-    def __init__(self, hash_val: int):
+    def __init__(self, hash_val: int) -> None:
         """
         Args:
             hash_val (str): name directly used to resolve
@@ -92,7 +90,7 @@ class BCSVHashKey(BCSVKey):
 class BCSVFieldKey(BCSVKey):
     """ BCSVKey that uses the entire directly to get the key string. """
 
-    def __init__(self, field: 'BCSVField'):
+    def __init__(self, field: 'BCSVField') -> None:
         """
         Args:
             field (BCSVField): Direct field to get the field name from.
@@ -192,7 +190,7 @@ class BCSVField:
     field_type: BCSVType = None
 
 
-    def __init__(self, field_hash: int, field_bitmask: int, field_offset: int, data_shift: int, data_type: int):
+    def __init__(self, field_hash: int, field_bitmask: int, field_offset: int, data_shift: int, data_type: int) -> None:
         """
         Represents a single field/header of a BCSV file.
         
@@ -212,7 +210,7 @@ class BCSVField:
 
 
     @classmethod
-    def import_field(cls, raw_bytes: BytesIO):
+    def import_field(cls, raw_bytes: BytesIO) -> "BCSVField":
         """
         Creates a given field/header from the raw BytesIO (should be 12 bytes)
 
@@ -282,7 +280,11 @@ class BCSVField:
         return (value & self.field_bitmask) >> self.field_shift
 
 
-    def set_value_in_buffer(self, reader: BinaryReader, writer: BinaryWriter, entry_value: BCSVValue, string_pool: list[StringPoolElement]):
+    def set_value_in_buffer(self,
+                            reader: BinaryReader,
+                            writer: BinaryWriter,
+                            entry_value: BCSVValue,
+                            string_pool: list[StringPoolElement]) -> None:
         """
         Sets the field's value into a given BCSV entry's bytes.
         
@@ -365,7 +367,8 @@ class BCSVEntry(dict[str, BCSVValue]):
 
     def __getitem__(self, key: int | str | BCSVField) -> BCSVValue:
         """
-        Gets a given BCSVValue from a given key. Creates a BSCVKey from the input key provided to verify the field exists first.
+        Gets a given BCSVValue from a given key.
+        Creates a BSCVKey from the input key provided to verify the field exists first.
         
         Args:
             key (BCSVKey): Key used find the related field's value
@@ -373,13 +376,14 @@ class BCSVEntry(dict[str, BCSVValue]):
         Returns:
             BCSVValue: Field_type format's value.
         """
-        bcsvField: str = BCSVKey.create(key).resolve_name()
-        return super().__getitem__(bcsvField)
+        bcsv_field: str = BCSVKey.create(key).resolve_name()
+        return super().__getitem__(bcsv_field)
 
 
-    def __setitem__(self, key: int | str | BCSVField, value: BCSVValue):
+    def __setitem__(self, key: int | str | BCSVField, value: BCSVValue) -> None:
         """
-        Sets a given BCSVValue from a given key. Creates a BSCVKey from the input key provided to verify the field exists first.
+        Sets a given BCSVValue from a given key.
+        Creates a BSCVKey from the input key provided to verify the field exists first.
         
         Args:
             key (BCSVKey): Key used find the related field
@@ -387,8 +391,8 @@ class BCSVEntry(dict[str, BCSVValue]):
         if not isinstance(value, int | str | float):
             raise TypeError(f"Provided value {value} is not of valid types: {type(BCSVValue)}")
 
-        bcsvField: str = BCSVKey.create(key).resolve_name()
-        super().__setitem__(bcsvField, value)
+        bcsv_field: str = BCSVKey.create(key).resolve_name()
+        super().__setitem__(bcsv_field, value)
 
 
 class BCSV:
@@ -409,7 +413,7 @@ class BCSV:
     str_fmt: str
 
 
-    def __init__(self, fields: list[BCSVField] = None, entries: list[BCSVEntry] = None):
+    def __init__(self, fields: list[BCSVField] = None, entries: list[BCSVEntry] = None) -> None:
         """
         Represents a given BCSV file in its enterity.
 
@@ -432,14 +436,15 @@ class BCSV:
 
 
     @classmethod
-    def import_bcsv(cls, raw_data: BytesIO, field_names: dict[int, str] = None, str_fmt: str = STRING_FORMAT):
+    def import_bcsv(cls, raw_data: BytesIO, field_names: dict[int, str] = None, str_fmt: str = STRING_FORMAT) -> "BCSV":
         """
         Takes an input stream of BCSV data and converts it into a BCSV object.
 
         Args:
             raw_data (BytesIO): raw stream of a file
             field_names (dict[int, str]): Contains the field_hash -> name quick lookup reference. 
-                By default, a field's name is the same as the hash, this allows for human-readable names to be used instead.
+                By default, a field's name is the same as the hash,
+                this allows for human-readable names to be used instead.
             str_fmt (str): Output decoding format.
         """
         data_length: int = raw_data.seek(0, 2)
@@ -464,7 +469,9 @@ class BCSV:
         fields_size: int = entry_data_offset - BCSV_HEADER_SIZE # BCSV Field details start after the above 16 bytes
         remainder_bytes: int = fields_size % BCSV_FIELD_SIZE
         read_field_count: int = int(fields_size / BCSV_FIELD_SIZE)
-        if remainder_bytes != 0 or not read_field_count == field_count: # Make sure there is no extra space between fields and entries
+
+        # Make sure there is no extra space between fields and entries
+        if remainder_bytes != 0 or not read_field_count == field_count:
             raise CorruptedDataError("When trying to read the fields block of the BCSV file, field block has an "
                 f"incorrect size.\nExpected field count: {field_count}\nExpected Byte count: {fields_size}\n"
                 f"Remainder Bytes: {remainder_bytes}\nAmount of fields found: {read_field_count}")
@@ -597,7 +604,7 @@ class BCSV:
         return max([field.field_offset + field.get_field_size() for field in self.fields])
 
 
-    def add_bcsv_field(self, bcsv_field: BCSVField, default_value: BCSVValue):
+    def add_bcsv_field(self, bcsv_field: BCSVField, default_value: BCSVValue) -> None:
         """
         Adds a new BCSVField and a default value to all existing data entries.
         
@@ -613,24 +620,24 @@ class BCSV:
             data_entry[bcsv_field] = default_value
 
 
-    def remove_bcsv_field(self, key: int | str | BCSVField):
+    def remove_bcsv_field(self, key: int | str | BCSVField) -> None:
         """
         Removes a new BCSVField and a default value to all existing data entries.
         
         Args:
             key (BCSVKey): field to add into a given file.
         """
-        keyName = BCSVKey.create(key).resolve_name()
-        field_found: BCSVField = next((field for field in self.fields if field.field_name == keyName), None)
+        key_name = BCSVKey.create(key).resolve_name()
+        field_found: BCSVField = next((field for field in self.fields if field.field_name == key_name), None)
         if field_found is None:
             raise ValueError(f"No BCSVField was found with key: {key}")
 
         for entry in self.entries:
-            del entry[keyName]
+            del entry[key_name]
 
         self.fields.remove(field_found)
 
-    def add_bcsv_entry(self, bcsv_entry: BCSVEntry):
+    def add_bcsv_entry(self, bcsv_entry: BCSVEntry) -> None:
         """
         Adds a new data entry using field names or hashes as keys with complete field validation.
         
@@ -639,13 +646,13 @@ class BCSV:
         """
         if not self.fields:
             raise KeyError("Cannot add a BCSVEntry to a BCSV with no defined fields.")
-        elif bcsv_entry is None or len(bcsv_entry.keys()) == 0:
+        if bcsv_entry is None or len(bcsv_entry.keys()) == 0:
             raise ValueError("Cannot add an empty BCSVEntry to the BCSV.")
 
         self.entries.append(bcsv_entry)
 
 
-    def remove_bcsv_entry(self, bcsv_entry: int | BCSVEntry):
+    def remove_bcsv_entry(self, bcsv_entry: int | BCSVEntry) -> None:
         """
         Deletes a BCSVEntry by either the Entry itself or the index number.
         
@@ -661,7 +668,7 @@ class BCSV:
 
         self.entries.remove(entry)
 
-    def verify_fields_and_entries(self, fields: list[BCSVField] = None, entries: list[BCSVEntry] = None):
+    def verify_fields_and_entries(self, fields: list[BCSVField] = None, entries: list[BCSVEntry] = None) -> None:
         """
         Verifies if all the BCSV Fields are in fact properly defined keys/fields. Similarly validates entries.
 
@@ -678,14 +685,16 @@ class BCSV:
 
         for bcsv_field in fields:
             if not isinstance(bcsv_field, BCSVField):
-                raise BCSVFileError(f"Fields provided is not of type 'BCSVField'.\nReceived field type: {type(bcsv_field)}")
+                raise BCSVFileError(f"Fields provided is not of type 'BCSVField'.\n"
+                                    f"Received field type: {type(bcsv_field)}")
             
         for bcsv_entry in entries:
             if not isinstance(bcsv_entry, BCSVEntry):
-                raise BCSVFileError(f"Entries provided is not of type 'BCSVEntry'.\nReceived field type: {type(bcsv_entry)}")
+                raise BCSVFileError(f"Entries provided is not of type 'BCSVEntry'.\n"
+                                    f"Received field type: {type(bcsv_entry)}")
 
     @classmethod
-    def read(cls, stream: BytesIO, **kwargs) -> "BCSV":
+    def read(cls, stream: BytesIO, **kwargs: int) -> "BCSV":
         return cls.import_bcsv(stream, **kwargs)
 
     def write(self, stream: BytesIO) -> None:

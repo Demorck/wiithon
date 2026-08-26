@@ -3,28 +3,30 @@ Modifying a Wii disck image and rebuilding it
 
 This module exposes :class:`WiiIsoPatcher`. To inspect it without modifying it, see :mod:`wiithon.disc.reader`
 """
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from typing import Callable, Optional, TypeVar, Iterator
-
 from io import BytesIO
+from pathlib import Path
+from typing import Concatenate, ParamSpec, TypeVar, Optional
 
+from wiithon.builder.copy_source import CopyPartitionSource
+from wiithon.builder.disc_builder import WiiDiscBuilder
+from wiithon.disc.enums import WiiPartType
+from wiithon.disc.reader import WiiIsoReader
+from wiithon.exceptions import NoDataPartitionError
+from wiithon.formats.archive import Archive, Container, flush_archive_cache, resolve_read, resolve_write
 from wiithon.disc.partition import WiiPartitionInfo
 
 from wiithon import NoDataPartitionError
 from wiithon.formats.bnr import BNR
-from wiithon.formats.archive import resolve_read, resolve_write
-from wiithon.fst.tree import FST
+from wiithon.formats.dol import DOL
 from wiithon.fst.node import FSTFile
 from wiithon.fst.operations import add_node, remove_node
-from wiithon.disc.enums import WiiPartType
-from wiithon.formats.dol import DOL
-from wiithon.disc.reader import WiiIsoReader
-from wiithon.builder.disc_builder import WiiDiscBuilder
-from wiithon.builder.copy_source import CopyPartitionSource
+from wiithon.fst.tree import FST
 
 T = TypeVar("T")
+P = ParamSpec("P")
 
-# TODO: Currently patch only data partition
 class WiiIsoPatcher:
     """
     Collects modifications to a wii ISO and writes a new one
@@ -73,6 +75,8 @@ class WiiIsoPatcher:
         #: A list of files to remove
         self.files_to_remove: list[str] = []
 
+        self.cached_archive: tuple[str, Archive, list[Container]] | None = None
+
     def __enter__(self) -> "WiiIsoPatcher":
         """
         Open the source ISO and load its DATA partition
@@ -98,7 +102,7 @@ class WiiIsoPatcher:
 
         return self
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args: int) -> None:
         if self.reader:
             self.reader.__exit__(*args)
 
@@ -200,7 +204,7 @@ class WiiIsoPatcher:
         return self.data_partition.read_file(path)
 
     @contextmanager
-    def edit_as(self, path: str, cls: type[T], **kwargs) -> Iterator[T]:
+    def edit_as(self, path: str, cls: type[T], **kwargs: int) -> Iterator[T]:
         """
         Edit a file in place parsed as a given format
 
@@ -241,7 +245,8 @@ class WiiIsoPatcher:
         obj.write(buf)
         resolve_write(self, path, buf.getvalue())
 
-    def patch_dol(self, fn: Callable[[DOL], None]) -> None:
+    # noinspection PyTypeHints
+    def patch_dol(self, fn: Callable[Concatenate[DOL, P], None], *args: P.args, **kwargs: P.kwargs) -> None:
         """
         Register a callback that patches the main executable
 
@@ -256,7 +261,7 @@ class WiiIsoPatcher:
         See Also:
             :doc:`/user_guide/patching` for code injection above the arena
         """
-        self.dol_modifier = fn
+        self.dol_modifiers.append(lambda dol: fn(dol, *args, **kwargs))
 
     def read_dol(self) -> DOL:
         """
@@ -336,7 +341,7 @@ class WiiIsoPatcher:
         self.reader.disc_header.game_id = b
         self.data_partition.header.ticket.title_id = b'\x00\x01\x00\x00' + b[:4]
 
-    def build(self, output_path: str, progress_cb=None) -> None:
+    def build(self, output_path: str, progress_cb: Callable | None = None) -> None:
         """
         Write the patched ISO
 
@@ -353,23 +358,25 @@ class WiiIsoPatcher:
             This is where all the work happens. Expect it to take a while and to need free disc space of roughly
             the size of the source ISO
         """
+        flush_archive_cache(self)
         builder = WiiDiscBuilder(self.reader.disc_header, self.reader.region)
 
-        with open(output_path, "w+b") as dest:
+        output_path = Path(output_path)
+        with output_path.open("w+b") as dest:
             for entry in self.reader.partitions:
                 is_data = entry.part_type == WiiPartType.DATA
                 copy_builder = CopyPartitionSource(
                     self.reader,
                     entry,
                     fst_modifier=self._build_fst_modifier() if is_data else None,
-                    dol_modifier=self.dol_modifier if is_data else None,
+                    dol_modifiers=self.dol_modifiers if is_data else None,
                     file_overrides=self.file_replacements if is_data else None,
                 )
                 builder.add_partition(dest, copy_builder, progress_cb)
 
             builder.finish(dest)
 
-    def _build_fst_modifier(self) -> Optional[Callable[[FST], None]]:
+    def _build_fst_modifier(self) -> Callable[[FST], None] | None:
         user_modification = self.fst_modifier
         files_to_add = dict(self.files_to_add)
         files_to_remove = list(self.files_to_remove)

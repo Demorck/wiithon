@@ -1,18 +1,17 @@
 """
 Building a partition from a directory tree on disk
 """
-import os
-from typing import List
-
-from wiithon.disc.structs.certificate import Certificate
-from wiithon.disc.structs.disc_header import DiscHeader
-from wiithon.disc.structs.tmd import TMD
-from wiithon.disc.structs.ticket import Ticket
-from wiithon.disc.enums import WiiPartType
+from pathlib import Path
 
 from wiithon.builder.source import PartitionSource
+from wiithon.disc.enums import WiiPartType
+from wiithon.disc.structs.certificate import Certificate
+from wiithon.disc.structs.disc_header import DiscHeader
+from wiithon.disc.structs.ticket import Ticket
+from wiithon.disc.structs.tmd import TMD
+from wiithon.fst.node import FSTDirectory, FSTFile
 from wiithon.fst.tree import FST
-from wiithon.fst.node import FSTFile, FSTDirectory
+
 
 def build_from_directory_tree(files_dir: str) -> FST:
     """
@@ -36,17 +35,18 @@ def build_from_directory_tree(files_dir: str) -> FST:
 
 def _build_from_directory_tree_recursive(path: str, current_entries: list) -> None:
     # Ordered
-    if not os.path.isdir(path):
+    target_path = Path(path)
+    if not target_path.is_dir():
         return
-    entries = sorted(os.scandir(path), key=lambda e: e.name.lower())
+
+    entries = sorted(target_path.iterdir(), key=lambda e: e.name.lower())
     for entry in entries:
-        filename = entry.name
         if entry.is_dir():
-            fst_dir = FSTDirectory(filename)
+            fst_dir = FSTDirectory(entry.name)
             current_entries.append(fst_dir)
-            _build_from_directory_tree_recursive(entry.path, fst_dir.children)
+            _build_from_directory_tree_recursive(str(entry), fst_dir.children)
         else:
-            fst_file = FSTFile(filename, 0, os.stat(entry.path).st_size)
+            fst_file = FSTFile(entry.name, 0, entry.stat().st_size)
             current_entries.append(fst_file)
 
 class DirectoryPartitionSource(PartitionSource):
@@ -82,59 +82,40 @@ class DirectoryPartitionSource(PartitionSource):
         :class:`~wiithon.builder.copy_source.CopyPartitionSource` to build from an existing ISO instead
     """
     def __init__(self, path: str, partition_type: WiiPartType) -> None:
-        """
-        Read every system file of the extracted partition and build its file system table
+        base_path = Path(path)
 
-        Encryption and hash verification are force-enabled in the internal disc header, whatever the extracted
-        header said, since the builder always writes an encrypted and hashed partition
-
-        Args:
-            path: Root of the extracted partition, the folder holding ``sys`` and ``files``
-            partition_type: Type to record in the partition table
-
-        Raises:
-            FileNotFoundError: If any of the expected system files is missing
-            InvalidFormatError: If one of them cannot be parsed
-
-        Note:
-            Exactly three certificates are read from ``cert.bin``, which is what retail discs carry
-        """
-        sys_folder = os.path.join(path, "sys")
-
+        sys_folder = base_path / "sys"
         #: Folder holding the game files, mirrored by the file system table
-        self.files_dir: str = os.path.join(path, "files")
+        self.files_dir = str(base_path / "files")
         
-        with open(os.path.join(sys_folder, "boot.bin"), 'rb') as f:
+        with (sys_folder / 'boot.bin').open('rb') as f:
             #: Internal disc header, with encryption and hash verification forced on
-            self.encrypted_header: DiscHeader = DiscHeader.read(f)
+            self.encrypted_header = DiscHeader.read(f)
         self.encrypted_header.disable_disc_encryption = 0
         self.encrypted_header.disable_hash_verification = 0
 
-        with open(os.path.join(sys_folder, "bi2.bin"), 'rb') as f:
-            #: Disc configuration block read from ``sys/bi2.bin``
-            self.bi2: bytes = f.read()
+        #: Disc configuration block read from ``sys/bi2.bin``
+        self.bi2 = (sys_folder / "bi2.bin").read_bytes()
 
-        with open(os.path.join(sys_folder, "apploader.img"), 'rb') as f:
-            #: Apploader read from ``sys/apploader.img``
-            self.apploader: bytes = f.read()
+        #: Apploader read from ``sys/apploader.img``
+        self.apploader = (sys_folder / "apploader.img").read_bytes()
 
-        with open(os.path.join(sys_folder, "main.dol"), 'rb') as f:
-            #: Executable read from ``sys/main.dol``, kept as raw bytes
-            self.dol: bytes = f.read()
+        #: Executable read from ``sys/main.dol``, kept as raw bytes
+        self.dol = (sys_folder / "main.dol").read_bytes()
 
-        with open(os.path.join(path, "tmd.bin"), 'rb') as f:
+        with (base_path / "tmd.bin").open('rb') as f:
             #: Title metadata read from ``tmd.bin``
-            self.tmd: TMD = TMD.read(f)
+            self.tmd = TMD.read(f)
 
-        with open(os.path.join(path, "cert.bin"), 'rb') as f:
+        with (base_path / "cert.bin").open('rb') as f:
             #: Certificate chain read from ``cert.bin``
-            self.certificates: List[Certificate] = []
+            self.certificates = []
             for _ in range(3):
                 self.certificates.append(Certificate.read(f))
 
-        with open(os.path.join(path, "ticket.bin"), 'rb') as f:
+        with (base_path / "ticket.bin").open('rb') as f:
             #: Ticket read from ``ticket.bin``
-            self.ticket: Ticket = Ticket.read(f)
+            self.ticket = Ticket.read(f)
 
         #: File system table mirroring ``files``
         self.fst: FST = build_from_directory_tree(self.files_dir)
@@ -148,7 +129,7 @@ class DirectoryPartitionSource(PartitionSource):
     def get_tmd(self) -> TMD:
         return self.tmd
 
-    def get_certificates(self) -> List[Certificate]:
+    def get_certificates(self) -> list[Certificate]:
         return self.certificates
 
     def get_encrypted_header(self) -> DiscHeader:
@@ -169,7 +150,7 @@ class DirectoryPartitionSource(PartitionSource):
     def get_fst(self) -> FST:
         return self.fst
 
-    def get_file_data(self, path: List[str]) -> bytes:
+    def get_file_data(self, path: list[str]) -> bytes:
         """
         Read one file from the ``files`` directory
 
@@ -182,7 +163,5 @@ class DirectoryPartitionSource(PartitionSource):
         Raises:
             FileNotFoundError: If the file disappeared between the construction of the tree and this call
         """
-        rel_path = os.path.join(*path)
-        file_path = os.path.join(self.files_dir, rel_path) # pycharm yells at me because arguments are not correct lmao
-        with open(file_path, 'rb') as f:
-            return f.read()
+        file_path = Path(self.files_dir).joinpath(*path)
+        return file_path.read_bytes()

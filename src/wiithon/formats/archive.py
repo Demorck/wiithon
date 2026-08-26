@@ -1,11 +1,18 @@
-from io import BytesIO
-from typing import runtime_checkable, Protocol, BinaryIO, Callable
+from __future__ import annotations
 
-from wiithon.exceptions import InvalidFormatError, FstFileNotFoundError
+from collections.abc import Callable
+from io import BytesIO
+from typing import TYPE_CHECKING, BinaryIO, Protocol, runtime_checkable
+
+from wiithon.exceptions import FstFileNotFoundError, InvalidFormatError
 from wiithon.formats.lz77 import Lz77
-from wiithon.formats.rarc import Rarc, RarcFileEntry, RARC_MAGIC_WORD
+from wiithon.formats.rarc import RARC_MAGIC_WORD, Rarc, RarcFileEntry
 from wiithon.formats.u8 import U8, U8_MAGIC_WORD
 from wiithon.formats.yaz0 import Yaz0
+from wiithon.fst.tree import FST
+
+if TYPE_CHECKING:
+    from wiithon.disc.patcher import WiiIsoPatcher
 
 @runtime_checkable
 class Archive(Protocol):
@@ -24,7 +31,7 @@ class Container(Protocol):
     data: bytes
 
     @classmethod
-    def read(cls, stream: BinaryIO) -> "Container":
+    def read(cls, stream: BinaryIO) -> Container:
         pass
 
     def get_bytes(self) -> bytes:
@@ -44,7 +51,7 @@ _ARCHIVES: dict[bytes, type] = {
 }
 
 
-def _split_path(fst, path: str) -> tuple[str, list[str]]:
+def _split_path(fst: FST, path: str) -> tuple[str, list[str]]:
     parts = [p for p in path.split("/") if p]
     for i in range(len(parts), 0, -1):
         node = fst.find_node(parts[:i])
@@ -77,22 +84,54 @@ def _serialize_archive(archive: Archive, containers: list[Container]) -> bytes:
         data = container.get_bytes()
     return data
 
+def _cached_archive(patcher: WiiIsoPatcher, fst_path: str) -> tuple[Archive, list[Container]]:
+    cached = patcher.cached_archive
+    if cached is not None:
+        if cached[0] == fst_path:
+            return cached[1], cached[2]
 
-def resolve_read(patcher, path: str) -> bytes:
+        flush_archive_cache(patcher)
+
+    arc, containers = _open_archive(_current_bytes(patcher, fst_path))
+    patcher.cached_archive = (fst_path, arc, containers)
+    return arc, containers
+
+def _current_bytes(patcher: WiiIsoPatcher, fst_path: str) -> bytes:
+    if patcher.cached_archive is not None and patcher.cached_archive[0] == fst_path:
+        flush_archive_cache(patcher)
+
+    replacement = patcher.file_replacements.get(fst_path)
+    return replacement if replacement is not None else patcher.read_file(fst_path)
+
+def flush_archive_cache(patcher: WiiIsoPatcher) -> None:
+    cached = patcher.cached_archive
+    if cached is None:
+        return
+
+    fst_path, arc, containers = cached
+    patcher.cached_archive = None
+    patcher.replace_file(fst_path, _serialize_archive(arc, containers))
+
+
+def resolve_read(patcher: WiiIsoPatcher, path: str) -> bytes:
     fst_path, archive_parts = _split_path(patcher.data_partition.fst, path)
-    data = patcher.read_file(fst_path)
     if not archive_parts:
-        return data
-    arc, _ = _open_archive(data)
+        return _current_bytes(patcher, fst_path)
+
+    cached = patcher.cached_archive
+    if cached is not None and cached[0] == fst_path:
+        arc = cached[1]
+    else:
+        arc, _ = _open_archive(_current_bytes(patcher, fst_path))
+
     result = arc.get_file("/".join(archive_parts))
     return result.data if isinstance(result, RarcFileEntry) else result
 
-def resolve_write(patcher, path: str, new_data: bytes) -> None:
+def resolve_write(patcher: WiiIsoPatcher, path: str, new_data: bytes) -> None:
     fst_path, archive_parts = _split_path(patcher.data_partition.fst, path)
     if not archive_parts:
         patcher.replace_file(fst_path, new_data)
         return
-    data = patcher.read_file(fst_path)
-    arc, containers = _open_archive(data)
+
+    arc, _ = _cached_archive(patcher, fst_path)
     arc.replace_file("/".join(archive_parts), new_data)
-    patcher.replace_file(fst_path, _serialize_archive(arc, containers))

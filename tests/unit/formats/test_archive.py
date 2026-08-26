@@ -1,11 +1,13 @@
 import unittest
 from io import BytesIO
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
+from wiithon import InvalidFormatError
 from wiithon.disc.patcher import WiiIsoPatcher
-from wiithon.formats.rarc import Rarc, RarcNode, RarcFileEntry, NodeAttribute
+from wiithon.formats import archive
+from wiithon.formats.archive import flush_archive_cache, resolve_read, resolve_write
+from wiithon.formats.rarc import NodeAttribute, Rarc, RarcFileEntry, RarcNode
 from wiithon.formats.yaz0 import Yaz0
-from wiithon.formats.archive import resolve_read, resolve_write
 
 
 def _rarc_entry(name: str, file_id: int, is_dir: bool,
@@ -81,6 +83,7 @@ def make_patcher(fst_files: dict[str, bytes]) -> WiiIsoPatcher:
     p.reader = None
     p.dol_modifier = None
     p.fst_modifier = None
+    p.cached_archive = None
     p.file_replacements = {}
     p.files_to_add = {}
     p.files_to_remove = []
@@ -105,6 +108,9 @@ def make_patcher(fst_files: dict[str, bytes]) -> WiiIsoPatcher:
     p.data_partition = dp
     return p
 
+def flushed(patcher: WiiIsoPatcher, fst_path: str) -> bytes:
+    flush_archive_cache(patcher)
+    return patcher.file_replacements[fst_path]
 
 class SimpleData:
     def __init__(self, value: int = 0):
@@ -163,8 +169,7 @@ class TestResolveWrite(unittest.TestCase):
 
         resolve_write(p, "Mario.arc/myfile.bin", b"modified")
 
-        self.assertIn("Mario.arc", p.file_replacements)
-        updated = Rarc.read(BytesIO(p.file_replacements["Mario.arc"]))
+        updated = Rarc.read(BytesIO(flushed(p, "Mario.arc")))
         self.assertEqual(updated.get_file("myfile.bin").data, b"modified")
 
     def test_yaz0_rarc_roundtrip(self):
@@ -173,8 +178,8 @@ class TestResolveWrite(unittest.TestCase):
 
         resolve_write(p, "Stage.szs/data.bin", b"new_content")
 
-        result = p.file_replacements["Stage.szs"]
-        self.assertEqual(result[:4], b"Yaz0", "Le résultat doit rester compressé en Yaz0")
+        result = flushed(p, "Stage.szs")
+        self.assertEqual(result[:4], b"Yaz0", "Result need to be yaz0 compressed")
         yaz0 = Yaz0.read(BytesIO(result))
         rarc = Rarc.read(BytesIO(yaz0.data))
         self.assertEqual(rarc.get_file("data.bin").data, b"new_content")
@@ -185,7 +190,7 @@ class TestResolveWrite(unittest.TestCase):
 
         resolve_write(p, "AstroGalaxy.arc/layera/objinfo", b"\xFF\xFF")
 
-        rarc = Rarc.read(BytesIO(p.file_replacements["AstroGalaxy.arc"]))
+        rarc = Rarc.read(BytesIO(flushed(p, "AstroGalaxy.arc")))
         self.assertEqual(rarc.get_file("layera/objinfo").data, b"\xFF\xFF")
 
     def test_does_not_touch_other_files_in_rarc(self):
@@ -194,7 +199,7 @@ class TestResolveWrite(unittest.TestCase):
 
         resolve_write(p, "Mario.arc/a.bin", b"ZZZ")
 
-        rarc = Rarc.read(BytesIO(p.file_replacements["Mario.arc"]))
+        rarc = Rarc.read(BytesIO(flushed(p, "Mario.arc")))
         self.assertEqual(rarc.get_file("b.bin").data, b"BBB")
 
 
@@ -218,7 +223,7 @@ class TestEditAs(unittest.TestCase):
             self.assertEqual(obj.value, 10)
             obj.value = 200
 
-        rarc = Rarc.read(BytesIO(p.file_replacements["Stage.arc"]))
+        rarc = Rarc.read(BytesIO(flushed(p, "Stage.arc")))
         self.assertEqual(int.from_bytes(rarc.get_file("table.bin").data, "big"), 200)
 
     def test_no_modification_still_replaces(self):
@@ -235,10 +240,9 @@ class TestEditAs(unittest.TestCase):
         initial = (1).to_bytes(4, "big")
         p = make_patcher({"data.bin": initial})
 
-        with self.assertRaises(ValueError):
-            with p.edit_as("data.bin", SimpleData) as obj:
-                obj.value = 999
-                raise ValueError("erreur intentionnelle")
+        with self.assertRaises(ValueError), p.edit_as("data.bin", SimpleData) as obj:
+            obj.value = 999
+            raise ValueError("intentional error")
 
         self.assertNotIn("data.bin", p.file_replacements)
 
@@ -254,13 +258,10 @@ class TestEditAs(unittest.TestCase):
         with p.edit_as("Stage.arc/a.bin", SimpleData) as obj:
             obj.value = 10
 
-        # Le second edit_as doit voir l'archive déjà modifiée
-        fst_files["Stage.arc"] = p.file_replacements["Stage.arc"]
-
         with p.edit_as("Stage.arc/b.bin", SimpleData) as obj:
             obj.value = 20
 
-        rarc = Rarc.read(BytesIO(p.file_replacements["Stage.arc"]))
+        rarc = Rarc.read(BytesIO(flushed(p, "Stage.arc")))
         self.assertEqual(int.from_bytes(rarc.get_file("a.bin").data, "big"), 10)
         self.assertEqual(int.from_bytes(rarc.get_file("b.bin").data, "big"), 20)
 
@@ -272,7 +273,7 @@ class TestEditAs(unittest.TestCase):
         with p.edit_as("Stage.szs/config.bin", SimpleData) as obj:
             obj.value = 88
 
-        result = p.file_replacements["Stage.szs"]
+        result = flushed(p, "Stage.szs")
         self.assertEqual(result[:4], b"Yaz0")
         yaz0 = Yaz0.read(BytesIO(result))
         rarc = Rarc.read(BytesIO(yaz0.data))
@@ -296,6 +297,88 @@ class TestAutoDetectLastFile(unittest.TestCase):
         rarc_bytes = build_nested_rarc("layera", {"objinfo": b"data"})
         rarc = Rarc.read(BytesIO(rarc_bytes))
         self.assertEqual(rarc.get_file("layera/objinfo").data, b"data")
+
+
+    def test_subpath_on_a_non_archive_file_raises(self):
+        p = make_patcher({"data.bin": b"\x00\x01\x02\x03"})
+
+        with self.assertRaises(InvalidFormatError), p.edit_as("data.bin/inner", SimpleData):
+            pass
+
+        self.assertEqual(p.file_replacements, {})
+        self.assertIsNone(p.cached_archive)
+
+class TestArchiveCache(unittest.TestCase):
+    def _patcher(self) -> WiiIsoPatcher:
+        return make_patcher({
+            "Stage.arc": build_flat_rarc({
+                "a.bin": (1).to_bytes(4, "big"),
+                "b.bin": (2).to_bytes(4, "big"),
+            }),
+            "Other.arc": build_flat_rarc({"c.bin": (3).to_bytes(4, "big")}),
+        })
+
+    def test_read_sees_pending_edit_without_flush(self):
+        p = self._patcher()
+
+        with p.edit_as("Stage.arc/a.bin", SimpleData) as obj:
+            obj.value = 69
+
+        self.assertNotIn("Stage.arc", p.file_replacements)
+        self.assertEqual(int.from_bytes(resolve_read(p, "Stage.arc/a.bin"), "big"), 69)
+
+    def test_read_only_access_does_not_replace_anything(self):
+        p = self._patcher()
+
+        self.assertEqual(int.from_bytes(resolve_read(p, "Stage.arc/a.bin"), "big"), 1)
+
+        flush_archive_cache(p)
+        self.assertEqual(p.file_replacements, {})
+
+    def test_switching_archive_flushes_the_previous_one(self):
+        p = self._patcher()
+
+        with p.edit_as("Stage.arc/a.bin", SimpleData) as obj:
+            obj.value = 10
+        with p.edit_as("Other.arc/c.bin", SimpleData) as obj:
+            obj.value = 30
+
+        rarc = Rarc.read(BytesIO(p.file_replacements["Stage.arc"]))
+        self.assertEqual(int.from_bytes(rarc.get_file("a.bin").data, "big"), 10)
+        self.assertEqual(p.cached_archive[0], "Other.arc")
+
+    def test_archive_is_serialized_once_per_loop(self):
+        p = self._patcher()
+
+        with patch("wiithon.formats.archive._serialize_archive",
+                   wraps=archive._serialize_archive) as spy:
+            for name, value in (("a.bin", 10), ("b.bin", 20)):
+                with p.edit_as(f"Stage.arc/{name}", SimpleData) as obj:
+                    obj.value = value
+            flush_archive_cache(p)
+
+        self.assertEqual(spy.call_count, 1)
+
+    def test_replacing_whole_file_drops_the_cache(self):
+        p = self._patcher()
+        raw = build_flat_rarc({"a.bin": (99).to_bytes(4, "big")})
+
+        with p.edit_as("Stage.arc/a.bin", SimpleData) as obj:
+            obj.value = 10
+
+        p.replace_file("Stage.arc", raw)
+        flush_archive_cache(p)
+
+        self.assertEqual(p.file_replacements["Stage.arc"], raw)
+
+    def test_reading_the_archive_itself_flushes_first(self):
+        p = self._patcher()
+
+        with p.edit_as("Stage.arc/a.bin", SimpleData) as obj:
+            obj.value = 10
+
+        rarc = Rarc.read(BytesIO(resolve_read(p, "Stage.arc")))
+        self.assertEqual(int.from_bytes(rarc.get_file("a.bin").data, "big"), 10)
 
 
 if __name__ == "__main__":

@@ -1,9 +1,9 @@
 from typing import BinaryIO
 
-from wiithon.disc.structs.signature import SignatureType
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
 from wiithon.crypto.keys import decrypt_title_key, encrypt_title_key
+from wiithon.disc.structs.signature import SignatureType
 from wiithon.disc.structs.ticket_time_limit import TicketTimeLimit
 
 
