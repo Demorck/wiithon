@@ -75,6 +75,7 @@ class WiiIsoPatcher:
         #: A list of files to remove
         self.files_to_remove: list[str] = []
 
+        #: Archive currently open for :meth:`edit_as`, kept so successive edits share one decompression
         self.cached_archive: tuple[str, Archive, list[Container]] | None = None
 
     def __enter__(self) -> "WiiIsoPatcher":
@@ -202,6 +203,10 @@ class WiiIsoPatcher:
             The contents as stored in the **source** ISO. Pending replacements are not applied,
             so reading a file you just replaced returns the original data
 
+        Note:
+            :meth:`edit_as` does see its own earlier edits since it keeps the archive in memory. This method
+            does not: it always reads the source
+
         Raises:
             FstFileNotFoundError: If no such file exists
             FstIsADirectoryError: If the path is a directory
@@ -231,9 +236,9 @@ class WiiIsoPatcher:
             The parsed object, ready to modify
 
         Warning:
-            Each call re-reads from the **source** disc. Editing two files inside the same archive with two successive
-            calls loses the first edit, because the second call reopens the original archive
-            Do both edits in a single block, opening the archive itself as :class:`~wiithon.formats.rarc.Rarc`
+            Successive calls on files of the same archive reuse the archive already in memory so edits
+            accumulate instead of overwriting each other. The archive is decompressed once and re-serialised
+            once, which also makes editing many files in a loop cheap
 
         Note:
             If the block raises, nothing is written back
@@ -259,9 +264,15 @@ class WiiIsoPatcher:
 
         Args:
             fn: Called with the parsed :class:`~wiithon.formats.dol.DOL`. Modify it in place
+            *args: Extra positional arguments forwarded to ``fn``
+            **kwargs: Extra keyword arguments forwarded to ``fn``
 
         Note:
-            Only one callback is kept. Calling this twice replaces the first
+            Callbacks accumulate. Call this several times and they run in registration order each seeing the
+            DOL as the previous one left it
+
+        Note:
+            :meth:`modify_fst` does **not** work this way, it keeps a single callback (for now)
 
         See Also:
             :doc:`/user_guide/patching` for code injection above the arena

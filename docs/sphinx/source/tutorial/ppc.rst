@@ -134,6 +134,8 @@ The module covers what binary patching normally needs:
 * branches: ``b``, ``bl``, ``ba``, ``bla``, ``bc``, ``bcl``, ``bclr``, ``bclrl``, ``blr``, ``blrl``
 * immediates: ``li``, ``lis``, ``addi``, ``addis``, ``mulli``, ``ori``, ``oris``, ``andi``
 * memory: ``lwz``, ``stw``, ``lhz``, ``sth``, ``lbz``, ``stb``, ``lfs``, ``stfs``
+* memory with update: ``lwzu``, ``stwu``, ``lhzu``, ``sthu``, ``lbzu``, ``stbu``
+* memory, indexed: ``lbzx``
 * arithmetic and logic: ``add``, ``subf``, ``and_``, ``or_``, ``mr``, ``cntlzw``, ``rlwnm``
 * comparison: ``cmp``, ``cmpi``
 * special registers: ``mfspr``, ``mtspr``, ``mflr``, ``mtlr``, ``mfctr``, ``mtctr``
@@ -141,6 +143,10 @@ The module covers what binary patching normally needs:
 
 Arguments are validated. Passing a register number above 31 or an immediate that does not fit raises rather
 than silently truncating.
+
+The update forms write the computed address back into ``rA``, which makes walking a structure a single
+instruction per step instead of two. The hardware forbids ``rA`` being ``r0`` and forbids ``rA`` and ``rD``
+being the same register. Wiithon raises rather than emitting an instruction the CPU treats as invalid.
 
 If you think you need something that it's not here, feel free to open an issue on github.
 

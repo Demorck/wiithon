@@ -109,9 +109,8 @@ Yaz0-compressed
 
 ..  warning::
 
-    Each ``edit_as`` call re-reads from the source disc. Two successive calls on two files of the same archive
-    will lose the first edit, because the second call reopens the original archive. Open the archive once and
-    make both changes inside a single block
+    Successive calls on files of the same archive share one decompression. Edits accumulate rather than
+    overwriting each other and a loop over many files pays the Yaz0 cost once instead of once per file
 
 ..  seealso::
 

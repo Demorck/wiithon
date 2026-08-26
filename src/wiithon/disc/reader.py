@@ -17,7 +17,7 @@ from wiithon.disc.layout import (
     REGION_OFFSET,
     REGION_SIZE,
     SYSTEM_MAGIC_WORD,
-    SYSTEM_MAGIC_WORD_OFFSET,
+    SYSTEM_MAGIC_WORD_OFFSET, MAGIC_WORD_OFFSET, WII_MAGIC_WORD,
 )
 from wiithon.disc.partition import WiiPartitionInfo
 from wiithon.disc.structs.certificate import Certificate
@@ -79,8 +79,8 @@ class WiiIsoReader:
 
             #: Wii magic word, validated at construction
             self.magic_word: int = self.read_magic_word()
-            if self.magic_word != SYSTEM_MAGIC_WORD:
-                raise InvalidDiscError(f"Wii magic word is not {SYSTEM_MAGIC_WORD:#X}, got {self.magic_word:#X}")
+            if self.magic_word != WII_MAGIC_WORD:
+                raise InvalidDiscError(f"Wii magic word is not {WII_MAGIC_WORD:#X}, got {self.magic_word:#X}")
         except BaseException:
             self.file.close()
             raise
@@ -132,14 +132,14 @@ class WiiIsoReader:
         Read the Wii magic word from its fixed offset
 
         Returns:
-            The 32-bit word stored at offset ``0x4FFFC``. A valid Wii disc yields ``0xC3F81A8E``.
+            The 32-bit word stored at offset ``0x18``. A valid Wii disc yields ``0x5D1C9EA3``
 
         Note:
-            This seeks the underlying file handle. The value is already validated
-            and cached in :attr:`magic_word` at construction
+            A Wii disc carries a second marker ``0xC3F81A8E`` at offset ``0x4FFFC``, which describes the
+            partition layout rather than the disc itself. It is exposed as ``SYSTEM_MAGIC_WORD``
         """
         reader = BinaryReader(self.file)
-        reader.seek(SYSTEM_MAGIC_WORD_OFFSET)
+        reader.seek(MAGIC_WORD_OFFSET)
         return reader.u32()
 
 

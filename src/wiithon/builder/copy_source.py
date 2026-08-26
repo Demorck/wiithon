@@ -48,7 +48,7 @@ class CopyPartitionSource(PartitionSource):
             partition: Entry of the partition to copy
             fst_modifier: Called once with the file system table, before the builder walks it. Modify the tree in
                 place, the return value is ignored
-            dol_modifier: Called once with the parsed executable. Modify it in place
+            dol_modifiers: Called in order with the parsed executable, each modifying it in place
             file_overrides: Replacement content keyed by full path inside the partition, using ``/`` as separator.
                 A path listed here is served from memory instead of being read from the source
 
@@ -68,7 +68,7 @@ class CopyPartitionSource(PartitionSource):
         #: Apploader read from the source
         self.apploader: bytes = self.partition_info.read_apploader()
 
-        #: Parsed executable, already patched if a ``dol_modifier`` was given
+        #: Parsed executable
         self.dol: DOL = self.partition_info.read_dol()
 
         #: Title metadata of the source partition
@@ -77,7 +77,7 @@ class CopyPartitionSource(PartitionSource):
         #: Certificate chain of the source partition
         self.certificates: list[Certificate] = self.partition_info.certificates
 
-        #: File system table, already modified if a ``fst_modifier`` was given
+        #: File system table
         self.fst: FST = copy.copy(self.partition_info.fst)
 
         #: Internal disc header of the source partition

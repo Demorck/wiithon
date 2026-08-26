@@ -289,7 +289,6 @@ class WiiDiscBuilder:
         stream.seek(REGION_OFFSET)
         stream.write(self.region)
 
-
         stream.seek(SYSTEM_MAGIC_WORD_OFFSET)
         stream.write(struct.pack(">I", SYSTEM_MAGIC_WORD))
 
