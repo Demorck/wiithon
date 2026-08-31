@@ -2,7 +2,7 @@ import struct
 import unittest
 from io import BytesIO
 
-from unit.rvz._common import FLAG, exception_bytes
+from tests.unit.rvz._common import FLAG, exception_bytes
 
 from wiithon.rvz.structs.exception_list import WiaExceptionList
 

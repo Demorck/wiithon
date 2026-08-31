@@ -4,6 +4,7 @@ from typing import BinaryIO
 
 from wiithon.binary.align import align
 from wiithon.binary.reader import BinaryReader
+from wiithon.crypto.layout import GROUP_SIZE
 from wiithon.exceptions import CorruptedDataError
 from wiithon.rvz.enums import WiaCompression
 from wiithon.rvz.layout import DISC_OFFSET, DISC_SIZE, PARTITION_SIZE
@@ -125,7 +126,7 @@ class WiaReader:
         self.file.seek(group.offset)
         return BinaryReader(self.file).raw(group.size)
 
-    def read_partition_group(self, index: int) -> tuple[WiaExceptionList, bytes]:
+    def read_partition_group(self, index: int) -> tuple[list[WiaExceptionList], bytes]:
         """
         Read one group of partition data. Splitted into Exception list and the payload
 
@@ -133,17 +134,18 @@ class WiaReader:
             index: Index into :attr:`groups`
 
         Returns:
-            The exceptions list and the decrypted data without the hash
+            One exception list per hash group, and the decrypted data without its hashes
 
         Raises:
             NotImplementedError: If the image is compressed by a compression not currently implemented
         """
+        count = max(1, self.disc.chunk_size // GROUP_SIZE)
         data = self.read_group(index)
         if not data:
-            return WiaExceptionList(), b''
+            return [WiaExceptionList() for _ in range(count)], b''
 
         stream = BytesIO(data)
-        exceptions = WiaExceptionList.read(stream)
+        exceptions = [WiaExceptionList.read(stream) for _ in range(count)]
 
         if self.disc.compression in (
                 WiaCompression.NONE,

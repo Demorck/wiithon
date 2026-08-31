@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from iso._common import (
+from tests.iso._common import (
     COMPARE_BUFFER,
     EXCEPTION_SIZE,
     GAME_ID,
@@ -11,6 +11,7 @@ from iso._common import (
     RVZ_PATH,
     WIA_PATH,
     needs_both,
+    needs_iso,
     needs_rvz,
     needs_wia,
 )
@@ -30,6 +31,19 @@ class TestMockImages(unittest.TestCase):
     One Disc to rule them all, one Disc to find them,
     One Disc to bring them all, and in the darkness bind them
     """
+    def rebuild(self, path: Path) -> Path:
+        """
+        Rebuild a whole image into a temporary file
+        """
+
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        target = Path(directory.name) / "rebuilt.iso"
+
+        with target.open("w+b") as stream:
+            IsoRebuilder(self.open_image(path)).write(stream)
+
+        return target
 
     def rebuild_raw_data(self, path: Path) -> Path:
         directory = tempfile.TemporaryDirectory()
@@ -161,7 +175,6 @@ class TestMockImages(unittest.TestCase):
 
     @needs_both
     def test_chunk_size_drives_the_group_count(self):
-        """The two writers cut the disc differently, so the counts must not match"""
         wia, rvz = self.open_image(WIA_PATH), self.open_image(RVZ_PATH)
         self.assertNotEqual(wia.disc.chunk_size, rvz.disc.chunk_size)
         self.assertNotEqual(wia.disc.group_count, rvz.disc.group_count)
@@ -172,9 +185,10 @@ class TestMockImages(unittest.TestCase):
         wia = self.open_image(WIA_PATH)
         exceptions, payload = wia.read_partition_group(125)
 
-        self.assertEqual(len(exceptions), 2848)
-        self.assertEqual(exceptions.exceptions[0].offset, 0x0354)
-        self.assertEqual(exceptions.exceptions[-1].block, 63)
+        self.assertEqual(len(exceptions), 1)
+        self.assertEqual(len(exceptions[0]), 2848)
+        self.assertEqual(exceptions[0].exceptions[0].offset, 0x0354)
+        self.assertEqual(exceptions[0].exceptions[-1].block, 63)
         self.assertEqual(len(payload), wia.disc.partition_chunk_size)
         self.assertEqual(payload[:6], GAME_ID)
 
@@ -217,6 +231,36 @@ class TestMockImages(unittest.TestCase):
                     count = min(COMPARE_BUFFER, remaining)
                     self.assertEqual(left.read(count), right.read(count))
                     remaining -= count
+
+
+    @needs_wia
+    @needs_iso
+    def test_rebuilt_partitions_match_the_iso(self):
+        wia = self.open_image(WIA_PATH)
+        rebuilt = self.rebuild(WIA_PATH)
+
+        with rebuilt.open("rb") as left, ISO_PATH.open("rb") as right:
+            for partition in wia.partitions:
+                for segment in partition.segments:
+                    size = segment.block_count * BLOCK_SIZE
+                    left.seek(segment.offset)
+                    right.seek(segment.offset)
+
+                    with self.subTest(segment=hex(segment.offset)):
+                        self.assertEqual(left.read(size), right.read(size))
+
+    @needs_wia
+    @needs_iso
+    def test_rebuilt_image_is_identical(self):
+        rebuilt = self.rebuild(WIA_PATH)
+        self.assertEqual(rebuilt.stat().st_size, ISO_SIZE)
+
+        with rebuilt.open("rb") as left, ISO_PATH.open("rb") as right:
+            while True:
+                block = left.read(COMPARE_BUFFER)
+                self.assertEqual(block, right.read(COMPARE_BUFFER))
+                if not block:
+                    break
 
 if __name__ == "__main__":
     unittest.main()

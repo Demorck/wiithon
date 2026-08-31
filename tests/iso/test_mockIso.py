@@ -1,6 +1,6 @@
 
 import pytest
-from iso._common import GAME_ID, ISO_PATH
+from tests.iso._common import GAME_ID, ISO_PATH
 
 from wiithon.disc.layout import WII_MAGIC_WORD
 

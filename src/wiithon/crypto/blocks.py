@@ -56,19 +56,16 @@ def decrypt_group(group_data: bytes, title_key: bytes) -> bytes:
 
     return result
 
-
-def encrypt_group(group_data: bytes | bytearray, title_key: bytes, h3_ref: bytearray | None = None) -> bytes:
+def hash_group(buffer: bytearray, h3_ref: bytearray | None = None) -> None:
     """
-    Hash and encrypt a full 2MB group
-    Reference: https://wiibrew.org/wiki/Wii_disc#Encrypted
+    Compute the Merkle Tree so the H0, H1 and H2 hashes of a group and write them into the block headers
 
-    :param group_data: 2MB bytes/bytearray to be hashed and encrypted
-    :param title_key: 16-byte decrypted title key
-    :param h3_ref: Optional bytearray of length 20 where the H3 hash will be stored
-    :return: The encrypted 2MB data as bytes
+    Modify the buffer in place.
+
+    Args:
+        buffer: Group bytearray to be hashed and encrypted
+        h3_ref: Optional bytearray of length 20 where the H3 hash will be stored
     """
-    buffer = bytearray(group_data)
-
     hasher = hashlib.sha1
     h2 = bytearray(SHA1_SIZE * SUBGROUP_BY_GROUP)
 
@@ -84,8 +81,8 @@ def encrypt_group(group_data: bytes | bytearray, title_key: bytes, h3_ref: bytea
             # H0 loop: all "subblock" hashes
             for j in range(SUBBLOCK_BY_BLOCK):
                 data_subblock = buffer[
-                                    block_start + (j + 1) * SUBBLOCK_SIZE:
-                                    block_start + (j + 2) * SUBBLOCK_SIZE
+                                block_start + (j + 1) * SUBBLOCK_SIZE:
+                                block_start + (j + 2) * SUBBLOCK_SIZE
                                 ]
 
                 # Putting the hash of the subblock in the right place in the h0 table
@@ -106,8 +103,8 @@ def encrypt_group(group_data: bytes | bytearray, title_key: bytes, h3_ref: bytea
             block_start = subgroup_index * SUBGROUP_SIZE + block_index * BLOCK_SIZE
             buffer[block_start + H1_OFFSET: block_start + H1_OFFSET + len(h1)] = h1
             buffer[
-                block_start + H1_OFFSET + H1_SIZE:
-                block_start + H2_OFFSET
+            block_start + H1_OFFSET + H1_SIZE:
+            block_start + H2_OFFSET
             ] = b'\x00' * (H2_OFFSET - H1_OFFSET - H1_SIZE)
 
     # Calculate H3
@@ -122,9 +119,24 @@ def encrypt_group(group_data: bytes | bytearray, title_key: bytes, h3_ref: bytea
             # Placing H2 in the block header
             buffer[block_start + H2_OFFSET: block_start + H2_OFFSET + len(h2)] = h2
             buffer[
-                block_start + IV_OFFSET + IV_SIZE:
-                block_start + BLOCK_HEADER_SIZE
+            block_start + IV_OFFSET + IV_SIZE:
+            block_start + BLOCK_HEADER_SIZE
             ] = b'\x00' * (BLOCK_HEADER_SIZE - IV_OFFSET - IV_SIZE)
+
+def encrypt_group_data(buffer: bytearray, title_key: bytes) -> bytes:
+    """
+    Encrypt every block of a group that has hashes
+
+    Args:
+        buffer: 2M group, hashed by ``hash_group``
+        title_key: 16 byte decrypted title key
+
+    Returns:
+        The encrypted 2MB data as bytes
+    """
+    for subgroup_index in range(SUBGROUP_BY_GROUP):
+        for block_index in range(BLOCK_BY_SUBGROUP):
+            block_start = subgroup_index * SUBGROUP_SIZE + block_index * BLOCK_SIZE
 
             cipher = AES.new(title_key, AES.MODE_CBC, b'\x00' * IV_SIZE)
             encrypted = cipher.encrypt(bytes(buffer[block_start: block_start + BLOCK_HEADER_SIZE]))
@@ -138,3 +150,18 @@ def encrypt_group(group_data: bytes | bytearray, title_key: bytes, h3_ref: bytea
             )
 
     return bytes(buffer)
+
+def encrypt_group(group_data: bytes | bytearray, title_key: bytes, h3_ref: bytearray | None = None) -> bytes:
+    """
+    Hash and encrypt a full 2MB group
+    Reference: https://wiibrew.org/wiki/Wii_disc#Encrypted
+
+    :param group_data: 2MB bytes/bytearray to be hashed and encrypted
+    :param title_key: 16-byte decrypted title key
+    :param h3_ref: Optional bytearray of length 20 where the H3 hash will be stored
+    :return: The encrypted 2MB data as bytes
+    """
+    buffer = bytearray(group_data)
+    hash_group(buffer, h3_ref)
+
+    return encrypt_group_data(buffer, title_key)
