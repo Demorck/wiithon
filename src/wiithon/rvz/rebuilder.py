@@ -6,12 +6,12 @@ from wiithon.crypto.layout import (
     BLOCK_HEADER_SIZE,
     BLOCK_PER_GROUP,
     BLOCK_SIZE,
-    GROUP_DATA_SIZE,
     GROUP_SIZE,
     SHA1_SIZE,
 )
 from wiithon.rvz.reader import WiaReader
 from wiithon.rvz.structs.exception_list import WiaExceptionList
+from wiithon.rvz.structs.partition_data import WiaPartitionData
 
 
 class IsoRebuilder:
@@ -69,54 +69,102 @@ class IsoRebuilder:
         Raises:
             NotImplementedError: If a chunk is smaller than a hash group
         """
-        if self.reader.disc.chunk_size < GROUP_SIZE:
-            raise NotImplementedError(
-                "Rebuilding from chunks smaller than a hash group is not supported yet"
-            )
-
-        blocks_per_chunk = self.reader.disc.chunk_size // BLOCK_SIZE
         for partition in self.reader.partitions:
             for segment in partition.segments:
-                for i in range(segment.group_count):
-                    lists, payload = self.reader.read_partition_group(segment.group_index + i)
+                self._write_segment(stream, segment, partition.title_key)
 
-                    for j, exceptions in enumerate(lists):
-                        first_block = i * blocks_per_chunk + j * BLOCK_PER_GROUP
-                        blocks = min(BLOCK_PER_GROUP, segment.block_count - first_block)
-                        if blocks <= 0:
-                            break
-
-                        group = self._build_group(
-                            payload[j * GROUP_DATA_SIZE: (j + 1) * GROUP_DATA_SIZE],
-                            exceptions,
-                        )
-                        stream.seek(segment.offset + first_block * BLOCK_SIZE)
-                        stream.write(
-                            encrypt_group_data(group, partition.title_key)[:blocks * BLOCK_SIZE]
-                        )
-
-    @staticmethod
-    def _build_group(payload: bytes, wia_exceptions: WiaExceptionList) -> bytearray:
+    def _write_segment(self, stream: BinaryIO, segment: WiaPartitionData, title_key: bytes) -> None:
         """
-        Build and hash a group from the payload
+        Write one segment of a partition at a time
 
         Args:
-            payload: Up to ``GROUP_DATA_SIZE`` bytes of decrypted data
-            wia_exceptions: Differences to apply once the hashes are computed
-
-        Returns:
-            A full group, hashed but not encrypted yet
+            stream: Where to write, opened for writing/seeking as always
+            segment: The segment to write
+            title_key: Decrypted key
         """
-        buffer = bytearray(GROUP_SIZE)
-        for block in range(BLOCK_PER_GROUP):
-            source = payload[block * BLOCK_DATA_SIZE:(block + 1) * BLOCK_DATA_SIZE]
-            start = block * BLOCK_SIZE + BLOCK_HEADER_SIZE
-            buffer[start: start + len(source)] = source
+        blocks_per_chunk = self.reader.disc.chunk_size // BLOCK_SIZE
+        blocks_per_list = min(blocks_per_chunk, BLOCK_PER_GROUP)
 
+        buffer = bytearray(GROUP_SIZE)
+        patches: list[tuple[int, WiaExceptionList]] = []
+        first_block_of_group = 0
+
+        for i in range(segment.group_count):
+            lists, payload = self.reader.read_partition_group(segment.group_index + i)
+
+            for k, exceptions in enumerate(lists):
+                first_block = i * blocks_per_chunk + k * blocks_per_list
+                if first_block >= segment.block_count:
+                    break
+
+                base = first_block - first_block_of_group
+                start = k * blocks_per_list * BLOCK_DATA_SIZE
+                self._place(buffer, base, payload[start:start + blocks_per_list * BLOCK_DATA_SIZE])
+                patches.append((base, exceptions))
+
+                if base + blocks_per_list < BLOCK_PER_GROUP:
+                    continue
+
+                self._write_group(
+                    stream,
+                    segment.offset + first_block_of_group * BLOCK_SIZE,
+                    min(BLOCK_PER_GROUP, segment.block_count - first_block_of_group),
+                    buffer, patches, title_key,
+                )
+                first_block_of_group += BLOCK_PER_GROUP
+                buffer, patches = bytearray(GROUP_SIZE), []
+
+        blocks = segment.block_count - first_block_of_group
+        if blocks > 0:
+            self._write_group(
+                stream,
+                segment.offset + first_block_of_group * BLOCK_SIZE,
+                blocks, buffer, patches, title_key,
+            )
+
+    @staticmethod
+    def _place(buffer: bytearray, first_block: int, payload: bytes) -> None:
+        """
+        Copy a payload into the data area of consecutive blocks of a group
+
+        Args:
+            buffer: The group being assembled
+            first_block: Which blcok of the group the payload start at
+            payload: Decrypted data, without the hash
+        """
+        for offset in range(0, len(payload), BLOCK_DATA_SIZE):
+            piece = payload[offset:offset + BLOCK_DATA_SIZE]
+            at = (first_block + offset // BLOCK_DATA_SIZE) * BLOCK_SIZE + BLOCK_HEADER_SIZE
+            buffer[at:at + len(piece)] = piece
+
+    @staticmethod
+    def _write_group(
+            stream: BinaryIO,
+            offset: int,
+            blocks: int,
+            buffer: bytearray,
+            patches: list[tuple[int, WiaExceptionList]],
+            title_key: bytes
+    ) -> None:
+        """
+        Hash a group, encrypt it and write it
+
+        Args:
+            stream: Where to write, opened for writing/seeking as always
+            offset: Where the group starts of the disc
+            blocks: How many blocks of it the segment holds
+            buffer: The assembled group
+            patches: Exception lists
+            title_key: Decrypted key
+        """
         hash_group(buffer)
 
-        for exceptions in wia_exceptions.exceptions:
-            start = exceptions.block * BLOCK_SIZE + exceptions.offset_in_block
-            buffer[start:start + SHA1_SIZE] = exceptions.hash
+        for base, exceptions_list in patches:
+            for exception in exceptions_list.exceptions:
+                at = (base + exception.block) * BLOCK_SIZE + exception.offset_in_block
+                buffer[at:at + SHA1_SIZE] = exception.hash
 
-        return buffer
+        stream.seek(offset)
+        stream.write(
+            encrypt_group_data(buffer, title_key)[:blocks * BLOCK_SIZE]
+        )

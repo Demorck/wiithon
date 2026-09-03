@@ -1,8 +1,9 @@
-import hashlib
 import bz2
-import zstandard
+import hashlib
 from io import BytesIO
 from typing import BinaryIO
+
+import zstandard
 
 from wiithon.binary.align import align
 from wiithon.binary.reader import BinaryReader
