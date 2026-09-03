@@ -1,4 +1,6 @@
 import hashlib
+import bz2
+import zstandard
 from io import BytesIO
 from typing import BinaryIO
 
@@ -124,7 +126,8 @@ class WiaReader:
             raise NotImplementedError("Decoding the RVZ packing is not supported yet")
 
         self.file.seek(group.offset)
-        return BinaryReader(self.file).raw(group.size)
+        data = BinaryReader(self.file).raw(group.size)
+        return self._decompress(data) if group.compressed else data
 
     def read_partition_group(self, index: int) -> tuple[list[WiaExceptionList], bytes]:
         """
@@ -147,10 +150,7 @@ class WiaReader:
         stream = BytesIO(data)
         exceptions = [WiaExceptionList.read(stream) for _ in range(count)]
 
-        if self.disc.compression in (
-                WiaCompression.NONE,
-                WiaCompression.PURGE
-        ):
+        if self._is_stored_plain(self.groups[index]):
             stream.seek(align(stream.tell(), 4))
 
         return exceptions, stream.read()
@@ -214,10 +214,50 @@ class WiaReader:
         Raises:
             NotImplementedError: If the image is compressed
         """
-        if self.disc.compression != WiaCompression.NONE:
-            raise NotImplementedError(
-                f"Reading a {self.disc.compression.name} image is not supported yet"
-            )
-
         self.file.seek(offset)
-        return BytesIO(BinaryReader(self.file).raw(size))
+        return BytesIO(self._decompress(BinaryReader(self.file).raw(size)))
+
+    def _decompress(self, data: bytes) -> bytes:
+        """
+        Decompress a block stored with the compression method of the disc
+
+        Args:
+            data: The block from the file
+
+        Returns:
+            The decompressed blcok
+
+        Raises:
+            NotImplementedError: If the method is not supported yet
+        """
+        if self.disc.compression == WiaCompression.NONE:
+            return data
+
+        if self.disc.compression == WiaCompression.BZIP2:
+            return bz2.decompress(data)
+
+        if self.disc.compression == WiaCompression.ZSTD:
+            return zstandard.ZstdDecompressor().decompressobj().decompress(data)
+
+        raise NotImplementedError(
+            f"Decoding {self.disc.compression.name} image is not supported yet"
+        )
+
+    def _is_stored_plain(self, group: WiaGroup) -> bool:
+        """
+        Whether the bytes of a group when through no compressor
+
+        Args:
+            group: The group to look at
+
+        Returns:
+            True if the group is stored plain
+        """
+        if not group.compressed:
+            return True
+
+
+        return self.disc.compression in (
+            WiaCompression.NONE,
+            WiaCompression.PURGE,
+        )
