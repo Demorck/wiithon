@@ -33,5 +33,10 @@ GROUP_COMPRESSED_FLAG: int = 0x8000_0000
 #: Remaining bits
 GROUP_SIZE_MASK: int = 0x7FFF_FFFF # FFFF_FFFF ^ GROUP_COMPRESSED_FLAG
 
+#: Most significant bit of a token size, marking a run to generate rather than raw copy
+PACKED_PRNG_FLAG: int = 0x8000_0000
+#: Remaining bits
+PACKED_SIZE_MASK: int = 0x7FFF_FFFF
+
 MIN_CHUNK_SIZE: int = 0x8000
 WIA_CHUNK_UNIT: int = 0x200000

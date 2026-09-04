@@ -15,8 +15,9 @@ from tests.iso._common import (
     needs_wia,
     patched_hash_offsets,
 )
+from wiithon.binary.align import align
 
-from wiithon.crypto.layout import BLOCK_DATA_SIZE, BLOCK_PER_GROUP, BLOCK_SIZE
+from wiithon.crypto.layout import BLOCK_DATA_SIZE, BLOCK_PER_GROUP, BLOCK_SIZE, GROUP_SIZE
 from wiithon.rvz.enums import WiaDiscType
 from wiithon.rvz.reader import WiaReader
 from wiithon.rvz.rebuilder import IsoRebuilder
@@ -88,33 +89,44 @@ class Shared:
                         continue
                     with self.subTest(group=index):
                         self.assertEqual(
-                            len(self.reader.read_group(index)), min(chunk, entry.size - i * chunk)
+                            len(self.reader.read_raw_group(entry, i)),
+                            min(chunk, entry.size - i * chunk),
                         )
 
         def test_partition_groups_are_exceptions_then_payload(self):
-            """The padding after the lists follows the storage of the group, not of the image"""
             blocks_per_chunk = self.reader.disc.chunk_size // BLOCK_SIZE
-            blocks_per_list = min(blocks_per_chunk, BLOCK_PER_GROUP)
+            expected_lists = max(1, self.reader.disc.chunk_size // GROUP_SIZE)
 
             for partition in self.reader.partitions:
+                partition_first_block = partition.segments[0].first_block
+
                 for segment in partition.segments:
                     for i in range(segment.group_count):
                         index = segment.group_index + i
-                        data = self.reader.read_group(index)
-                        if not data:
+                        group = self.reader.groups[index]
+                        stored = self.reader.read_group(index)
+                        if not stored:
                             continue
 
-                        lists, payload = self.reader.read_partition_group(index)
-                        counted = sum(len(listing) for listing in lists)
-                        header = 2 * len(lists) + EXCEPTION_SIZE * counted
-                        if self.reader._is_stored_plain(self.reader.groups[index]):
-                            header = (header + 3) // 4 * 4
+                        block = segment.first_block - partition_first_block + i * blocks_per_chunk
+                        lists, payload = self.reader.read_partition_group(
+                            index, block * BLOCK_DATA_SIZE
+                        )
+
+                        header = 2 * len(lists) + EXCEPTION_SIZE * sum(len(one) for one in lists)
+                        if self.reader._is_stored_plain(group):
+                            header = align(header, 4)
 
                         blocks = min(blocks_per_chunk, segment.block_count - i * blocks_per_chunk)
+
                         with self.subTest(group=index):
-                            self.assertEqual(len(data), header + len(payload))
+                            self.assertEqual(len(lists), expected_lists)
                             self.assertEqual(len(payload), blocks * BLOCK_DATA_SIZE)
-                            self.assertEqual(len(lists), max(1, blocks_per_chunk // blocks_per_list))
+
+                            if group.is_packed:
+                                self.assertEqual(group.packed_size, len(stored) - header)
+                            else:
+                                self.assertEqual(len(stored), header + len(payload))
 
         @needs_wia
         def test_patched_hashes_match_the_reference(self):

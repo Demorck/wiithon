@@ -66,7 +66,7 @@ def patched_hash_offsets(reader: WiaReader) -> set[int]:
     for partition in reader.partitions:
         for segment in partition.segments:
             for chunk in range(segment.group_count):
-                lists, _ = reader.read_partition_group(segment.group_index + chunk)
+                lists = reader.read_exception_lists(segment.group_index + chunk)
 
                 for sub_group, listing in enumerate(lists):
                     first_block = chunk * blocks_per_chunk + sub_group * blocks_per_list

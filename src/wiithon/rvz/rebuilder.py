@@ -46,7 +46,7 @@ class IsoRebuilder:
                     continue
 
                 stream.seek(entry.offset + i * chunk)
-                stream.write(self.reader.read_group(group_index))
+                stream.write(self.reader.read_raw_group(entry, i))
 
     def write(self, stream: BinaryIO) -> None:
         """
@@ -70,10 +70,17 @@ class IsoRebuilder:
             NotImplementedError: If a chunk is smaller than a hash group
         """
         for partition in self.reader.partitions:
+            first_block = partition.segments[0].first_block
             for segment in partition.segments:
-                self._write_segment(stream, segment, partition.title_key)
+                self._write_segment(stream, segment, partition.title_key, first_block)
 
-    def _write_segment(self, stream: BinaryIO, segment: WiaPartitionData, title_key: bytes) -> None:
+    def _write_segment(
+            self,
+            stream: BinaryIO,
+            segment: WiaPartitionData,
+            title_key: bytes,
+            partition_first_block: int
+    ) -> None:
         """
         Write one segment of a partition at a time
 
@@ -90,7 +97,10 @@ class IsoRebuilder:
         first_block_of_group = 0
 
         for i in range(segment.group_count):
-            lists, payload = self.reader.read_partition_group(segment.group_index + i)
+            block = segment.first_block - partition_first_block + i * blocks_per_chunk
+            lists, payload = self.reader.read_partition_group(
+                segment.group_index + i, block * BLOCK_DATA_SIZE
+            )
 
             for k, exceptions in enumerate(lists):
                 first_block = i * blocks_per_chunk + k * blocks_per_list

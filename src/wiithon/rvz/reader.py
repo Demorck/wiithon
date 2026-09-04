@@ -11,6 +11,7 @@ from wiithon.crypto.layout import GROUP_SIZE
 from wiithon.exceptions import CorruptedDataError
 from wiithon.rvz.enums import WiaCompression
 from wiithon.rvz.layout import DISC_OFFSET, DISC_SIZE, PARTITION_SIZE
+from wiithon.rvz.packing import unpack
 from wiithon.rvz.structs.disc import WiaDisc
 from wiithon.rvz.structs.exception_list import WiaExceptionList
 from wiithon.rvz.structs.file_header import WiaHeader
@@ -114,23 +115,68 @@ class WiaReader:
             index: Index into :attr:`groups`
 
         Returns:
-            The stored bytes that is empty for a group holding only zeros
-
-        Raises:
-            NotImplementedError: If the image is compressed by a compression not currently implemented
+            The stored bytes. Still packed if the group is packed. Empty if a group holfing only zeros
         """
         group = self.groups[index]
         if group.is_zero:
             return b''
 
-        if group.is_packed:
-            raise NotImplementedError("Decoding the RVZ packing is not supported yet")
-
         self.file.seek(group.offset)
         data = BinaryReader(self.file).raw(group.size)
         return self._decompress(data) if group.compressed else data
 
-    def read_partition_group(self, index: int) -> tuple[list[WiaExceptionList], bytes]:
+    def read_partition_group(self, index: int, payload_offset: int) -> tuple[list[WiaExceptionList], bytes]:
+        """
+        Read one chunk of partition data splitted into its exception lists and its payload
+
+        Args:
+            index: Index into :attr:`groups`
+            payload_offset: Where the payload starts, counted in decrypted bytes from
+                the start of the partition data. Only used to unpack
+
+        Returns:
+            One exception list per hash group and the decrypted data without its hashes
+        """
+        lists, payload = self._split_partition_group(index)
+        if self.groups[index].is_packed:
+            payload = unpack(payload, payload_offset)
+
+        return lists, payload
+
+    def read_raw_group(self, entry: WiaRawData, position: int) -> bytes:
+        """
+        Read one unpacked group of a raw area
+
+        Args:
+            entry: The area where the group is
+            position: Which of its groups
+
+        Returns:
+            The bytes as they are on the disc
+        """
+        index = entry.first_group_index + position
+        data = self.read_group(index)
+        if not data or not self.groups[index].is_packed:
+            return data
+
+        return unpack(data, entry.offset + position * self.disc.chunk_size)
+
+    def read_exception_lists(self, index: int) -> list[WiaExceptionList]:
+        """
+        Read only the hashes a partition group overrides
+
+        Args:
+            index: Index into :attr:`groups`
+
+        Returns:
+            One list per hash group the chunk covers
+        """
+        return self._split_partition_group(index)[0]
+
+    def close(self) -> None:
+        self.file.close()
+
+    def _split_partition_group(self, index: int) -> tuple[list[WiaExceptionList], bytes]:
         """
         Read one group of partition data. Splitted into Exception list and the payload
 
@@ -155,9 +201,6 @@ class WiaReader:
             stream.seek(align(stream.tell(), 4))
 
         return exceptions, stream.read()
-
-    def close(self) -> None:
-        self.file.close()
 
     def _read_verified(self, offset: int, size: int, expected_hash: bytes,
                        padded_to: int, what: str) -> BytesIO:
