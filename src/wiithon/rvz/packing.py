@@ -3,7 +3,7 @@ The RVZ packing scheme which stores runs of disc padding as a 68 bytes seed inst
 """
 from wiithon.crypto.layout import BLOCK_SIZE
 from wiithon.rvz.layout import PACKED_PRNG_FLAG, PACKED_SIZE_MASK
-from wiithon.rvz.lfg import LaggedFibonacci, SEED_SIZE
+from wiithon.rvz.lfg import SEED_SIZE, LaggedFibonacci
 
 
 def unpack(data: bytes, offset: int) -> bytes:

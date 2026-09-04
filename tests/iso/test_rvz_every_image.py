@@ -15,9 +15,9 @@ from tests.iso._common import (
     needs_wia,
     patched_hash_offsets,
 )
-from wiithon.binary.align import align
 
-from wiithon.crypto.layout import BLOCK_DATA_SIZE, BLOCK_PER_GROUP, BLOCK_SIZE, GROUP_SIZE
+from wiithon.binary.align import align
+from wiithon.crypto.layout import BLOCK_DATA_SIZE, BLOCK_SIZE, GROUP_SIZE
 from wiithon.rvz.enums import WiaDiscType
 from wiithon.rvz.reader import WiaReader
 from wiithon.rvz.rebuilder import IsoRebuilder
