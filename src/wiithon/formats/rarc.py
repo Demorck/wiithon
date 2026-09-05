@@ -280,7 +280,7 @@ class Rarc:
 
         self.data_offset = self.string_table_offset + self.string_table_length
         self.data_length = len(payload)
-        self.file_length = 0x40 + self.string_table_offset + self.string_table_length + self.data_length
+        self.file_length = 0x20 + self.string_table_offset + self.string_table_length + self.data_length
 
         # Header
         writer.raw(RARC_MAGIC_WORD)
