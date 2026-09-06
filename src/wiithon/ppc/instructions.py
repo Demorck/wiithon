@@ -57,6 +57,12 @@ def _check_mb_me(val: int, name: str) -> None:
         raise ValueError(f"{name} must be in [0, 31], got {val}")
 
 
+def _check_n(n: int, name: str = "n") -> None:
+    """Raise ValueError if n is not a valid value (0-31)"""
+    if not (0 <= n <= 31):
+        raise ValueError(f"{name} must be in [0, 31], got {n}")
+
+
 def _branch_offset(target: int, from_addr: int) -> int:
     """Compute and validate the PC-relative offset for a 26-bit unconditional branch"""
     offset = target - from_addr
@@ -374,6 +380,11 @@ def subf(rD: int, rA: int, rB: int) -> bytes:
     return _fmt_xo(31, rD, rA, rB, 40)
 
 
+def sub(rD: int, rA: int, rB: int) -> bytes:
+    """sub rD, rA, rB  - subtract: rD = rA - rB"""
+    return subf(rD, rB, rA)
+
+
 # ---------------------------------------------------------------------------
 # Format X - logical register-register
 # [opcode:6][rS:5][rA:5][rB:5][subopcode:10][Rc:1]
@@ -431,6 +442,23 @@ def _fmt_m(opcode: int, rS: int, rA: int, rB: int, mb: int, me: int, rc: int = 0
 def rlwnm(rA: int, rS: int, rB: int, mb: int, me: int) -> bytes:
     """rlwnm rA, rS, rB, MB, ME  - rotate rS left by rB bits, AND with mask(MB, ME), store in rA"""
     return _fmt_m(23, rS, rA, rB, mb, me)
+
+
+def rlwinm(rA: int, rS: int, sh: int, mb: int, me: int) -> bytes:
+    """rlwinm rA, rS, SH, MB, ME  - rotate rS left by SH bits, AND with mask(MB, ME), store in rA"""
+    return _fmt_m(21, rS, rA, sh, mb, me)
+
+
+def slwi(rA: int, rS: int, n: int) -> bytes:
+    """slwi rA, rS, n  - shift rS left by n bits, store in rA"""
+    _check_n(n)
+    return rlwinm(rA, rS, n, 0, 31 - n)
+
+
+def srwi(rA: int, rS: int, n: int) -> bytes:
+    """srwi rA, rS, n  - shift rS right by n bits, store in rA"""
+    _check_n(n)
+    return rlwinm(rA, rS, 32 - n, n, 31)
 
 
 # ---------------------------------------------------------------------------
