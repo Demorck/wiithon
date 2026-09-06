@@ -7,3 +7,6 @@ jobs:
 
   ci-lint:
     uses: ./.github/workflows/lint.yml
+
+  ci-docs:
+    uses: ./.github/workflows/docs.yml

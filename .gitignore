@@ -1,15 +1,24 @@
-*.iso
+# Code IDE
 .idea
+.code
+
+# Wii files and extracted files
+*.iso
 *.arc
 
+# Directory for testing purposes
 /src_dir/
 /assets
 /extract
-
-.venv*/
-**/__pycache__
-
 /temp
 
-/dist/
+# Python stuff
+.venv*/
+**/__pycache__
 *.egg-info/
+
+# Build stuff
+/dist/
+
+# Docs stuff
+/docs/sphinx/build/
