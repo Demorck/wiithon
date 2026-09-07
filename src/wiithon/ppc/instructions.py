@@ -39,22 +39,28 @@ def _check_crf(crf: int, name: str = "CR field") -> None:
         raise ValueError(f"{name} must be in [0, 7], got {crf}")
 
 
-def _check_signed_imm16(imm: int, name: str = "immediate") -> None:
-    """Raise ValueError if imm does not fit in a signed 16-bit field"""
-    if not (-32768 <= imm <= 32767):
-        raise ValueError(f"{name} must be a signed 16-bit value [-32768, 32767], got {imm}")
+def _check_signed_imm16(simm: int, name: str = "immediate") -> None:
+    """Raise ValueError if simm does not fit in a signed 16-bit field"""
+    if not (-32768 <= simm <= 32767):
+        raise ValueError(f"{name} must be a signed 16-bit value [-32768, 32767], got {simm}")
 
 
-def _check_unsigned_imm16(imm: int, name: str = "immediate") -> None:
-    """Raise ValueError if imm does not fit in an unsigned 16-bit field"""
-    if not (0 <= imm <= 65535):
-        raise ValueError(f"{name} must be an unsigned 16-bit value [0, 65535], got {imm}")
+def _check_unsigned_imm16(uimm: int, name: str = "immediate") -> None:
+    """Raise ValueError if uimm does not fit in an unsigned 16-bit field"""
+    if not (0 <= uimm <= 65535):
+        raise ValueError(f"{name} must be an unsigned 16-bit value [0, 65535], got {uimm}")
 
 
 def _check_mb_me(val: int, name: str) -> None:
     """Raise ValueError if val is not a valid mask-begin/end value (0–31)"""
     if not (0 <= val <= 31):
         raise ValueError(f"{name} must be in [0, 31], got {val}")
+
+
+def _check_n(n: int, name: str = "n") -> None:
+    """Raise ValueError if n is not a valid value (0-31)"""
+    if not (0 <= n <= 31):
+        raise ValueError(f"{name} must be in [0, 31], got {n}")
 
 
 def _branch_offset(target: int, from_addr: int) -> int:
@@ -179,13 +185,13 @@ def cmp(crfD: int, rA: int, rB: int, length: int = 0) -> bytes:
     return _pack((31 << 26) | (field << 21) | (rA << 16) | (rB << 11) | (0 << 1) | 0)
 
 
-def cmpi(crfD: int, rA: int, imm: int, length: int = 0) -> bytes:
-    """cmpi crfD, rA, imm  - signed compare immediate; result written to CR field crfD"""
+def cmpi(crfD: int, rA: int, simm: int, length: int = 0) -> bytes:
+    """cmpi crfD, rA, simm  - signed compare immediate; result written to CR field crfD"""
     _check_crf(crfD, "crfD")
     _check_reg(rA, "rA")
-    _check_signed_imm16(imm)
+    _check_signed_imm16(simm)
     field = (crfD << 2) | (length & 1)
-    return _pack((11 << 26) | (field << 21) | (rA << 16) | (imm & 0xFFFF))
+    return _pack((11 << 26) | (field << 21) | (rA << 16) | (simm & 0xFFFF))
 
 
 # ---------------------------------------------------------------------------
@@ -195,25 +201,25 @@ def cmpi(crfD: int, rA: int, imm: int, length: int = 0) -> bytes:
 # SIMM can be D, SI, UI
 # ---------------------------------------------------------------------------
 
-def _fmt_d(opcode: int, rD: int, rA: int, imm: int) -> bytes:
+def _fmt_d(opcode: int, rD: int, rA: int, simm: int) -> bytes:
     """Encode a Format-D instruction with a signed 16-bit immediate"""
     _check_reg(rD, "rD")
     _check_reg(rA, "rA")
-    _check_signed_imm16(imm)
-    return _pack((opcode << 26) | (rD << 21) | (rA << 16) | (imm & 0xFFFF))
+    _check_signed_imm16(simm)
+    return _pack((opcode << 26) | (rD << 21) | (rA << 16) | (simm & 0xFFFF))
 
 
-def _fmt_d_unsigned(opcode: int, rD: int, rA: int, imm: int) -> bytes:
+def _fmt_d_unsigned(opcode: int, rD: int, rA: int, uimm: int) -> bytes:
     """Encode a Format-D instruction with an unsigned 16-bit immediate"""
     _check_reg(rD, "rD")
     _check_reg(rA, "rA")
-    _check_unsigned_imm16(imm)
-    return _pack((opcode << 26) | (rD << 21) | (rA << 16) | (imm & 0xFFFF))
+    _check_unsigned_imm16(uimm)
+    return _pack((opcode << 26) | (rD << 21) | (rA << 16) | (uimm & 0xFFFF))
 
 
-def li(rD: int, imm: int) -> bytes:
-    """li rD, imm  - load signed 16-bit immediate"""
-    return _fmt_d(14, rD, 0, imm)
+def li(rD: int, simm: int) -> bytes:
+    """li rD, simm  - load signed 16-bit immediate"""
+    return _fmt_d(14, rD, 0, simm)
 
 
 def lis(rD: int, imm: int) -> bytes:
@@ -223,19 +229,19 @@ def lis(rD: int, imm: int) -> bytes:
     return _fmt_d(15, rD, 0, imm)
 
 
-def addi(rD: int, rA: int, imm: int) -> bytes:
-    """addi rD, rA, imm  - add signed 16-bit immediate; rA=r0 reads as 0"""
-    return _fmt_d(14, rD, rA, imm)
+def addi(rD: int, rA: int, simm: int) -> bytes:
+    """addi rD, rA, simm  - add signed 16-bit immediate; rA=r0 reads as 0"""
+    return _fmt_d(14, rD, rA, simm)
 
 
-def addis(rD: int, rA: int, imm: int) -> bytes:
-    """addis rD, rA, imm  - add immediate shifted; imm is placed in the high halfword"""
-    return _fmt_d(15, rD, rA, imm)
+def addis(rD: int, rA: int, simm: int) -> bytes:
+    """addis rD, rA, simm  - add signed immediate shifted; simm is placed in the high halfword"""
+    return _fmt_d(15, rD, rA, simm)
 
 
-def mulli(rD: int, rA: int, imm: int) -> bytes:
-    """mulli rD, rA, imm  - multiply rA by signed 16-bit immediate, store low 32 bits"""
-    return _fmt_d(7, rD, rA, imm)
+def mulli(rD: int, rA: int, simm: int) -> bytes:
+    """mulli rD, rA, simm  - multiply rA by signed 16-bit immediate, store low 32 bits"""
+    return _fmt_d(7, rD, rA, simm)
 
 
 def lwz(rD: int, offset: int, rA: int) -> bytes:
@@ -307,14 +313,14 @@ def sthu(rS: int, offset: int, rA: int) -> bytes:
     return _fmt_d(45, rS, rA, offset)
 
 
-def ori(rA: int, rS: int, imm: int) -> bytes:
-    """ori rA, rS, imm  - bitwise OR with unsigned 16-bit immediate"""
-    return _fmt_d_unsigned(24, rS, rA, imm)
+def ori(rA: int, rS: int, uimm: int) -> bytes:
+    """ori rA, rS, uimm  - bitwise OR with unsigned 16-bit immediate"""
+    return _fmt_d_unsigned(24, rS, rA, uimm)
 
 
-def oris(rA: int, rS: int, imm: int) -> bytes:
-    """oris rA, rS, imm  - bitwise OR with unsigned 16-bit immediate shifted"""
-    return _fmt_d_unsigned(0x19, rS, rA, imm)
+def oris(rA: int, rS: int, uimm: int) -> bytes:
+    """oris rA, rS, uimm  - bitwise OR with unsigned 16-bit immediate shifted"""
+    return _fmt_d_unsigned(0x19, rS, rA, uimm)
 
 
 def nop() -> bytes:
@@ -322,9 +328,9 @@ def nop() -> bytes:
     return ori(0, 0, 0)
 
 
-def andi(rA: int, rS: int, imm: int) -> bytes:
-    """andi. rA, rS, imm  - rA = rS & imm (unsigned 16-bit); always updates CR0"""
-    return _fmt_d_unsigned(28, rS, rA, imm)
+def andi(rA: int, rS: int, uimm: int) -> bytes:
+    """andi. rA, rS, uimm  - rA = rS & uimm (unsigned 16-bit); always updates CR0"""
+    return _fmt_d_unsigned(28, rS, rA, uimm)
 
 
 
@@ -372,6 +378,11 @@ def add(rD: int, rA: int, rB: int) -> bytes:
 def subf(rD: int, rA: int, rB: int) -> bytes:
     """subf rD, rA, rB  - subtract from: rD = rB - rA"""
     return _fmt_xo(31, rD, rA, rB, 40)
+
+
+def sub(rD: int, rA: int, rB: int) -> bytes:
+    """sub rD, rA, rB  - subtract: rD = rA - rB"""
+    return subf(rD, rB, rA)
 
 
 # ---------------------------------------------------------------------------
@@ -431,6 +442,23 @@ def _fmt_m(opcode: int, rS: int, rA: int, rB: int, mb: int, me: int, rc: int = 0
 def rlwnm(rA: int, rS: int, rB: int, mb: int, me: int) -> bytes:
     """rlwnm rA, rS, rB, MB, ME  - rotate rS left by rB bits, AND with mask(MB, ME), store in rA"""
     return _fmt_m(23, rS, rA, rB, mb, me)
+
+
+def rlwinm(rA: int, rS: int, sh: int, mb: int, me: int) -> bytes:
+    """rlwinm rA, rS, SH, MB, ME  - rotate rS left by SH bits, AND with mask(MB, ME), store in rA"""
+    return _fmt_m(21, rS, rA, sh, mb, me)
+
+
+def slwi(rA: int, rS: int, n: int) -> bytes:
+    """slwi rA, rS, n  - shift rS left by n bits, store in rA"""
+    _check_n(n)
+    return rlwinm(rA, rS, n, 0, 31 - n)
+
+
+def srwi(rA: int, rS: int, n: int) -> bytes:
+    """srwi rA, rS, n  - shift rS right by n bits, store in rA"""
+    _check_n(n)
+    return rlwinm(rA, rS, 32 - n, n, 31)
 
 
 # ---------------------------------------------------------------------------

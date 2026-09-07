@@ -26,6 +26,7 @@ from wiithon.ppc.instructions import (
     or_,
     ori,
     oris,
+    rlwinm,
     rlwnm,
     stb,
     stbu,
@@ -284,6 +285,17 @@ class TestGhidra(unittest.TestCase):
 
     def test_nop(self):
         self.assertEqual(u32(nop()), 0x60000000)
+
+
+    def test_rlwinm(self):
+        # Location: 0x80007d50  - Instruction: 0x5460863e - Code:     rlwinm     r0 ,r3 ,0x10 ,0x18 ,0x1f
+        self.assertEqual(u32(rlwinm(0, 3, 0x10, 0x18, 0x1f)), 0x5460863e)
+
+        # Location: 0x80012bb0  - Instruction: 0x54e4ef7a - Code:     rlwinm     r4 ,r7 ,0x1d ,0x1d ,0x1d
+        self.assertEqual(u32(rlwinm(4, 7, 0x1d, 0x1d, 0x1d)), 0x54e4ef7a)
+
+        # Location: 0x80013818  - Instruction: 0x5406073e - Code:     rlwinm     r6 ,r0 ,0x0 ,0x1c ,0x1f
+        self.assertEqual(u32(rlwinm(6, 0, 0, 0x1c, 0x1f)), 0x5406073e)
 
 
     def test_rlwnm(self):
