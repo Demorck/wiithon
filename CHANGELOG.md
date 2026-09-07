@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-09-07
+
+### Fixed
+
+- Some RARC would not be written back correctly
+
+### Added
+
+- 4 new PowerPC instructions: `sub`, `rlwinm`, `slwi`, `srwi`
+
+### Changed
+
+- PowerPC docstring to say if an immediate needs to be signed or unsigned
+
 ## [0.1.2] - 2026-08-19
 
 ### Fixed
@@ -87,6 +101,7 @@ First public release.
 - Requires Python 3.11 or later.
 
 [Unreleased]: https://github.com/Demorck/wiithon/compare/v0.1.0...HEAD
+[0.1.3]: https://github.com/Demorck/wiithon/releases/tag/v0.1.3
 [0.1.2]: https://github.com/Demorck/wiithon/releases/tag/v0.1.2
 [0.1.1]: https://github.com/Demorck/wiithon/releases/tag/v0.1.1
 [0.1.0]: https://github.com/Demorck/wiithon/releases/tag/v0.1.0
