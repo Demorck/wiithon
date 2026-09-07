@@ -1,11 +1,18 @@
 from typing import BinaryIO
+
 from Crypto.Cipher import AES
 
-from wiithon.crypto.layout import (
-    GROUP_SIZE, GROUP_DATA_SIZE, BLOCK_SIZE,
-    BLOCK_HEADER_SIZE, BLOCK_DATA_SIZE, BLOCK_PER_GROUP, IV_OFFSET, IV_SIZE
-)
 from wiithon.crypto.blocks import encrypt_group
+from wiithon.crypto.layout import (
+    BLOCK_DATA_SIZE,
+    BLOCK_HEADER_SIZE,
+    BLOCK_PER_GROUP,
+    BLOCK_SIZE,
+    GROUP_DATA_SIZE,
+    GROUP_SIZE,
+    IV_OFFSET,
+    IV_SIZE,
+)
 from wiithon.disc.layout import H3_TABLE_SIZE
 
 
@@ -27,7 +34,7 @@ class CryptPartWriter:
 
         self.h3_table = bytearray(H3_TABLE_SIZE)
 
-    def write(self, data: bytes, directly: bool = False) -> int:
+    def write(self, data: bytes, *, directly: bool = False) -> int:
         bytes_to_write = len(data)
         offset_in_data = 0
 
@@ -63,7 +70,7 @@ class CryptPartWriter:
 
         return offset_in_data
 
-    def _load_group(self, group: int):
+    def _load_group(self, group: int) -> None:
         self.is_dirty = False
         physical_offset = self.data_offset + (group * GROUP_SIZE)
         self.stream.seek(physical_offset)
@@ -79,7 +86,7 @@ class CryptPartWriter:
         self.group_cache = bytearray(raw_group)
         self.current_group = group
 
-        # Decrypt - because of all the issues that i had, i recreated the function but may TODO: using the decrypt_group from Utils
+        # Decrypt
         for i in range(BLOCK_PER_GROUP):
             start = i * BLOCK_SIZE
 
@@ -100,7 +107,7 @@ class CryptPartWriter:
                 bytes(self.group_cache[start + BLOCK_HEADER_SIZE: start + BLOCK_SIZE])
             )
 
-    def _flush_group(self):
+    def _flush_group(self) -> None:
         if not self.is_dirty or self.current_group is None:
             return
 
@@ -116,7 +123,6 @@ class CryptPartWriter:
         physical_offset = self.data_offset + (self.current_group * GROUP_SIZE)
         self.stream.seek(physical_offset)
         self.stream.write(encrypted_data)
-        # print(encrypted_data)
 
         self.is_dirty = False
 
@@ -138,5 +144,5 @@ class CryptPartWriter:
     def tell(self) -> int:
         return self.current_position
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"CryptPartWriter(pos: {self.current_position:X}, group: {self.current_group})"

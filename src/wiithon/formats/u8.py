@@ -1,12 +1,12 @@
-import os
 import struct
 from io import BytesIO
-from typing import BinaryIO, List
+from pathlib import Path
+from typing import BinaryIO
 
-from wiithon.binary.reader import BinaryReader
 from wiithon.binary.align import align
+from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
-from wiithon.exceptions import InvalidFormatError, ArchiveFileNotFoundError, ArchiveIsADirectoryError
+from wiithon.exceptions import ArchiveFileNotFoundError, ArchiveIsADirectoryError, InvalidFormatError
 
 NODE_SIZE = 0xC
 ROOTNODE_OFFSET = 0x20
@@ -24,7 +24,7 @@ class U8Node:
 
 class U8:
     def __init__(self) -> None:
-        self.nodes : List[U8Node] = []
+        self.nodes : list[U8Node] = []
 
 
     @classmethod
@@ -46,11 +46,10 @@ class U8:
         reader.seek(base + rootnode_offset)
 
         raw_root_node = reader.raw(NODE_SIZE)
-        total_nodes = struct.unpack_from(">I", raw_root_node, 8)[0] # Maybe change this one to a new writer ? Maybe overkill though
+        total_nodes = struct.unpack_from(">I", raw_root_node, 8)[0]
         raw_nodes = [raw_root_node]
 
-        for _ in range(total_nodes - 1):
-            raw_nodes.append(reader.raw(NODE_SIZE))
+        raw_nodes.extend(reader.raw(NODE_SIZE) for _ in range(total_nodes - 1))
 
         string_table = reader.raw(header_size - total_nodes * NODE_SIZE)
 
@@ -83,7 +82,7 @@ class U8:
 
         return obj
 
-    def _search(self, parts: List[str], start: int, end: int) -> int | None:
+    def _search(self, parts: list[str], start: int, end: int) -> int | None:
         if not parts:
             return None
 
@@ -194,18 +193,20 @@ class U8:
         self._extract(1, self.nodes[0].size, output_dir)
 
     def _extract(self, start: int, end: int, current_dir: str) -> None:
-        os.makedirs(current_dir, exist_ok=True)
+        target_dir = Path(current_dir)
+        target_dir.mkdir(parents=True, exist_ok=True)
+
         i = start
         while i < end:
             node = self.nodes[i]
-            path = os.path.join(current_dir, node.name)
+            path = target_dir / node.name
+
             if node.is_dir:
                 node_size = node.size
-                self._extract(i + 1, node_size, path)
+                self._extract(i + 1, node_size, str(path))
                 i = node_size
             else:
-                with open(path, "wb") as f:
-                    f.write(node.data)
+                path.write_text(node.data)
                 i += 1
 
     def get_file_by_path(self, path: str) -> bytes:

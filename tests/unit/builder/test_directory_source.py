@@ -3,10 +3,10 @@ import tempfile
 import unittest
 
 from wiithon.builder.directory_source import (
-    build_from_directory_tree,
     DirectoryPartitionSource,
+    build_from_directory_tree,
 )
-from wiithon.fst.node import FSTFile, FSTDirectory
+from wiithon.fst.node import FSTDirectory, FSTFile
 
 
 #  build_from_directory_tree
@@ -131,8 +131,7 @@ class TestDirectoryPartitionBuilderGetFileData(unittest.TestCase):
             )
 
     def test_missing_file_raises(self):
-        with tempfile.TemporaryDirectory() as d:
-            with self.assertRaises((FileNotFoundError, OSError)):
+        with tempfile.TemporaryDirectory() as d, self.assertRaises((FileNotFoundError, OSError)):
                 self._make_builder(d).get_file_data(["ghost.bin"])
 
 

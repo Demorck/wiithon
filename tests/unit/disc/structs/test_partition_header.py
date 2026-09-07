@@ -3,6 +3,7 @@ import unittest
 from io import BytesIO
 
 from tests.unit.disc.structs._roundtrip import RoundTripMixin
+
 from wiithon.disc.structs.partition_header import WiiPartitionHeader
 
 

@@ -1,7 +1,8 @@
-from typing import BinaryIO, Callable, List
+from collections.abc import Callable
+from typing import BinaryIO
 
 from wiithon.crypto.part_writer import CryptPartWriter
-from wiithon.fst.node import FSTNode, FSTFile, FSTDirectory
+from wiithon.fst.node import FSTDirectory, FSTFile, FSTNode
 from wiithon.fst.raw_node import RawFSTNode
 
 
@@ -14,7 +15,7 @@ class FSTToBytes:
     The string table is computed once at construction time
     """
 
-    def __init__(self, fst_entries: List[FSTNode]) -> None:
+    def __init__(self, fst_entries: list[FSTNode]) -> None:
         """
         Pre-compute the string table from an FST entry list
 
@@ -23,13 +24,13 @@ class FSTToBytes:
 
         :param fst_entries: Top-level entries of the FST (``FST.entries``)
         """
-        self.entries: List[FSTNode] = fst_entries
+        self.entries: list[FSTNode] = fst_entries
 
         # String table.
         # Index 0 is always the root node's empty name (one null byte).
         # _str_offsets[i] = byte offset of the i-th node's name, including root.
         self.string_bytes: bytearray = bytearray(b"\x00")
-        self.string_offsets: List[int] = [0]
+        self.string_offsets: list[int] = [0]
 
         _build_str_table(fst_entries, self.string_offsets, self.string_bytes)
 
@@ -39,7 +40,7 @@ class FSTToBytes:
 
     def callback_all_files(
         self,
-        callback: Callable[[List[str], FSTFile], None],
+        callback: Callable[[list[str], FSTFile], None],
     ) -> None:
         """
         Call the callback for every ``FSTFile`` in depth-first order.
@@ -64,7 +65,7 @@ class FSTToBytes:
 
         :param stream: Writable binary stream
         """
-        raw_nodes: List[RawFSTNode] = []
+        raw_nodes: list[RawFSTNode] = []
 
         # Root node (not in _entries, added manually)
         root = RawFSTNode()
@@ -95,8 +96,8 @@ class FSTToBytes:
 
 
 def _build_str_table(
-    entries: List[FSTNode],
-    offsets: List[int],
+    entries: list[FSTNode],
+    offsets: list[int],
     strings: bytearray,
 ) -> None:
     """Recursively build the string table and the parallel offsets list.
@@ -118,10 +119,10 @@ def _build_str_table(
 
 
 def _build_raw_nodes(
-    entries: List[FSTNode],
-    str_offsets: List[int],
-    raw_nodes: List[RawFSTNode],
-    idx_counter: List[int],
+    entries: list[FSTNode],
+    str_offsets: list[int],
+    raw_nodes: list[RawFSTNode],
+    idx_counter: list[int],
     parent_index: int = 0
 ) -> None:
     """Recursively convert the FST tree into flat RawFSTNode.
@@ -157,9 +158,9 @@ def _build_raw_nodes(
 
 
 def _walk_files(
-    entries: List[FSTNode],
-    path: List[str],
-    callback: Callable[[List[str], FSTFile], None],
+    entries: list[FSTNode],
+    path: list[str],
+    callback: Callable[[list[str], FSTFile], None],
 ) -> None:
     """DFS calling callback on every ``FSTFile``.
 
@@ -176,7 +177,7 @@ def _walk_files(
             callback(list(path), entry)
 
 
-def _count_files(entries: List[FSTNode]) -> int:
+def _count_files(entries: list[FSTNode]) -> int:
     """Return the total number of `FSTFile` nodes in the subtree"""
     result = 0
     for entry in entries:
@@ -188,7 +189,7 @@ def _count_files(entries: List[FSTNode]) -> int:
     return result
 
 
-def _count_nodes(entries: List[FSTNode]) -> int:
+def _count_nodes(entries: list[FSTNode]) -> int:
     """Return the total number of nodes (files + directories) in the subtree"""
     total = 0
     for entry in entries:

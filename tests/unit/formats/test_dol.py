@@ -2,8 +2,8 @@ import struct
 import unittest
 from io import BytesIO
 
-from wiithon.exceptions import DolError, DolNoFreeSectionError, DolSectionOverlapError, DolSectionNotFoundError
-from wiithon.formats.dol import DOL, DOL_HEADER_SIZE, DOL_DATA_SECTIONS, DOL_TEXT_SECTIONS
+from wiithon.exceptions import DolError, DolNoFreeSectionError, DolSectionNotFoundError, DolSectionOverlapError
+from wiithon.formats.dol import DOL, DOL_DATA_SECTIONS, DOL_HEADER_SIZE, DOL_TEXT_SECTIONS
 from wiithon.formats.dol_header import DOLHeader
 
 

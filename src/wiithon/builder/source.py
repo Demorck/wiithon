@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import List
 
 from wiithon.disc.structs.certificate import Certificate
 from wiithon.disc.structs.disc_header import DiscHeader
-from wiithon.disc.structs.tmd import TMD
 from wiithon.disc.structs.ticket import Ticket
+from wiithon.disc.structs.tmd import TMD
 from wiithon.fst.tree import FST
 
 
@@ -16,7 +15,7 @@ class PartitionSource(ABC):
     def get_tmd(self) -> TMD: pass
     
     @abstractmethod
-    def get_certificates(self) -> List[Certificate]: pass
+    def get_certificates(self) -> list[Certificate]: pass
     
     @abstractmethod
     def get_encrypted_header(self) -> DiscHeader: pass
@@ -37,4 +36,4 @@ class PartitionSource(ABC):
     def get_ticket(self) -> Ticket: pass
     
     @abstractmethod
-    def get_file_data(self, path: List[str]) -> bytes: pass
+    def get_file_data(self, path: list[str]) -> bytes: pass

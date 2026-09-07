@@ -1,10 +1,10 @@
-from typing import List
 import bisect
 
 from wiithon.exceptions import FstError
-from wiithon.fst.node import FSTNode, FSTDirectory
+from wiithon.fst.node import FSTDirectory, FSTNode
 
-def find_node(entries: List[FSTNode], path_parts: List[str]) -> FSTNode | None:
+
+def find_node(entries: list[FSTNode], path_parts: list[str]) -> FSTNode | None:
     current: None | FSTDirectory = None
     for part in path_parts:
         found = None
@@ -21,7 +21,7 @@ def find_node(entries: List[FSTNode], path_parts: List[str]) -> FSTNode | None:
 
     return current
 
-def remove_node(entries: List[FSTNode], path_parts: List[str]) -> FSTNode | None:
+def remove_node(entries: list[FSTNode], path_parts: list[str]) -> FSTNode | None:
     parts = list(path_parts)
     parent_list = entries
     for part in parts[:-1]:
@@ -37,11 +37,11 @@ def remove_node(entries: List[FSTNode], path_parts: List[str]) -> FSTNode | None
 
     return None
 
-def add_node(entries: List[FSTNode], path_parts: List[str], new_node: FSTNode) -> FSTNode | None:
+def add_node(entries: list[FSTNode], path_parts: list[str], new_node: FSTNode) -> FSTNode | None:
     current_list = entries
     for part in path_parts:
         found = None
-        for i, node in enumerate(current_list):
+        for _, node in enumerate(current_list):
             if node.name.lower() == part.lower():
                 found = node
                 break

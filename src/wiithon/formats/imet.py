@@ -14,7 +14,7 @@ IMET_LANGUAGES = ["Japanese", "English", "German", "French", "Spanish",
                   "Italian", "Dutch", "Simplified Chinese", "Traditional Chinese", "Korean"]
 
 class IMET:
-    def __init__(self):
+    def __init__(self) -> None:
         self.icon_size: int = 0
         self.banner_size: int = 0
         self.sound_size: int = 0

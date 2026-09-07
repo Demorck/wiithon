@@ -1,9 +1,9 @@
 from typing import BinaryIO
 
-from wiithon.disc.structs.signature import SignatureType
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
 from wiithon.crypto.keys import decrypt_title_key, encrypt_title_key
+from wiithon.disc.structs.signature import SignatureType
 from wiithon.disc.structs.ticket_time_limit import TicketTimeLimit
 
 
@@ -33,7 +33,8 @@ class Ticket:
 	0x1E4	0x02			Unknown, mostly 0xFFFF
 	0x1E6	0x02			Ticket title version
 	0x1E8	0x04			Permitted Titles Mask
-	0x1EC	0x04			Permit mask. The current disc title is ANDed with the inverse of this mask to see if the result matches the Permitted Titles Mask.
+	0x1EC	0x04			Permit mask. The current disc title is ANDed with the inverse of this mask
+                            to see if the result matches the Permitted Titles Mask.
 	0x1F0	0x01			Title Export allowed using PRNG key (1 = allowed, 0 = not allowed)
 	0x1F1	0x01			Common Key index (2 = Wii U Wii mode, 1 = Korean Common key, 0 = "normal" Common key)
 	0x1F2	0x3			    Unknown. Is all 0 for non-VC, for VC, all 0 except last byte is 1.

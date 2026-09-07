@@ -29,8 +29,8 @@ def display_bcsv(bcsv: BCSV) -> None:
 
 
 if __name__ == "__main__":
-    with WiiIsoPatcher(ISO_PATH) as patcher:
-        with patcher.edit_as(BCSV_PATH, BCSV, field_names=FIELD_NAMES, str_fmt="shift_jis") as bcsv:
+    with WiiIsoPatcher(ISO_PATH) as patcher, \
+         patcher.edit_as(BCSV_PATH, BCSV, field_names=FIELD_NAMES, str_fmt="shift_jis") as bcsv:
             print("=== BEFORE ===")
             display_bcsv(bcsv)
 
@@ -40,5 +40,5 @@ if __name__ == "__main__":
             print("\n=== AFTER ===")
             display_bcsv(bcsv)
 
-        # patcher.build(OUTPUT_PATH)
-        # print(f"\nPatched : {OUTPUT_PATH}")
+            patcher.build(OUTPUT_PATH)
+            print(f"\nPatched : {OUTPUT_PATH}")

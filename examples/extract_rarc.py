@@ -1,7 +1,9 @@
 import os
+
 from wiithon.formats.rarc import Rarc
 
-def main():
+
+def main() -> None:
     input_file = "../assets/AstroDomeScenario.arc"
 
     base_name = os.path.splitext(input_file)[0]

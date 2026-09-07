@@ -1,35 +1,38 @@
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from typing import Callable, Optional, TypeVar, Iterator
-
 from io import BytesIO
+from pathlib import Path
+from typing import Concatenate, ParamSpec, TypeVar
 
-from wiithon import NoDataPartitionError
+from wiithon.builder.copy_source import CopyPartitionSource
+from wiithon.builder.disc_builder import WiiDiscBuilder
+from wiithon.disc.enums import WiiPartType
+from wiithon.disc.reader import WiiIsoReader
+from wiithon.exceptions import NoDataPartitionError
+from wiithon.formats.archive import Archive, Container, flush_archive_cache, resolve_read, resolve_write
 from wiithon.formats.bnr import BNR
-from wiithon.formats.archive import resolve_read, resolve_write
-from wiithon.fst.tree import FST
+from wiithon.formats.dol import DOL
 from wiithon.fst.node import FSTFile
 from wiithon.fst.operations import add_node, remove_node
-from wiithon.disc.enums import WiiPartType
-from wiithon.formats.dol import DOL
-from wiithon.disc.reader import WiiIsoReader
-from wiithon.builder.disc_builder import WiiDiscBuilder
-from wiithon.builder.copy_source import CopyPartitionSource
+from wiithon.fst.tree import FST
 
 T = TypeVar("T")
+P = ParamSpec("P")
 
-# TODO: Currently patch only data partition
 class WiiIsoPatcher:
-    def __init__(self, src_path: str):
+    def __init__(self, src_path: str) -> None:
         self.src_path = src_path
-        self.reader: Optional[WiiIsoReader] = None
+        self.reader: WiiIsoReader | None = None
 
-        self.data_partition = None # TODO: currently doing for data partition, may need a change
-        self.dol_modifier: Optional[Callable[[DOL], None]] = None
+        self.data_partition = None
+        self.dol_modifiers: list[Callable[[DOL], None]] = []
 
         self.file_replacements: dict[str, bytes] = {}
-        self.fst_modifier: Optional[Callable[[FST], None]] = None
+        self.fst_modifier: Callable[[FST], None] | None = None
         self.files_to_add: dict[str, bytes] = {}
         self.files_to_remove: list[str] = []
+
+        self.cached_archive: tuple[str, Archive, list[Container]] | None = None
 
     def __enter__(self) -> "WiiIsoPatcher":
         self.reader = WiiIsoReader(self.src_path)
@@ -48,7 +51,7 @@ class WiiIsoPatcher:
 
         return self
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args: int) -> None:
         if self.reader:
             self.reader.__exit__(*args)
 
@@ -69,7 +72,11 @@ class WiiIsoPatcher:
             self.files_to_remove.append(key)
 
     def replace_file(self, path: str, data: bytes) -> None:
-        self.file_replacements[path.strip("/")] = data
+        key = path.strip('/')
+        if self.cached_archive is not None and self.cached_archive[0] == key:
+            self.cached_archive = None
+
+        self.file_replacements[key] = data
 
     def list_files(self) -> list[str]:
         return self.data_partition.list_files()
@@ -78,7 +85,7 @@ class WiiIsoPatcher:
         return self.data_partition.read_file(path)
 
     @contextmanager
-    def edit_as(self, path: str, cls: type[T], **kwargs) -> Iterator[T]:
+    def edit_as(self, path: str, cls: type[T], **kwargs: int) -> Iterator[T]:
         data = resolve_read(self, path)
         obj = cls.read(BytesIO(data), **kwargs)
         yield obj
@@ -86,8 +93,9 @@ class WiiIsoPatcher:
         obj.write(buf)
         resolve_write(self, path, buf.getvalue())
 
-    def patch_dol(self, fn: Callable[[DOL], None]) -> None:
-        self.dol_modifier = fn
+    # noinspection PyTypeHints
+    def patch_dol(self, fn: Callable[Concatenate[DOL, P], None], *args: P.args, **kwargs: P.kwargs) -> None:
+        self.dol_modifiers.append(lambda dol: fn(dol, *args, **kwargs))
 
     def read_dol(self) -> DOL:
         return self.data_partition.read_dol()
@@ -110,7 +118,7 @@ class WiiIsoPatcher:
     def modify_title(self, new_title: str) -> None:
         self.reader.disc_header.game_title = new_title
 
-    def modify_title_id(self, new_id: str):
+    def modify_title_id(self, new_id: str) -> None:
         b = new_id.encode("ascii")
         if len(b) != 0x06:
             raise RuntimeError(f"Title ID needs to be 6 bytes length, got: {len(b)} with {b}")
@@ -118,24 +126,26 @@ class WiiIsoPatcher:
         self.reader.disc_header.game_id = b
         self.data_partition.header.ticket.title_id = b'\x00\x01\x00\x00' + b[:4]
 
-    def build(self, output_path: str, progress_cb=None) -> None:
+    def build(self, output_path: str, progress_cb: Callable | None = None) -> None:
+        flush_archive_cache(self)
         builder = WiiDiscBuilder(self.reader.disc_header, self.reader.region)
 
-        with open(output_path, "w+b") as dest:
+        output_path = Path(output_path)
+        with output_path.open("w+b") as dest:
             for entry in self.reader.partitions:
                 is_data = entry.part_type == WiiPartType.DATA
                 copy_builder = CopyPartitionSource(
                     self.reader,
                     entry,
                     fst_modifier=self._build_fst_modifier() if is_data else None,
-                    dol_modifier=self.dol_modifier if is_data else None,
+                    dol_modifiers=self.dol_modifiers if is_data else None,
                     file_overrides=self.file_replacements if is_data else None,
                 )
                 builder.add_partition(dest, copy_builder, progress_cb)
 
             builder.finish(dest)
 
-    def _build_fst_modifier(self) -> Optional[Callable[[FST], None]]:
+    def _build_fst_modifier(self) -> Callable[[FST], None] | None:
         user_modification = self.fst_modifier
         files_to_add = dict(self.files_to_add)
         files_to_remove = list(self.files_to_remove)

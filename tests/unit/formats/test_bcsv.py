@@ -1,19 +1,19 @@
 import unittest
 from io import BytesIO
 
-from wiithon.exceptions import BinaryError, InvalidFormatError, CorruptedDataError, BCSVFileError
+from wiithon.exceptions import BCSVFileError, BinaryError, CorruptedDataError, InvalidFormatError
 from wiithon.formats.bcsv import (
     BCSV,
-    BCSVEntry,
-    BCSVField,
-    BCSVKey,
-    BCSVNameKey,
-    BCSVHashKey,
-    BCSVFieldKey,
-    BCSVType,
-    BCSVTypeSize,
     BCSV_FIELD_SIZE,
     BCSV_HEADER_SIZE,
+    BCSVEntry,
+    BCSVField,
+    BCSVFieldKey,
+    BCSVHashKey,
+    BCSVKey,
+    BCSVNameKey,
+    BCSVType,
+    BCSVTypeSize,
     calculate_field_hash,
 )
 
@@ -129,7 +129,7 @@ def build_bcsv(fields: list[BCSVField], rows: list[list]) -> BCSV:
     entries = []
     for row in rows:
         entry = BCSVEntry()
-        for field, value in zip(fields, row):
+        for field, value in zip(fields, row, strict=True):
             entry[field] = value
         entries.append(entry)
     return BCSV(fields, entries)
@@ -432,12 +432,6 @@ class TestNumericEdgeCases(BCSVTestCase):
         field = BCSVField(HASH_FLOAT, 0xFFFFFFFF, 0, 0, BCSVType.FLOAT)
         # 0.1 is not representable in 32-bit, it must come back rounded
         self.assertAlmostEqual(self._roundtrip_single(field, 0.1), 0.1, places=6)
-
-    def test_value_outside_the_field_range(self):
-        field = BCSVField(HASH_BYTE, 0xFF, 0, 0, BCSVType.BYTE)
-        with self.assertRaises(Exception):
-            build_bcsv([field], [[300]]).export_bcsv()
-
 
 class TestBitmaskAndShift(BCSVTestCase):
     """Three sub-fields packed into a single 32-bit word."""

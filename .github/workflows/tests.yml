@@ -65,4 +65,4 @@ jobs:
         if: steps.cache-iso.outputs.cache-hit != 'true' # If the iso is cached, don't do it
         run: wit copy tests/mock_iso/src/ tests/mock_iso/test.iso --overwrite
 
-      - run: python -m pytest tests/iso/
+      - run: python -m pytest tests/iso/ tests/cli/

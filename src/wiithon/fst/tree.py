@@ -1,14 +1,14 @@
-from typing import List, BinaryIO
+from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
-from wiithon.fst.node import FSTNode, FSTDirectory, FSTFile
+from wiithon.fst.node import FSTDirectory, FSTFile, FSTNode
 from wiithon.fst.raw_node import RawFSTNode
 
 
 class FST:
-    def __init__(self):
-        self.entries: List[FSTNode] = []
+    def __init__(self) -> None:
+        self.entries: list[FSTNode] = []
 
     @classmethod
     def read(cls, stream: BinaryIO, offset: int) -> "FST":
@@ -18,9 +18,8 @@ class FST:
 
         root = RawFSTNode.read(stream)
         total_nodes = root.length
-        nodes: List[RawFSTNode] = [root]
-        for _ in range(total_nodes - 1):
-            nodes.append(RawFSTNode.read(stream))
+        nodes: list[RawFSTNode] = [root]
+        nodes.extend(RawFSTNode.read(stream) for _ in range(total_nodes - 1))
 
         string_offset = reader.tell()
         obj.entries, _ = _build_tree(reader, string_offset, nodes,
@@ -55,7 +54,7 @@ class FST:
     def count_files(self) -> int:
         return sum(e.count_files() for e in self.entries)
 
-    def find_node(self, path) -> FSTNode | None:
+    def find_node(self, path: str | list[str]) -> FSTNode | None:
         """Finds a node by its path (string or list of strings)"""
         if isinstance(path, str):
             path = [p for p in path.strip('/').replace('\\', '/').split('/') if p]
@@ -82,8 +81,8 @@ class FST:
 
 
 def _build_tree(reader: BinaryReader, string_offset: int,
-                nodes: List[RawFSTNode],
-                start: int, end: int) -> tuple[List[FSTNode], int]:
+                nodes: list[RawFSTNode],
+                start: int, end: int) -> tuple[list[FSTNode], int]:
     """Recursively convert flat raw nodes into a tree.
 
     :param stream: Binary stream (for reading names from string table).
@@ -94,7 +93,7 @@ def _build_tree(reader: BinaryReader, string_offset: int,
 
     :return: list of FSTNodes, next index to process.
     """
-    result: List[FSTNode] = []
+    result: list[FSTNode] = []
     i = start
 
     while i < end:

@@ -1,13 +1,14 @@
+import hashlib
 from io import BytesIO
 from typing import BinaryIO
-import hashlib
+
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
-from wiithon.exceptions import InvalidFormatError, CorruptedDataError
+from wiithon.exceptions import CorruptedDataError, InvalidFormatError
 
 
 class IMD5:
-    def __init__(self):
+    def __init__(self) -> None:
         self.magic_word = ""
         self.filesize: int
         self.zeroes: bytes
@@ -18,7 +19,7 @@ class IMD5:
         reader = BinaryReader(stream)
         magic_word = reader.string(4)
 
-        if magic_word != "IMD5": #TODO: Constant HERE
+        if magic_word != "IMD5":
             raise InvalidFormatError("Magic word is not IMD5")
 
         filesize = reader.u32()

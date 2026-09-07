@@ -3,11 +3,20 @@ import hashlib
 from Crypto.Cipher import AES
 
 from wiithon.crypto.layout import (
+    BLOCK_BY_SUBGROUP,
+    BLOCK_HEADER_SIZE,
+    BLOCK_PER_GROUP,
+    BLOCK_SIZE,
+    H1_OFFSET,
+    H1_SIZE,
+    H2_OFFSET,
+    IV_OFFSET,
+    IV_SIZE,
     SHA1_SIZE,
-
-    BLOCK_HEADER_SIZE, BLOCK_PER_GROUP, BLOCK_SIZE,
-    SUBGROUP_BY_GROUP, SUBBLOCK_SIZE, SUBBLOCK_BY_BLOCK,
-    BLOCK_BY_SUBGROUP, SUBGROUP_SIZE, IV_OFFSET, IV_SIZE, H1_OFFSET, H2_OFFSET, H1_SIZE
+    SUBBLOCK_BY_BLOCK,
+    SUBBLOCK_SIZE,
+    SUBGROUP_BY_GROUP,
+    SUBGROUP_SIZE,
 )
 
 
@@ -96,7 +105,10 @@ def encrypt_group(group_data: bytes | bytearray, title_key: bytes, h3_ref: bytea
         for block_index in range(BLOCK_BY_SUBGROUP):
             block_start = subgroup_index * SUBGROUP_SIZE + block_index * BLOCK_SIZE
             buffer[block_start + H1_OFFSET: block_start + H1_OFFSET + len(h1)] = h1
-            buffer[block_start + H1_OFFSET + H1_SIZE: block_start + H2_OFFSET] = b'\x00' * (H2_OFFSET - H1_OFFSET - H1_SIZE)
+            buffer[
+                block_start + H1_OFFSET + H1_SIZE:
+                block_start + H2_OFFSET
+            ] = b'\x00' * (H2_OFFSET - H1_OFFSET - H1_SIZE)
 
     # Calculate H3
     if h3_ref is not None:
@@ -109,10 +121,14 @@ def encrypt_group(group_data: bytes | bytearray, title_key: bytes, h3_ref: bytea
 
             # Placing H2 in the block header
             buffer[block_start + H2_OFFSET: block_start + H2_OFFSET + len(h2)] = h2
-            buffer[block_start + IV_OFFSET + IV_SIZE: block_start + BLOCK_HEADER_SIZE] = b'\x00' * (BLOCK_HEADER_SIZE - IV_OFFSET - IV_SIZE)
+            buffer[
+                block_start + IV_OFFSET + IV_SIZE:
+                block_start + BLOCK_HEADER_SIZE
+            ] = b'\x00' * (BLOCK_HEADER_SIZE - IV_OFFSET - IV_SIZE)
 
             cipher = AES.new(title_key, AES.MODE_CBC, b'\x00' * IV_SIZE)
-            buffer[block_start: block_start + BLOCK_HEADER_SIZE] = cipher.encrypt(bytes(buffer[block_start: block_start + BLOCK_HEADER_SIZE]))
+            encrypted = cipher.encrypt(bytes(buffer[block_start: block_start + BLOCK_HEADER_SIZE]))
+            buffer[block_start: block_start + BLOCK_HEADER_SIZE] = encrypted
 
             # Encrypt data with the last 16 bytes (before padding) of encrypted header
             iv = buffer[block_start + IV_OFFSET: block_start + IV_OFFSET + IV_SIZE]

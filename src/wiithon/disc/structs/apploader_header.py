@@ -3,11 +3,12 @@ from typing import BinaryIO
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
 
+
 class ApploaderHeader:
     """
 
     """
-    def __init__(self):
+    def __init__(self) -> None:
         self.size1 = 0
         self.size2 = 0
 
