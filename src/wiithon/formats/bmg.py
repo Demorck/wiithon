@@ -1,11 +1,13 @@
-from io import BytesIO
 from typing import BinaryIO
 
+from wiithon.binary.align import align
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
-from wiithon.formats.bmg_sections.bmg_section import BMGSection
+from wiithon.exceptions import InvalidFormatError
+from wiithon.formats.bmg_sections.bmg_section import BMGSection, RawSection
 from wiithon.formats.bmg_sections.inf1 import INF1Section
 from wiithon.formats.bmg_sections.dat1 import DAT1Section
+from wiithon.formats.bmg_sections.mid1 import MID1Section
 from wiithon.formats.bmg_sections.flw1 import FLW1Section
 from wiithon.formats.bmg_sections.fli1 import FLI1Section
 
@@ -13,115 +15,103 @@ DATA_MAGIC = "MESG"
 FILE_MAGIC = "bmg1"
 
 class BMG:
-    """
-    BMG (Binary Message Data) file handler for parsing and exporting binary message data.
-    The BMG class manages the structure of BMG files which contain multiple sections
-    (INF1, DAT1, FLW1, FLI1) that store message information and data.
-    Attributes:
-        section_count (int): Number of sections in the BMG file.
-        sections (list[bmg_section]): List of parsed section objects.
-        flw1_section_offset (int): Offset to the FLW1 section in the file.
-        unknown (int): Unknown single byte value from file header.
-    Methods:
-        __init__(raw_bytes: BytesIO) -> None:
-            Parses a BMG file from raw bytes. Validates magic numbers and reads
-            all sections from the file.
-        add_header(section: bmg_section) -> BytesIO:
-            Wraps a section with its BMG header (magic and size) and applies
-            32-byte alignment padding. Returns the complete section data.
-        export_bmg() -> BytesIO:
-            Reconstructs the complete BMG file from the current sections list.
-            Rebuilds the header and all sections with proper formatting and padding.
-            Returns the complete BMG file as bytes.
-    """
-    section_count: int
-    sections: list[BMGSection]
+    def __init__(self) -> None:
+        self.sections: list[BMGSection] = []
+        self.end_of_message_data: int = 0
+        self.encoding: int = 0
 
-    def __init__(self, raw_bytes: BinaryIO):
-        reader = BinaryReader(raw_bytes)
+    @classmethod
+    def read(cls, stream: BinaryIO) -> "BMG":
+        obj = cls()
+        reader = BinaryReader(stream)
+
         data_magic = reader.string(0x4)
-        assert data_magic == DATA_MAGIC
+        if data_magic != DATA_MAGIC:
+            raise InvalidFormatError(f"Invalid magic data word for BMG {data_magic:!r} instead of {DATA_MAGIC}")
 
         file_magic = reader.string(0x4)
-        assert file_magic == FILE_MAGIC
+        if file_magic != FILE_MAGIC:
+            raise InvalidFormatError(f"Invalid magic file word for BMG {file_magic:!r} instead of {FILE_MAGIC}")
 
-        self.flw1_section_offset = reader.u32()
-        self.section_count = reader.u32()
-        self.unknown = reader.u8()
+        obj.end_of_message_data = reader.u32()
+
+        section_count = reader.u32()
+
+        obj.encoding = reader.u8()
         reader.seek(0x20)
 
-        self.sections = []
-
-        for section in range(self.section_count):
+        for section in range(section_count):
+            position = reader.tell()
             section_magic = reader.string(0x4)
-            section_size = reader.u32() - 0x8
-
-            # Take into account the removed padding at the end of the file
-            if section_size > reader.size() - reader.tell():
-                section_size = reader.size() - reader.tell()
-
-            section_bytes = reader.raw(section_size)
-            section_bytes = BytesIO(section_bytes)
+            section_size = reader.u32()
             
             match section_magic:
                 case "INF1":
-                    section = INF1Section.import_section(section_bytes)
+                    section = INF1Section.read(reader.stream)
                 case "DAT1":
-                    section = DAT1Section.import_section(section_bytes)
+                    section = DAT1Section.read(reader.stream)
+                case "MID1":
+                    section = MID1Section.read(reader.stream)
                 case "FLW1":
-                    section = FLW1Section.import_section(section_bytes)
+                    section = FLW1Section.read(reader.stream)
                 case "FLI1":
-                    section = FLI1Section.import_section(section_bytes)
-            
-            self.sections.append(section)
+                    section = FLI1Section.read(reader.stream)
+                case _:
+                    section = RawSection.read(reader.stream)
+                    
+            obj.sections.append(section)
 
-    def add_header(self, section: BMGSection) -> BinaryIO:
-        total_bytes = BytesIO()
-        writer = BinaryWriter(total_bytes)
+            reader.seek(position + section_size)
 
-        section_bytes = section.export_section()
-        section_size = section_bytes.seek(0, 2) + 0x8
-        
-        padding = 0
-        if section_size % 32:
-            padding = 32 - section_size % 32
-            section_size += padding
+        return obj
 
-        writer.string(section.magic, 0x4)
-        writer.u32(section_size)
-        writer.raw(section_bytes.read)
-        writer.pad(padding) # should be align(0x20)
-
-        return total_bytes
-    
-    def get_section(self, section_magic: str) -> list[BMGSection]:
-        out: list[BMGSection] = []
-
+    def get_section(self, section_magic: str) -> BMGSection:
         for section in self.sections:
             if section.magic == section_magic:
-                out.append(section)
-        
-        return out
+                return section
 
-    def export_bmg(self) -> BinaryIO:
-        bmg_bytes = BytesIO()
-        writer = BinaryWriter(bmg_bytes)
+        raise ValueError(f"Section with magic {section_magic} could not be found")
+
+    def write(self, stream: BinaryIO) -> None:
+        writer = BinaryWriter(stream)
 
         writer.string(DATA_MAGIC)
         writer.string(FILE_MAGIC)
-        writer.u32(0) # Write the flw1_section_offset later
+        writer.u32(0) # Write the end_of_message_data later
         writer.u32(len(self.sections))
-        writer.u8(self.unknown)
-        writer.seek(0x20)
+        writer.u8(self.encoding)
+
+        pad_boundary = align(writer.tell(), 0x20)
+        writer.pad(pad_boundary - writer.tell())
 
         for section in self.sections:
-            if section.magic == "FLW1":
+            if section.magic == "FLW1" or section.magic == "MID1":
                 position = writer.tell()
+                
                 writer.seek(0x8)
                 writer.u32(position)
                 writer.seek(position)
-            
-            section_bytes = self.add_header(section)
-            writer.raw(section_bytes.read())
 
-        return bmg_bytes
+            # Header
+            section_start = writer.tell()
+
+            writer.string(section.magic)
+            writer.u32(0) # Write the section size later
+
+            # Section
+            section.write(writer.stream)
+
+            section_end = writer.tell()
+
+            # Tail
+            pad_boundary = align(writer.tell(), 0x20)
+            writer.pad(pad_boundary - writer.tell())
+
+            # Section size
+            position = writer.tell()
+            
+            writer.seek(section_start + 0x4)
+            writer.u32(position - section_start)
+            writer.seek(position)
+
+        writer.truncate(section_end)

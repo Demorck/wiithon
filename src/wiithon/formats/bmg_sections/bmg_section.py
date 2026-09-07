@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import BinaryIO
 
+from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
+
 class BMGSection(ABC):
     """
     Base class for BMG file sections.
@@ -11,24 +14,28 @@ class BMGSection(ABC):
     """
     magic: str
 
-    def __init__(self, magic: str):
-        self.magic = magic
-
     @classmethod
     @abstractmethod
-    def import_section(cls, raw_data: BinaryIO) -> "BMGSection":
-        """
-        Import a section from raw bytes.
-        This method must be overridden in subclasses to provide proper implementation.
-        Raises NotImplementedError: If not properly overridden in a subclass.
-        """
-        raise NotImplementedError("Import section is not implemented")
+    def read(cls, stream: BinaryIO) -> "BMGSection":
+        """Read a section from a data stream."""
 
     @abstractmethod
-    def export_section(self) -> BinaryIO:
-        """
-        Export a section from raw bytes.
-        This method must be overridden in subclasses to provide proper implementation.
-        Raises NotImplementedError: If not properly overridden in a subclass.
-        """
-        raise NotImplementedError("Export section is not implemented")
+    def write(self, stream: BinaryIO) -> None:
+        """Write a section to a data stream."""
+
+# Default section
+class RawSection(BMGSection):
+    data: bytes
+
+    def __init__(self):
+        self.data = b''
+
+    @classmethod
+    def read(cls, stream: BinaryIO) -> "RawSection":
+        obj = cls()
+        reader = BinaryReader(stream)
+        obj.data = reader.raw()
+
+    def write(self, stream: BinaryIO) -> None:
+        writer = BinaryWriter(stream)
+        writer.raw(self.data)

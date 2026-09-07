@@ -19,6 +19,9 @@ class BinaryWriter:
     def pad(self, count: int, byte: bytes = b'\x00') -> None:
         self.stream.write(count * byte)
 
+    def truncate(self, size: int) -> None:
+        self.stream.truncate(size)
+
     def size(self) -> int:
         current_offset = self.tell()
         size = self.stream.seek(0, 2)
