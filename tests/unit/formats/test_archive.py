@@ -380,6 +380,49 @@ class TestArchiveCache(unittest.TestCase):
         rarc = Rarc.read(BytesIO(resolve_read(p, "Stage.arc")))
         self.assertEqual(int.from_bytes(rarc.get_file("a.bin").data, "big"), 10)
 
+class TestEditWholeArchive(unittest.TestCase):
+    def test_yaz0_archive_as_rarc(self):
+        p = make_patcher({"AirBubble.arc": build_yaz0_rarc({"a.bin": b"old"})})
+
+        with p.edit_as("AirBubble.arc", Rarc) as rarc:
+            rarc.replace_file("a.bin", b"new")
+
+        out = p.file_replacements["AirBubble.arc"]
+        self.assertEqual(out[:4], b"Yaz0", "The archive must be recompressed")
+        self.assertEqual(Rarc.read(BytesIO(Yaz0.read(BytesIO(out)).data)).get_file("a.bin").data, b"new")
+
+    def test_plain_archive_as_rarc(self):
+        p = make_patcher({"AirBubble.arc": build_flat_rarc({"a.bin": b"old"})})
+
+        with p.edit_as("AirBubble.arc", Rarc) as rarc:
+            rarc.replace_file("a.bin", b"new")
+
+        out = p.file_replacements["AirBubble.arc"]
+        self.assertEqual(out[:4], b"RARC", "No container must be added")
+        self.assertEqual(Rarc.read(BytesIO(out)).get_file("a.bin").data, b"new")
+
+    def test_container_itself_is_not_peeled(self):
+        p = make_patcher({"Stage.szs": build_yaz0_rarc({"a.bin": b"old"})})
+
+        with p.edit_as("Stage.szs", Yaz0) as yaz0:
+            self.assertEqual(yaz0.data[:4], b"RARC")
+
+        self.assertEqual(p.file_replacements["Stage.szs"][:4], b"Yaz0")
+
+    def test_whole_archive_edit_sees_pending_inner_edits(self):
+        p = make_patcher({"Stage.arc": build_flat_rarc({"a.bin": (1).to_bytes(4, "big"),
+                                                        "b.bin": b"bbb"})})
+
+        with p.edit_as("Stage.arc/a.bin", SimpleData) as obj:
+            obj.value = 42
+
+        with p.edit_as("Stage.arc", Rarc) as rarc:
+            self.assertEqual(int.from_bytes(rarc.get_file("a.bin").data, "big"), 42)
+            rarc.replace_file("b.bin", b"zzz")
+
+        rarc = Rarc.read(BytesIO(p.file_replacements["Stage.arc"]))
+        self.assertEqual(int.from_bytes(rarc.get_file("a.bin").data, "big"), 42)
+        self.assertEqual(rarc.get_file("b.bin").data, b"zzz")
 
 if __name__ == "__main__":
     unittest.main()
