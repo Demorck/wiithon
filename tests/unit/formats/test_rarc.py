@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from io import BytesIO
 
+from wiithon.binary.align import align
 from wiithon.exceptions import ArchiveEntryExistsError, ArchiveFileNotFoundError
 from wiithon.formats.rarc import NodeAttribute, Rarc, RarcFileEntry
 
@@ -443,8 +444,9 @@ class TestRarcHeaderLayout(unittest.TestCase):
             self.offset_first_directory,
             self.string_table_length,
             self.string_table_offset,
-            self.number_of_files,
-        ) = struct.unpack(">6IH", self.raw[HEADER_SIZE:HEADER_SIZE + 0x1A])
+            self.next_free_id,
+            self.sync_flag,
+        ) = struct.unpack(">6IHB", self.raw[HEADER_SIZE:HEADER_SIZE + 0x1B])
 
     def test_magic_and_header_length(self):
         self.assertEqual(self.magic, b"RARC")
@@ -456,16 +458,19 @@ class TestRarcHeaderLayout(unittest.TestCase):
     def test_data_section_ends_at_end_of_file(self):
         self.assertEqual(HEADER_SIZE + self.data_offset + self.data_length, len(self.raw))
 
-    def test_section_offsets_are_contiguous(self):
+    def test_section_offsets_are_padded(self):
         self.assertEqual(self.offset_first_node, HEADER_SIZE)
-        self.assertEqual(self.offset_first_directory, self.offset_first_node + self.number_nodes * NODE_SIZE)
-        self.assertEqual(self.string_table_offset, self.offset_first_directory + self.total_directory * ENTRY_SIZE)
+        self.assertEqual(self.offset_first_directory,
+                         self.offset_first_node + align(self.number_nodes * NODE_SIZE, 0x20))
+        self.assertEqual(self.string_table_offset,
+                         self.offset_first_directory + align(self.total_directory * ENTRY_SIZE, 0x20))
         self.assertEqual(self.data_offset, self.string_table_offset + self.string_table_length)
 
     def test_counts_match_the_archive(self):
         self.assertEqual(self.number_nodes, len(self.arc.nodes))
         self.assertEqual(self.total_directory, len(self.arc.entries))
-        self.assertEqual(self.number_of_files, 3)
+        self.assertEqual(self.next_free_id, self.total_directory)
+        self.assertEqual(self.sync_flag, 1)
 
     def test_string_table_and_data_are_aligned(self):
         self.assertEqual(self.string_table_length % ALIGNMENT, 0)
@@ -491,6 +496,21 @@ class TestRarcHeaderLayout(unittest.TestCase):
 
         self.assertEqual(stream.tell(), len(self.raw))
         self.assertEqual(stream.read(), sentinel)
+
+    def test_data_block_starts_on_a_32_byte_boundary(self):
+        self.assertEqual((HEADER_SIZE + self.data_offset) % ALIGNMENT, 0)
+
+    def test_preload_sizes_are_reported(self):
+        mram, aram, dvd = struct.unpack(">3I", self.raw[0x14:0x20])
+        expected = sum(align(len(entry.data), 0x20) for entry in self.arc.entries
+                       if not entry.attributes & NodeAttribute.DIRECTORY
+                       and entry.attributes & NodeAttribute.PRELOAD_TO_MRAM)
+        self.assertEqual(mram, expected)
+        self.assertEqual((aram, dvd), (0, 0))
+
+    def test_string_table_starts_with_the_dot_entries(self):
+        table = self.raw[HEADER_SIZE + self.string_table_offset:][:self.string_table_length]
+        self.assertTrue(table.startswith(b".\x00..\x00"))
 
 if __name__ == "__main__":
     unittest.main()
