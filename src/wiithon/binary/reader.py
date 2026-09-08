@@ -16,8 +16,14 @@ class BinaryReader:
         stream = BytesIO(data)
         return cls(stream)
 
-    def seek(self, offset: int) -> None:
-        self.stream.seek(offset)
+    def seek(self, offset: int, whence: int = 0) -> None:
+        self.stream.seek(offset, whence)
+    
+    def size(self) -> int:
+        current_position = self.tell()
+        size = self.stream.seek(0, 2)
+        self.seek(current_position)
+        return size
 
     def tell(self) -> int:
         return self.stream.tell()

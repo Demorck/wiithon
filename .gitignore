@@ -1,6 +1,7 @@
 *.iso
 .idea
 *.arc
+**/__pycache__
 
 /src_dir/
 /assets
