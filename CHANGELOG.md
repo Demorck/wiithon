@@ -25,7 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Some archive tests (4 functions)
 - Rarc tests (3 functions)
 - BinaryWriter tests (2 functions)
+- In patcher: properties `title` and `title_id` has been added
 
+### Removed
+
+- In patcher.py: `get_infos`, `modify_title` and `modify_title_id` has been removed
 
 ## [0.1.3] - 2026-09-07
 
