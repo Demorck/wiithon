@@ -9,8 +9,15 @@ from wiithon.builder.disc_builder import WiiDiscBuilder
 from wiithon.disc.enums import WiiPartType
 from wiithon.disc.reader import WiiIsoReader
 from wiithon.exceptions import NoDataPartitionError
-from wiithon.formats.archive import Archive, Container, flush_archive_cache, resolve_read, resolve_write, \
-    unwrap_containers, wrap_containers
+from wiithon.formats.archive import (
+    Archive,
+    Container,
+    flush_archive_cache,
+    resolve_read,
+    resolve_write,
+    unwrap_containers,
+    wrap_containers,
+)
 from wiithon.formats.bnr import BNR
 from wiithon.formats.dol import DOL
 from wiithon.formats.imet import IMET_LANGUAGES
