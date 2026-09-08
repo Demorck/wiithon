@@ -249,6 +249,12 @@ class TestString(unittest.TestCase):
         with self.assertRaises(UnicodeEncodeError):
             written("string", "テスト", 32, encoding="latin-1")
 
+    def test_default_size_counts_bytes(self):
+        self.assertEqual(written("string", "♪"), "♪".encode())
+
+    def test_explicit_zero_size_rejects_a_non_empty_string(self):
+        with self.assertRaises(BinaryError):
+            written("string", "ab", 0)
 
 class TestRoundTripWithReader(unittest.TestCase):
     def _roundtrip(self, method: str, value):

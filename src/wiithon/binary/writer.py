@@ -75,7 +75,9 @@ class BinaryWriter:
     def string(self, value: str, size: int | None = None, padding: bytes = b'\x00',
                encoding: str | None = None, *, add_null_byte: bool = False) -> None:
         encoded = value.encode(encoding or self.encoding)
-        size = size or len(value)
+        if size is None:
+            size = len(encoded)
+
         if len(encoded) > size:
             raise BinaryError(
                 f"String {value!r} encodes to {len(encoded)} bytes, "
