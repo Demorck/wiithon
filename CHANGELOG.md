@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-09-09
+
+### Fixed
+- RARC files are aligned properly
+- RARC nodes RAM attributes are now written properly
+- BinaryWriter.string now check the length of the string encoded and not value
+- `edit_as` can now edit directly files not in archive, even if it's Yaz0/Lz77 compressed
+- Fixing an throwing error format in IMET
+- Changing in BNR the banner and sound now properly changes their respective size
+- Rewrite the read/write function for IMET (it was unfinished...)
+
+### Added
+
+- BNR tests (14 functions)
+- IMET tests (20 functions)
+- Some archive tests (4 functions)
+- Rarc tests (3 functions)
+- BinaryWriter tests (2 functions)
+
+
 ## [0.1.3] - 2026-09-07
 
 ### Fixed
@@ -101,6 +121,7 @@ First public release.
 - Requires Python 3.11 or later.
 
 [Unreleased]: https://github.com/Demorck/wiithon/compare/v0.1.0...HEAD
+[0.1.4]: https://github.com/Demorck/wiithon/releases/tag/v0.1.4
 [0.1.3]: https://github.com/Demorck/wiithon/releases/tag/v0.1.3
 [0.1.2]: https://github.com/Demorck/wiithon/releases/tag/v0.1.2
 [0.1.1]: https://github.com/Demorck/wiithon/releases/tag/v0.1.1
