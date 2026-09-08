@@ -60,29 +60,36 @@ def _split_path(fst: FST, path: str) -> tuple[str, list[str]]:
     raise FstFileNotFoundError(path)
 
 
-def _open_archive(data: bytes) -> tuple[Archive, list[Container]]:
+def unwrap_containers(data: bytes, cls: type | None = None) -> tuple[bytes, list[Container]]:
+    """Peel the compression layers, unless the caller asked for the container itself"""
     containers: list[Container] = []
 
     # For people who don't know about walrus operator `:=`
     # It evaluates the expression from the right and the variable on the left gets the evaluation
-    while (container_cls := _CONTAINERS.get(data[:4])) is not None:
+    while (container_cls := _CONTAINERS.get(data[:4])) is not None and container_cls is not cls:
         container = container_cls.read(BytesIO(data))
         containers.append(container)
         data = container.data
 
+    return data, containers
+
+def wrap_containers(data: bytes, containers: list[Container]) -> bytes:
+    for container in reversed(containers):
+        container.data = data
+        data = container.get_bytes()
+    return data
+
+
+def _open_archive(data: bytes) -> tuple[Archive, list[Container]]:
+    data, containers = unwrap_containers(data)
     archive_cls = _ARCHIVES.get(data[:4])
     if archive_cls is None:
         raise InvalidFormatError(f"Unknown archive format: {data[:4]!r}")
 
     return archive_cls.read(BytesIO(data)), containers
 
-
 def _serialize_archive(archive: Archive, containers: list[Container]) -> bytes:
-    data = archive.get_bytes()
-    for container in reversed(containers):
-        container.data = data
-        data = container.get_bytes()
-    return data
+    return wrap_containers(archive.get_bytes(), containers)
 
 def _cached_archive(patcher: WiiIsoPatcher, fst_path: str) -> tuple[Archive, list[Container]]:
     cached = patcher.cached_archive

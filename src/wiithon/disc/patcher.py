@@ -9,7 +9,8 @@ from wiithon.builder.disc_builder import WiiDiscBuilder
 from wiithon.disc.enums import WiiPartType
 from wiithon.disc.reader import WiiIsoReader
 from wiithon.exceptions import NoDataPartitionError
-from wiithon.formats.archive import Archive, Container, flush_archive_cache, resolve_read, resolve_write
+from wiithon.formats.archive import Archive, Container, flush_archive_cache, resolve_read, resolve_write, \
+    unwrap_containers, wrap_containers
 from wiithon.formats.bnr import BNR
 from wiithon.formats.dol import DOL
 from wiithon.formats.imet import IMET_LANGUAGES
@@ -110,12 +111,12 @@ class WiiIsoPatcher:
 
     @contextmanager
     def edit_as(self, path: str, cls: type[T], **kwargs: int) -> Iterator[T]:
-        data = resolve_read(self, path)
+        data, containers = unwrap_containers(resolve_read(self, path), cls)
         obj = cls.read(BytesIO(data), **kwargs)
         yield obj
         buf = BytesIO()
         obj.write(buf)
-        resolve_write(self, path, buf.getvalue())
+        resolve_write(self, path, wrap_containers(buf.getvalue(), containers))
 
     # noinspection PyTypeHints
     def patch_dol(self, fn: Callable[Concatenate[DOL, P], None], *args: P.args, **kwargs: P.kwargs) -> None:
