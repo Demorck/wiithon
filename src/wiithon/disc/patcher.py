@@ -12,6 +12,7 @@ from wiithon.exceptions import NoDataPartitionError
 from wiithon.formats.archive import Archive, Container, flush_archive_cache, resolve_read, resolve_write
 from wiithon.formats.bnr import BNR
 from wiithon.formats.dol import DOL
+from wiithon.formats.imet import IMET_LANGUAGES
 from wiithon.fst.node import FSTFile
 from wiithon.fst.operations import add_node, remove_node
 from wiithon.fst.tree import FST
@@ -54,6 +55,29 @@ class WiiIsoPatcher:
     def __exit__(self, *args: int) -> None:
         if self.reader:
             self.reader.__exit__(*args)
+
+    @property
+    def title(self) -> str:
+        return self.reader.disc_header.game_title
+
+    @title.setter
+    def title(self, title: str) -> None:
+        self.reader.disc_header.game_title = title
+
+    @property
+    def title_id(self) -> str:
+        return self.reader.disc_header.game_id.decode("ascii").strip("\x00")
+
+    @title_id.setter
+    def title_id(self, value: str) -> None:
+        b = value.encode("ascii")
+        if len(b) > 0x06:
+            raise ValueError(f"Title ID is 6 bytes max, got: {len(b)} with {b}")
+
+        b = b.ljust(0x06, b"\x00")
+
+        self.reader.disc_header.game_id = b
+        self.data_partition.header.ticket.title_id = b'\x00\x01\x00\x00' + b[:4]
 
     def modify_fst(self, fn: Callable[[FST], None]) -> None:
         self.fst_modifier = fn
@@ -100,31 +124,15 @@ class WiiIsoPatcher:
     def read_dol(self) -> DOL:
         return self.data_partition.read_dol()
 
-    def get_infos(self) -> dict:
-        header = self.reader.disc_header
-        return {
-            "game_id"    : header.game_id.decode("ascii").strip("\x00"),
-            "title"      : header.game_title,
-            "disc_number": header.disc_num,
-            "version"    : header.disc_version
-        }
+    def get_banner_title(self, language: str = "English") -> str:
+        bnr = BNR.read(BytesIO(self.read_file("opening.bnr")))
+        return bnr.imet.titles[IMET_LANGUAGES.index(language)]
 
-    def modify_banner_title(self, new_title: str, language: str = "English") -> None:
+    def set_banner_title(self, new_title: str, language: str = "English") -> None:
         bnr_bytes = self.read_file("opening.bnr")
         bnr = BNR.read(BytesIO(bnr_bytes))
         bnr.imet.set_title(new_title, language)
         self.replace_file("opening.bnr", bnr.get_bytes())
-
-    def modify_title(self, new_title: str) -> None:
-        self.reader.disc_header.game_title = new_title
-
-    def modify_title_id(self, new_id: str) -> None:
-        b = new_id.encode("ascii")
-        if len(b) != 0x06:
-            raise RuntimeError(f"Title ID needs to be 6 bytes length, got: {len(b)} with {b}")
-
-        self.reader.disc_header.game_id = b
-        self.data_partition.header.ticket.title_id = b'\x00\x01\x00\x00' + b[:4]
 
     def build(self, output_path: str, progress_cb: Callable | None = None) -> None:
         flush_archive_cache(self)

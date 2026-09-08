@@ -52,26 +52,15 @@ class TestGetInfo(unittest.TestCase):
         p.reader.disc_header.disc_version = version
         return p
 
-    def test_returns_all_keys(self):
-        info = self._setup().get_infos()
-        for key in ("game_id", "title", "disc_number", "version"):
-            self.assertIn(key, info)
-
     def test_game_id_decoded(self):
-        self.assertEqual(self._setup(game_id=b"RMGE01").get_infos()["game_id"], "RMGE01")
+        self.assertEqual(self._setup(game_id=b"RMGE01").title_id, "RMGE01")
 
     def test_game_id_null_bytes_stripped(self):
-        self.assertEqual(self._setup(game_id=b"RMCE\x00\x00").get_infos()["game_id"], "RMCE")
+        self.assertEqual(self._setup(game_id=b"RMCE\x00\x00").title_id, "RMCE")
 
     def test_title_preserved(self):
-        self.assertEqual(self._setup(title="Super Mario Galaxy").get_infos()["title"],
+        self.assertEqual(self._setup(title="Super Mario Galaxy").title,
                          "Super Mario Galaxy")
-
-    def test_disc_number_and_version(self):
-        info = self._setup(disc_num=1, version=2).get_infos()
-        self.assertEqual(info["disc_number"], 1)
-        self.assertEqual(info["version"], 2)
-
 
 # add_file
 class TestAddFile(unittest.TestCase):
