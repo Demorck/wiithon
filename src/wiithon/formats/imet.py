@@ -1,4 +1,5 @@
 import hashlib
+from io import BytesIO
 from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
@@ -34,11 +35,13 @@ class IMET:
         if len(obj._raw_block) < IMET_BLOCK_SIZE or obj._raw_block[:4] != IMET_MAGIC_WORD:
             raise InvalidFormatError(f"Invalid IMET magic: {obj._raw_block[:4]!r}")
 
-        reader.seek(0x04)
-        obj.hash_size        = reader.u32()
-        obj.icon_size        = reader.u32()
-        obj.banner_size      = reader.u32()
-        obj.sound_size       = reader.u32()
+        block = BinaryReader.from_bytes(obj._raw_block)
+        block.seek(0x04)
+        obj.hash_size = block.u32()
+        block.skip(0x04)
+        obj.icon_size = block.u32()
+        obj.banner_size = block.u32()
+        obj.sound_size = block.u32()
 
         for i in range(IMET_TITLE_COUNT):
             off = 0x1C + i * IMET_TITLE_MAX_BYTES
@@ -63,29 +66,30 @@ class IMET:
         self.titles[IMET_LANGUAGES.index(language)] = title
 
     def write(self, stream: BinaryIO) -> None:
-        writer = BinaryWriter(stream)
+        block = BytesIO(bytes(self._raw_block))
+        block_writer = BinaryWriter(block)
 
-        writer.pad(IMET_PADDING_SIZE)
-
-        buf = bytearray(self._raw_block)
-
-        writer.seek(0x0C)
-        writer.u32(self.icon_size)
-        writer.u32(self.banner_size)
-        writer.u32(self.sound_size)
+        block_writer.seek(0x0C)
+        block_writer.u32(self.icon_size)
+        block_writer.u32(self.banner_size)
+        block_writer.u32(self.sound_size)
 
         for i in range(IMET_TITLE_COUNT):
-            off = 0x1C + i * IMET_TITLE_MAX_BYTES
             encoded = self.titles[i].encode("utf-16-be")[:IMET_TITLE_MAX_BYTES]
-            buf[off:off + IMET_TITLE_MAX_BYTES] = b'\x00' * IMET_TITLE_MAX_BYTES
-            buf[off:off + len(encoded)] = encoded
+            block_writer.seek(0x1C + i * IMET_TITLE_MAX_BYTES)
+            block_writer.raw(encoded)
+            block_writer.pad(IMET_TITLE_MAX_BYTES - len(encoded))
 
-        buf[0x5B0:0x5C0] = b'\x00' * 16
-        hashed = (b'\x00' * IMET_PADDING_SIZE + bytes(buf))[-self.hash_size:]
-        digest = hashlib.md5(hashed).digest()
-        buf[0x5B0:0x5C0] = digest
+        block_writer.seek(0x5B0)
+        block_writer.pad(0x10)
+        hashed = (b'\x00' * IMET_PADDING_SIZE + block.getvalue())[-self.hash_size:]
 
-        writer.raw(bytes(buf))
+        block_writer.seek(0x5B0)
+        block_writer.raw(hashlib.md5(hashed).digest())
+
+        writer = BinaryWriter(stream)
+        writer.pad(IMET_PADDING_SIZE)
+        writer.raw(block.getvalue())
 
     def __repr__(self) -> str:
         lines = [f"IMET  icon={self.icon_size:#x}  banner={self.banner_size:#x}  sound={self.sound_size:#x}"]

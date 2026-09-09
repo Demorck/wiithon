@@ -35,7 +35,7 @@ class U8:
 
         magic = reader.raw(4)
         if magic != U8_MAGIC_WORD:
-            raise InvalidFormatError(f"Invalid magic word for U8 {magic:!r} instead of {U8_MAGIC_WORD}")
+            raise InvalidFormatError(f"Invalid magic word for U8 {magic} instead of {U8_MAGIC_WORD}")
 
         rootnode_offset = reader.u32() # Always 0x20
         header_size = reader.u32()
