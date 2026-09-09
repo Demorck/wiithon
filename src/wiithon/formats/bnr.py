@@ -11,8 +11,6 @@ class BNR:
     def __init__(self) -> None:
         self.imet: IMET = IMET()
         self.u8: U8 = U8()
-
-
         self._banner_compressed = False
 
     @classmethod
@@ -52,11 +50,11 @@ class BNR:
 
     def replace_banner(self, data: bytes) -> None:
         self.u8.replace_file("meta/banner.bin", data)
-        self.imet.icon_size = len(data)
+        self.imet.banner_size = len(data)
 
     def replace_sound(self, data: bytes) -> None:
         self.u8.replace_file("meta/sound.bin", data)
-        self.imet.icon_size = len(data)
+        self.imet.sound_size = len(data)
 
     def open_banner(self) -> U8:
         payload = IMD5.unwrap(BytesIO(self.get_banner()))

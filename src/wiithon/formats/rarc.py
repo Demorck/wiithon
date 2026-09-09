@@ -3,6 +3,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import BinaryIO
 
+from wiithon.binary.align import align
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
 from wiithon.exceptions import ArchiveEntryExistsError, ArchiveFileNotFoundError, InvalidFormatError
@@ -224,7 +225,10 @@ class Rarc:
             string_map[name] = offset
             string_table_bytes.extend(name.encode('utf-8') + b'\x00')
             return offset
-            
+
+        add_string(".")
+        add_string("..")
+
         # Pack nodes
         for node in self.nodes:
             node_name = node.name or node.type.strip('\x00')
@@ -256,8 +260,8 @@ class Rarc:
         self.total_directory = len(self.entries)
 
         # Sizes
-        nodes_size = self.number_nodes * 0x10
-        entries_size = self.total_directory * 0x14
+        nodes_size = align(self.number_nodes * 0x10, 0x20)
+        entries_size = align(self.total_directory * 0x14, 0x20)
         
         self.offset_first_node = 0x20
         self.offset_first_directory = self.offset_first_node + nodes_size
@@ -265,6 +269,9 @@ class Rarc:
         
         # Calculate data offsets and payloads
         payload = bytearray()
+        preload_sizes = {NodeAttribute.PRELOAD_TO_MRAM: 0,
+                         NodeAttribute.PRELOAD_TO_ARAM: 0,
+                         NodeAttribute.LOAD_FROM_DVD: 0}
         for entry in self.entries:
             if entry.file_id != 0xFFFF and not entry.attributes & NodeAttribute.DIRECTORY:
                 # Align payload to 0x20
@@ -273,6 +280,9 @@ class Rarc:
                 entry.data_offset_or_idx = len(payload)
                 entry.data_size = len(entry.data)
                 payload.extend(entry.data)
+                for flag in preload_sizes:
+                    if entry.attributes & flag:
+                        preload_sizes[flag] += align(entry.data_size, 0x20)
 
         # Align end of payload
         while len(payload) % 0x20 != 0:
@@ -280,7 +290,7 @@ class Rarc:
 
         self.data_offset = self.string_table_offset + self.string_table_length
         self.data_length = len(payload)
-        self.file_length = 0x40 + self.string_table_offset + self.string_table_length + self.data_length
+        self.file_length = 0x20 + self.string_table_offset + self.string_table_length + self.data_length
 
         # Header
         writer.raw(RARC_MAGIC_WORD)
@@ -288,7 +298,9 @@ class Rarc:
         writer.u32(0x20)
         writer.u32(self.data_offset)
         writer.u32(self.data_length)
-        writer.pad(0x0C)
+        writer.u32(preload_sizes[NodeAttribute.PRELOAD_TO_MRAM])
+        writer.u32(preload_sizes[NodeAttribute.PRELOAD_TO_ARAM])
+        writer.u32(preload_sizes[NodeAttribute.LOAD_FROM_DVD])
 
         # Info block (at 0x20)
         writer.u32(self.number_nodes)
@@ -298,8 +310,9 @@ class Rarc:
         writer.u32(self.string_table_length)
         writer.u32(self.string_table_offset)
 
-        writer.u16(file_id_counter)
-        writer.pad(0x06)
+        writer.u16(self.total_directory)
+        writer.u8(0x01)
+        writer.pad(0x05)
 
         # Nodes
         for node in self.nodes:
@@ -308,6 +321,8 @@ class Rarc:
             writer.u16(node.name_hash)
             writer.u16(node.entry_count)
             writer.u32(node.first_entry_index)
+
+        writer.pad(nodes_size - self.number_nodes * 0x10)
 
         # Entries
         for entry in self.entries:
@@ -319,6 +334,8 @@ class Rarc:
             writer.u32(entry.data_offset_or_idx)
             writer.u32(entry.data_size)
             writer.u32(0)
+
+        writer.pad(entries_size - self.total_directory * 0x14)
 
         # String table
         writer.raw(self.string_table)
