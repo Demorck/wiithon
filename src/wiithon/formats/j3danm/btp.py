@@ -75,7 +75,7 @@ class BTP(J3DAnmBase):
             reader.seek(section_start + remap_table_offset)
             remap_index = reader.u16()
 
-            keyframe = BTPKeyFrame(material_names[keyframe_index], material_name_index, texture_indices, remap_index)
+            keyframe = BTPKeyFrame(material_names[material_name_index], texture_indices, remap_index)
             obj.keyframes.append(keyframe)
 
         reader.seek(section_start + section_size)
@@ -109,11 +109,12 @@ class BTP(J3DAnmBase):
         # Keyframes
         keyframe_offset = writer.tell() - section_start
 
+        material_names = [keyframe.material_name for keyframe in self.keyframes]
         first_index = 0
         for keyframe in self.keyframes:
             writer.u16(len(keyframe.texture_indices))
             writer.u16(first_index)
-            writer.u8(keyframe.material_name_index)
+            writer.u8(material_names.index(keyframe.material_name_index))
             writer.pad(3, PAD_BYTE)
 
             first_index += len(keyframe.texture_indices)
@@ -144,7 +145,7 @@ class BTP(J3DAnmBase):
         writer.u32(name_table_offset)
 
         writer.seek(section_start + name_table_offset)
-        self.write_name_table(writer.stream, [keyframe.material_name for keyframe in self.keyframes])
+        self.write_name_table(writer.stream, material_names)
 
         # Section size
         section_size = writer.tell() - section_start
