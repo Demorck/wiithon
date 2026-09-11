@@ -115,6 +115,10 @@ class BVA(J3DAnmBase):
             for show in show_list:
                 writer.u8(show)
 
+        # Pad table
+        self.pad_string(writer.stream, 0x4)
+
+        # Pad section
         self.pad_string(writer.stream)
 
         section_size = writer.tell() - section_start
