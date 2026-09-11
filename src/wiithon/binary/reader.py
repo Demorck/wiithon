@@ -181,9 +181,9 @@ class BinaryReader:
 
     def u32_shifted(self) -> int:
         """
-        Reads a usigned 32 bits number then left shifted 2 times.
+        Reads an unsigned 32 bits number then left shifted 2 times.
 
-        Some file formats used this.
+        Some file formats use this.
 
         Returns:
             The number left shifted 2 times from the stream
@@ -196,6 +196,7 @@ class BinaryReader:
     def raw(self, size: int = -1) -> bytes:
         """
         Read ``size`` raw bytes from the stream.
+
         Args:
             size: The number of bytes to read
 
@@ -208,6 +209,15 @@ class BinaryReader:
         return data
 
     def list_u32(self, size: int) -> list[int]:
+        """
+        Read a list of unsigned 32 bits numbers one after the other
+
+        Args:
+            size: How many numbers to read
+
+        Returns:
+            A list of unsigned 32 bits numbers
+        """
         result_list: list[int] = [self.u32() for _ in range(size)]
 
         return result_list
@@ -229,6 +239,7 @@ class BinaryReader:
     def string_until_null(self, encoding: str | None = None) -> str:
         """
         Read a string from the stream until a null byte (``\x00``) is found
+
         Args:
             encoding: The encoding to use
 
