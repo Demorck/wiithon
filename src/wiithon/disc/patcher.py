@@ -1,3 +1,8 @@
+"""
+Modifying a Wii disck image and rebuilding it
+
+This module exposes :class:`WiiIsoPatcher`. To inspect it without modifying it, see :mod:`wiithon.disc.reader`
+"""
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from io import BytesIO
@@ -7,6 +12,7 @@ from typing import Concatenate, ParamSpec, TypeVar
 from wiithon.builder.copy_source import CopyPartitionSource
 from wiithon.builder.disc_builder import WiiDiscBuilder
 from wiithon.disc.enums import WiiPartType
+from wiithon.disc.partition import WiiPartitionInfo
 from wiithon.disc.reader import WiiIsoReader
 from wiithon.exceptions import NoDataPartitionError
 from wiithon.formats.archive import (
@@ -29,21 +35,67 @@ T = TypeVar("T")
 P = ParamSpec("P")
 
 class WiiIsoPatcher:
+    """
+    Collects modifications to a wii ISO and writes a new one
+
+    Nothing is applied as you go.
+    Every call records an intent and the whole set is replayed when :meth:`build` is called
+    The source ISO is opened read only and never written to
+
+    Warning:
+        Only the DATA partition is patched. Other partition are copied to the output byte by byte
+
+    Example:
+        >>> with WiiIsoPatcher("path/to/iso") as patcher:
+        ...     patcher.replace_file("opening.bnr", data)
+        ...     patcher.modify_title("My super game")
+        ...     patcher.build("output/iso")
+    """
+
     def __init__(self, src_path: str) -> None:
-        self.src_path = src_path
+        """
+        Nothing is opened in the constructor
+
+        Args:
+            src_path: Path to the ISO file to patch. It's opened when entering in a ``with`` block
+        """
+
+        #: The source path
+        self.src_path: str = src_path
+
+        #: WiiIsoReader. Used internally
         self.reader: WiiIsoReader | None = None
 
-        self.data_partition = None
+        #: The opened data partition
+        self.data_partition: WiiPartitionInfo | None = None
+
+        #: A callback function that runs when build is called. Used for modifying the DOL
         self.dol_modifiers: list[Callable[[DOL], None]] = []
 
+        #: A dictionnary that map files to their data
         self.file_replacements: dict[str, bytes] = {}
+
+        #: Callback applied to the FST at build time, set by :meth:`modify_fst`
         self.fst_modifier: Callable[[FST], None] | None = None
+
+        #: A dictionnary that map new files to their data
         self.files_to_add: dict[str, bytes] = {}
+
+        #: A list of files to remove
         self.files_to_remove: list[str] = []
 
+        #: Archive currently open for :meth:`edit_as`, kept so successive edits share one decompression
         self.cached_archive: tuple[str, Archive, list[Container]] | None = None
 
     def __enter__(self) -> "WiiIsoPatcher":
+        """
+        Open the source ISO and load its DATA partition
+
+        Raises:
+            NoDataPartitionError: If the disc has no DATA partition, which means
+                there is nothing to patch
+            InvalidDiscError: If the source is not a valid Wii disc image
+        """
         self.reader = WiiIsoReader(self.src_path)
         try:
             self.reader.__enter__()
@@ -88,14 +140,53 @@ class WiiIsoPatcher:
         self.data_partition.header.ticket.title_id = b'\x00\x01\x00\x00' + b[:4]
 
     def modify_fst(self, fn: Callable[[FST], None]) -> None:
+        """
+        Register a callback that edits the file system table directly
+
+        The callback runs during :meth:`build`, before the additions and removals queued by :meth:`add_file` and
+        :meth:`remove_file` are applied
+
+        Args:
+            fn: Called with the FST of the DATA partition. Its return value is
+                ignored, modify the tree in place
+
+        Note:
+            Only one callback is kept. Calling this twice replaces the first
+
+        Example:
+            >>> with WiiIsoPatcher("path/to/iso") as patcher:
+            ...     patcher.modify_fst(lambda x: print(x.count_files()))
+            ...     patcher.build("output")
+        """
         self.fst_modifier = fn
 
     def add_file(self, path: str, data: bytes) -> None:
+        """
+        Queue a new file for insertion
+
+        The file is added to the file system table and its data is written at build time. Parent directories must exists
+
+        Args:
+            path: Destination path inside the DATA partition. Leading and trailing slashes are stripped
+            data: File content in bytes
+        """
         key = path.strip("/")
         self.files_to_add[key] = data
         self.file_replacements[key] = data
 
     def remove_file(self, path: str) -> None:
+        """
+        Queue a new file for deletion
+
+        If ``path`` was queued by :meth:`add_file` earlier that pending addition
+        is cancelled instead of scheduling a removal
+
+        Args:
+            path: Destination path inside the DATA partition. Leading and trailing slashes are stripped
+
+        Note:
+            Removing a path that does not exist just do  nothing, since the FST finds nothing
+        """
         key = path.strip("/")
         if key in self.files_to_add:
             self.files_to_add.pop(key)
@@ -104,6 +195,16 @@ class WiiIsoPatcher:
             self.files_to_remove.append(key)
 
     def replace_file(self, path: str, data: bytes) -> None:
+        """
+        Queue new contents for an existing file
+
+        Unlike :meth:`add_file`, this does not touch the file system table, so the
+        file must already exist on the disc. The new data may be of any size
+
+        Args:
+            path: Path inside the DATA partition
+            data: Replacement contents
+        """
         key = path.strip('/')
         if self.cached_archive is not None and self.cached_archive[0] == key:
             self.cached_archive = None
@@ -111,13 +212,74 @@ class WiiIsoPatcher:
         self.file_replacements[key] = data
 
     def list_files(self) -> list[str]:
+        """
+        List every file of the DATA partition
+
+        Returns:
+            Full paths, using ``/`` as separator
+
+        Warning:
+            This reflects the **source** disc. Files queued by :meth:`add_file` or
+            :meth:`remove_file` do not appear or disappear until :meth:`build`
+        """
         return self.data_partition.list_files()
 
     def read_file(self, path: str) -> bytes:
+        """
+        Read a file from the source disc
+
+        Args:
+            path: Path inside the DATA partition
+
+        Returns:
+            The contents as stored in the **source** ISO. Pending replacements are not applied,
+            so reading a file you just replaced returns the original data
+
+        Note:
+            :meth:`edit_as` does see its own earlier edits since it keeps the archive in memory. This method
+            does not: it always reads the source
+
+        Raises:
+            FstFileNotFoundError: If no such file exists
+            FstIsADirectoryError: If the path is a directory
+        """
         return self.data_partition.read_file(path)
 
     @contextmanager
     def edit_as(self, path: str, cls: type[T], **kwargs: int) -> Iterator[T]:
+        """
+        Edit a file in place parsed as a given format
+
+        Reads the file, parses it with ``cls.read()``, hands you the object, then serialises it back with
+        ``obj.write()`` and queues the result as a replacement when the block exits
+
+        The path may cross archive boundaries
+        Given ``"Stage.arc/scenariodata.bcsv"``, the RARC archive is opened, the inner file is extracted,
+        and the archive is re-serialised around your changes
+        Yaz0 compression is handled transparently. Everything is transparent. You want the object, you have the object
+
+        Args:
+            path: Path inside the DATA partition, optionally continuing inside an archive
+            cls: Format class providing ``read(stream, **kwargs)`` and ``write(stream)``,
+                such as :class:`~wiithon.formats.bcsv.BCSV` or :class:`~wiithon.formats.rarc.Rarc`
+            **kwargs: Forwarded to ``cls.read()``
+
+        Yields:
+            The parsed object, ready to modify
+
+        Warning:
+            Successive calls on files of the same archive reuse the archive already in memory so edits
+            accumulate instead of overwriting each other. The archive is decompressed once and re-serialised
+            once, which also makes editing many files in a loop cheap
+
+        Note:
+            If the block raises, nothing is written back
+
+        Example:
+            >>> with patcher.edit_as("AstroDome/AstroDome.arc/stageinfo/layera", BCSV, str_fmt="shift_jis") as bcsv:
+            ...     for entry in bcsv.entries:
+            ...         entry["Timer"] = 0
+        """
         data, containers = unwrap_containers(resolve_read(self, path), cls)
         obj = cls.read(BytesIO(data), **kwargs)
         yield obj
@@ -127,9 +289,35 @@ class WiiIsoPatcher:
 
     # noinspection PyTypeHints
     def patch_dol(self, fn: Callable[Concatenate[DOL, P], None], *args: P.args, **kwargs: P.kwargs) -> None:
+        """
+        Register a callback that patches the main executable
+
+        The callback runs during :meth:`build`, on the DOL of the DATA partition
+
+        Args:
+            fn: Called with the parsed :class:`~wiithon.formats.dol.DOL`. Modify it in place
+            *args: Extra positional arguments forwarded to ``fn``
+            **kwargs: Extra keyword arguments forwarded to ``fn``
+
+        Note:
+            Callbacks accumulate. Call this several times and they run in registration order each seeing the
+            DOL as the previous one left it
+
+        Note:
+            :meth:`modify_fst` does **not** work this way, it keeps a single callback (for now)
+
+        See Also:
+            :doc:`/user_guide/patching` for code injection above the arena
+        """
         self.dol_modifiers.append(lambda dol: fn(dol, *args, **kwargs))
 
     def read_dol(self) -> DOL:
+        """
+        Read the main executable of the source disc
+
+        Returns:
+            The parsed DOL, without any pending patch applied
+        """
         return self.data_partition.read_dol()
 
     def get_banner_title(self, language: str = "English") -> str:
@@ -137,12 +325,41 @@ class WiiIsoPatcher:
         return bnr.imet.titles[IMET_LANGUAGES.index(language)]
 
     def set_banner_title(self, new_title: str, language: str = "English") -> None:
+        """
+        Change the title shown in the Wii menu, for one language
+
+        Reads ``opening.bnr``, rewrites its IMET header and queues the result as a replacement
+
+        Args:
+            new_title: New title
+            language: One of ``Japanese``, ``English``, ``German``, ``French``, ``Spanish``, ``Italian``, ``Dutch``,
+                ``Simplified Chinese``, ``Traditional Chinese`` or ``Korean``
+
+        Raises:
+            ValueError: If ``language`` is not one of the values above
+        """
         bnr_bytes = self.read_file("opening.bnr")
         bnr = BNR.read(BytesIO(bnr_bytes))
         bnr.imet.set_title(new_title, language)
         self.replace_file("opening.bnr", bnr.get_bytes())
 
     def build(self, output_path: str, progress_cb: Callable | None = None) -> None:
+        """
+        Write the patched ISO
+
+        Every partition of the source disc is copied to the output
+        The DATA partition additionally receives the queued file changes, the FST callback and the DOL callback
+        Hashes and encryption are recomputed as required
+
+        Args:
+            output_path: Path of the ISO to create. It is overwritten if it exists
+            progress_cb: Called with an integer percentage from 0 to 100. It is invoked once per partition,
+                so the value restarts at 0 for each
+
+        Note:
+            This is where all the work happens. Expect it to take a while and to need free disc space of roughly
+            the size of the source ISO
+        """
         flush_archive_cache(self)
         builder = WiiDiscBuilder(self.reader.disc_header, self.reader.region)
 
