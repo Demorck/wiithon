@@ -8,9 +8,8 @@ from wiithon.formats.j3danm.j3d import PAD_BYTE, J3DAnmBase, LoopMode
 
 
 class BTPKeyFrame:
-    def __init__(self, material_name: str, material_name_index: int, texture_indices: list[int], material_index: int):
+    def __init__(self, material_name: str, texture_indices: list[int], material_index: int):
         self.material_name: str = material_name # Material name in the name table
-        self.material_name_index: int = material_name_index # Material index into the name table
         self.texture_indices: list[int] = texture_indices
         self.material_index: int = material_index # Material index in the model's materials
 
