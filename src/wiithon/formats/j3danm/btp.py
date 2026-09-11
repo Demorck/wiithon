@@ -113,7 +113,7 @@ class BTP(J3DAnmBase):
         for keyframe in self.keyframes:
             writer.u16(len(keyframe.texture_indices))
             writer.u16(first_index)
-            writer.u8(material_names.index(keyframe.material_name_index))
+            writer.u8(material_names.index(keyframe.material_name))
             writer.pad(3, PAD_BYTE)
 
             first_index += len(keyframe.texture_indices)
