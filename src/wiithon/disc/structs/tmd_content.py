@@ -23,6 +23,7 @@ from typing import BinaryIO
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
 
+
 class TMDContent:
     """
     A single content descriptor of a TMD
