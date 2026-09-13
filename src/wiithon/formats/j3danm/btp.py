@@ -1,17 +1,19 @@
-from io import BytesIO
+from dataclasses import dataclass
 from typing import BinaryIO, ClassVar
 
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
 from wiithon.exceptions import InvalidFormatError
-from wiithon.formats.j3danm.j3d import PAD_BYTE, J3DAnmBase, LoopMode
+from wiithon.formats.j3danm.j3d import PAD_BYTE, TABLE_BOUNDARY, J3DAnmBase, LoopMode
+
+KEYFRAME_SIZE = 8
 
 
+@dataclass
 class BTPKeyFrame:
-    def __init__(self, material_name: str, texture_indices: list[int], material_index: int):
-        self.material_name: str = material_name # Material name in the name table
-        self.texture_indices: list[int] = texture_indices
-        self.material_index: int = material_index # Material index in the model's materials
+    material_name: str # Material name at the index of material_index
+    texture_indices: list[int]
+    material_index: int # Material index in the model's materials
 
 
 class BTP(J3DAnmBase):
@@ -22,7 +24,7 @@ class BTP(J3DAnmBase):
 
     def __init__(self) -> None:
         self.duration: int = 0
-        self.loop_mode: LoopMode = None
+        self.loop_mode: LoopMode | None = None
         self.keyframes: list[BTPKeyFrame] = []
 
 
@@ -41,7 +43,7 @@ class BTP(J3DAnmBase):
         # TPT section
         section_magic = reader.string(4)
         if section_magic != obj.section_magic:
-            raise InvalidFormatError(f"Invalid file magic, {section_magic!r} instead of {obj.section_magic!r}")
+            raise InvalidFormatError(f"Invalid section magic, {section_magic!r} instead of {obj.section_magic!r}")
 
         section_size = reader.u32()
         obj.loop_mode = LoopMode(reader.u8())
@@ -61,17 +63,18 @@ class BTP(J3DAnmBase):
         material_names = obj.read_name_table(reader.stream)
 
         for keyframe_index in range(keyframe_count):
-            reader.seek(section_start + keyframe_offset + keyframe_index * 4)
+            reader.seek(section_start + keyframe_offset + keyframe_index * KEYFRAME_SIZE)
             texture_count = reader.u16()
             first_index = reader.u16()
             material_name_index = reader.u8()
 
-            reader.seek(section_start + texture_index_offset + first_index * 2)
-            texture_indices: list[int] = []
-            for texture_index in range(texture_count):
-                texture_indices.append(reader.u16())
+            if first_index + texture_count > texture_index_count:
+                raise IndexError(f"Texture index is out of range. Count: {texture_index_count}, index: {first_index + texture_count - 1}.")
 
-            reader.seek(section_start + remap_table_offset)
+            reader.seek(section_start + texture_index_offset + first_index * 2)
+            texture_indices: list[int] = [reader.u16() for _ in range(texture_count)]
+
+            reader.seek(section_start + remap_table_offset + keyframe_index * 2)
             remap_index = reader.u16()
 
             keyframe = BTPKeyFrame(material_names[material_name_index], texture_indices, remap_index)
@@ -97,9 +100,11 @@ class BTP(J3DAnmBase):
         writer.pad(1, PAD_BYTE)
         writer.u16(self.duration)
         writer.u16(len(self.keyframes))
-        writer.u16(sum([len(keyframe.texture_indices) for keyframe in self.keyframes]))
+        writer.u16(sum(len(keyframe.texture_indices) for keyframe in self.keyframes))
 
         # Offsets
+        offsets_offset = writer.tell() - section_start
+
         writer.u32(0)
         writer.u32(0)
         writer.u32(0)
@@ -124,20 +129,20 @@ class BTP(J3DAnmBase):
             for index in keyframe.texture_indices:
                 writer.u16(index)
 
-        self.pad_string(writer.stream, 0x4)
+        self.pad_string(writer.stream, TABLE_BOUNDARY)
 
         # Remap table
         remap_table_offset = writer.tell() - section_start
         for keyframe in self.keyframes:
             writer.u16(keyframe.material_index)
 
-        self.pad_string(writer.stream, 0x4)
+        self.pad_string(writer.stream, TABLE_BOUNDARY)
 
         # Name table
         name_table_offset = writer.tell() - section_start
 
         # Write the offsets
-        writer.seek(section_start + 0x10)
+        writer.seek(section_start + offsets_offset)
         writer.u32(keyframe_offset)
         writer.u32(texture_index_offset)
         writer.u32(remap_table_offset)

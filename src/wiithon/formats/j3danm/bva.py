@@ -1,15 +1,15 @@
-from io import BytesIO
+from dataclasses import dataclass
 from typing import BinaryIO, ClassVar
 
 from wiithon.binary.reader import BinaryReader
 from wiithon.binary.writer import BinaryWriter
 from wiithon.exceptions import InvalidFormatError
-from wiithon.formats.j3danm.j3d import PAD_BYTE, J3DAnmBase, LoopMode
+from wiithon.formats.j3danm.j3d import PAD_BYTE, TABLE_BOUNDARY, J3DAnmBase, LoopMode
 
 
+@dataclass
 class BVAKeyFrame:
-    def __init__(self, show_shape_indices: list[bool]):
-        self.show_shape_indices: list[bool] = show_shape_indices
+    show_shape_indices: list[bool]
 
 
 class BVA(J3DAnmBase):
@@ -19,8 +19,8 @@ class BVA(J3DAnmBase):
 
 
     def __init__(self) -> None:
-        self.loop_mode: LoopMode = None
         self.duration: int = 0
+        self.loop_mode: LoopMode | None = None
         self.keyframes: list[BVAKeyFrame] = []
 
 
@@ -39,7 +39,7 @@ class BVA(J3DAnmBase):
         # VAF1 section
         section_magic = reader.string(4)
         if section_magic != obj.section_magic:
-            raise InvalidFormatError(f"Invalid file magic, {section_magic!r} instead of {obj.section_magic!r}")
+            raise InvalidFormatError(f"Invalid section magic, {section_magic!r} instead of {obj.section_magic!r}")
 
         section_size = reader.u32()
         obj.loop_mode = LoopMode(reader.u8())
@@ -58,10 +58,11 @@ class BVA(J3DAnmBase):
             show_shape_count = reader.u16()
             first_index = reader.u16()
 
+            if first_index + show_shape_count > show_count:
+                raise IndexError(f"Show shape index is out of range. Count: {show_count}, index: {first_index + show_shape_count - 1}.")
+            
             reader.seek(section_start + show_table_offset + first_index)
-            show_shape_indices: list[bool] = []
-            for show_shape_index in range(show_shape_count):
-                show_shape_indices.append(reader.u8())
+            show_shape_indices: list[bool] = [not not reader.u8() for _ in range(show_shape_count)]
 
             keyframe = BVAKeyFrame(show_shape_indices)
             obj.keyframes.append(keyframe)
@@ -95,9 +96,10 @@ class BVA(J3DAnmBase):
                 seen_show_lists.append(keyframe.show_shape_indices)
                 show_list_offset.append(len(keyframe.show_shape_indices))
 
-        writer.u16(sum([len(show_list) for show_list in seen_show_lists]))
+        writer.u16(sum(len(show_list) for show_list in seen_show_lists))
         
         # Offsets
+        offsets_offset = writer.tell() - section_start
         writer.u32(0)
         writer.u32(0)
         self.pad_string(writer.stream)
@@ -116,7 +118,7 @@ class BVA(J3DAnmBase):
                 writer.u8(show)
 
         # Pad table
-        self.pad_string(writer.stream, 0x4)
+        self.pad_string(writer.stream, TABLE_BOUNDARY)
 
         # Pad section
         self.pad_string(writer.stream)
@@ -124,7 +126,7 @@ class BVA(J3DAnmBase):
         section_size = writer.tell() - section_start
 
         # Write the offsets
-        writer.seek(section_start + 0x10)
+        writer.seek(section_start + offsets_offset)
         writer.u32(keyframe_offset)
         writer.u32(show_table_offset)
 

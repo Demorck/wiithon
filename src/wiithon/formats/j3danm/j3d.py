@@ -10,6 +10,7 @@ from wiithon.exceptions import InvalidFormatError
 PADDING_STRING = "This is padding data to alignme"
 PAD_BYTE = b'\xFF'
 PAD_BOUNDARY = 0x20
+TABLE_BOUNDARY = 0x4
 
 STRING_ENCODING = "ascii"
 
@@ -77,7 +78,7 @@ class J3DAnmBase(ABC):
 
 
     @staticmethod
-    def read_name_table(stream: BinaryIO) -> list[str]:
+    def read_name_table(stream: BinaryIO, encoding: str = STRING_ENCODING) -> list[str]:
         reader = BinaryReader(stream)
 
         table_start = reader.tell()
@@ -85,21 +86,27 @@ class J3DAnmBase(ABC):
         name_count = reader.u16()
         reader.skip(2)
 
-        names: list[str] = []
+        hashes: list[str] = []
+        offsets: list[str] = []
         for name_index in range(name_count):
-            reader.seek(table_start + 0x4 + name_index * 0x4)
+            hashes.append(reader.u16())
+            offsets.append(reader.u16())
 
-            reader.skip(2)
-            name_offset = reader.u16()
-
+        names: list[str] = []
+        for name_hash, name_offset in hashes, offsets:
             reader.seek(table_start + name_offset)
-            name = reader.string_until_null()
+            name = reader.string_until_null(STRING_ENCODING)
+
+            calculated_hash = J3DAnmBase.hash_name(name)
+            if calculated_hash != name_hash:
+                raise ValueError(f"Hash is different than the calculated hash. String: {name}, expected hash: {calculated_hash}, got: {name_hash}.")
+
             names.append(name)
         return names
 
 
     @staticmethod
-    def write_name_table(stream: BinaryIO, names: list[str]) -> None:
+    def write_name_table(stream: BinaryIO, names: list[str], encoding: str = STRING_ENCODING) -> None:
         writer = BinaryWriter(stream)
 
         writer.u16(len(names))
@@ -111,16 +118,16 @@ class J3DAnmBase(ABC):
             writer.u16(J3DAnmBase.hash_name(name))
             writer.u16(name_offset)
 
-            name_offset += len(name) + 1
+            name_offset += len(name.encode(encoding)) + 1
 
         for name in names:
-            writer.string(name, add_null_byte=True)
+            writer.string(name, encoding=STRING_ENCODING, add_null_byte=True)
 
         J3DAnmBase.pad_string(writer.stream)
 
 
     @staticmethod
-    def pad_string(stream: BinaryIO, boundary = PAD_BOUNDARY) -> None:
+    def pad_string(stream: BinaryIO, boundary: int = PAD_BOUNDARY) -> None:
         writer = BinaryWriter(stream)
 
         pad_boundary = align(writer.tell(), boundary)
@@ -130,7 +137,7 @@ class J3DAnmBase(ABC):
 
 
     @staticmethod
-    def pad_byte(stream: BinaryIO, boundary = PAD_BOUNDARY) -> None:
+    def pad_byte(stream: BinaryIO, boundary: int = PAD_BOUNDARY) -> None:
         writer = BinaryWriter(stream)
 
         pad_boundary = align(writer.tell(), boundary)
