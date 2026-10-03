@@ -1,6 +1,6 @@
 import unittest
 
-from wiithon.crypto.layout import SHA1_SIZE, BLOCK_HEADER_SIZE
+from wiithon.crypto.layout import BLOCK_HEADER_SIZE, SHA1_SIZE
 from wiithon.rvz.patching import hash_exceptions
 
 IDENTICAL = bytes(range(256)) * 4

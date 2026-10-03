@@ -2,6 +2,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from wiithon.rvz.plan import DiscPlanner
+from wiithon.disc.reader import WiiIsoReader
+
 from tests.iso._common import (
     EXCEPTION_SIZE,
     GAME_ID,
@@ -17,10 +20,8 @@ from tests.iso._common import (
 )
 
 from wiithon.binary.align import align
-from wiithon.crypto.blocks import decrypt_block_header, hash_group
-from wiithon.crypto.layout import BLOCK_DATA_SIZE, BLOCK_SIZE, GROUP_SIZE, BLOCK_PER_GROUP, BLOCK_HEADER_SIZE
+from wiithon.crypto.layout import BLOCK_DATA_SIZE, BLOCK_SIZE, GROUP_SIZE
 from wiithon.rvz.enums import WiaDiscType
-from wiithon.rvz.patching import hash_exceptions
 from wiithon.rvz.reader import WiaReader
 from wiithon.rvz.rebuilder import IsoRebuilder
 
@@ -144,6 +145,31 @@ class Shared:
             self.assertEqual(self.rebuilt.stat().st_size, ISO_SIZE)
             with self.rebuilt.open("rb") as left, ISO_PATH.open("rb") as right:
                 compare_range(left, right, 0, ISO_SIZE)
+
+        @needs_iso
+        def test_the_planner_reproduces_these_descriptors(self):
+            with WiiIsoReader(str(ISO_PATH)) as source:
+                planned = DiscPlanner(self.reader.disc.chunk_size).plan(source)
+
+            self.assertEqual(planned.iso_size, self.reader.header.iso_file_size)
+            self.assertEqual(planned.disc_head, self.reader.disc.disc_head)
+            self.assertEqual(planned.group_count, self.reader.disc.group_count)
+
+            self.assertEqual(
+                [(e.offset, e.size, e.first_group_index, e.group_count) for e in planned.raw_data],
+                [(e.offset, e.size, e.first_group_index, e.group_count)
+                 for e in self.reader.raw_data],
+            )
+            self.assertEqual(
+                [(s.first_block, s.block_count, s.group_index, s.group_count)
+                 for p in planned.partitions for s in p.segments],
+                [(s.first_block, s.block_count, s.group_index, s.group_count)
+                 for p in self.reader.partitions for s in p.segments],
+            )
+            self.assertEqual(
+                [p.title_key for p in planned.partitions],
+                [p.title_key for p in self.reader.partitions],
+            )
 
 
 for _image in discover_images():
