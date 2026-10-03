@@ -20,6 +20,22 @@ from wiithon.crypto.layout import (
 )
 
 
+def decrypt_block_header(block: bytes, title_key: bytes) -> bytes:
+    """
+    Decrypt the header of a single block
+    The header is encrypted with a null IV
+
+    Args:
+        block: Raw encrypted block with at least BLOCK_HEADER_SIZE bytes
+        title_key: The decrypted title_key
+
+    Returns:
+        The 0x400 bytes of hashes and padding
+    """
+    cipher = AES.new(title_key, AES.MODE_CBC, b'\x00' * IV_SIZE)
+
+    return cipher.decrypt(block[:BLOCK_HEADER_SIZE])
+
 def decrypt_block(block: bytes, title_key: bytes) -> bytes:
     """
     Decrypt a single 0x8000-byte block

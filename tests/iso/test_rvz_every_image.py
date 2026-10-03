@@ -17,8 +17,10 @@ from tests.iso._common import (
 )
 
 from wiithon.binary.align import align
-from wiithon.crypto.layout import BLOCK_DATA_SIZE, BLOCK_SIZE, GROUP_SIZE
+from wiithon.crypto.blocks import decrypt_block_header, hash_group
+from wiithon.crypto.layout import BLOCK_DATA_SIZE, BLOCK_SIZE, GROUP_SIZE, BLOCK_PER_GROUP, BLOCK_HEADER_SIZE
 from wiithon.rvz.enums import WiaDiscType
+from wiithon.rvz.patching import hash_exceptions
 from wiithon.rvz.reader import WiaReader
 from wiithon.rvz.rebuilder import IsoRebuilder
 
