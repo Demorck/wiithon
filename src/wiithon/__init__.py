@@ -4,6 +4,7 @@ from wiithon.builder.copy_source import CopyPartitionSource
 from wiithon.builder.directory_source import DirectoryPartitionSource
 from wiithon.builder.disc_builder import WiiDiscBuilder
 from wiithon.builder.source import PartitionSource
+from wiithon.convert import convert
 from wiithon.disc.enums import WiiPartType
 from wiithon.disc.partition import WiiPartitionInfo
 from wiithon.disc.patcher import WiiIsoPatcher
@@ -37,6 +38,9 @@ from wiithon.formats.u8 import U8
 from wiithon.formats.yaz0 import Yaz0
 from wiithon.fst.node import FSTDirectory, FSTFile, FSTNode
 from wiithon.fst.tree import FST
+from wiithon.output import IsoOutput
+from wiithon.rvz.reader import WiaReader
+from wiithon.rvz.rebuilder import IsoRebuilder
 
 __version__ = "0.1.1"
 
@@ -61,6 +65,9 @@ __all__ = [
 
     ## FST
     "FST", "FSTNode", "FSTFile", "FSTDirectory",
+
+    ## RVZ
+    "convert", "IsoOutput", "WiaReader", "IsoRebuilder",
 
     ## Format
     "DOL", "BCSV", "BNR", "Rarc", "U8", "Yaz0", "Lz77",

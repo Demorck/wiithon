@@ -51,13 +51,6 @@ class Shared:
             except NotImplementedError as unsupported:
                 raise unittest.SkipTest(str(unsupported)) from unsupported
 
-            directory = tempfile.TemporaryDirectory()
-            cls.addClassCleanup(directory.cleanup)
-
-            cls.rebuilt = Path(directory.name) / "rebuilt.iso"
-            with cls.rebuilt.open("w+b") as stream:
-                IsoRebuilder(cls.reader).write(stream)
-
         def test_header_names_the_disc(self):
             """Whatever the container, it points at the same disc"""
             self.assertEqual(self.reader.header.iso_file_size, ISO_SIZE)
