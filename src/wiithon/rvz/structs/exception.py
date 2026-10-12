@@ -1,6 +1,7 @@
 from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
 from wiithon.crypto.layout import BLOCK_HEADER_SIZE, SHA1_SIZE
 
 
@@ -61,3 +62,15 @@ class WiaException:
         obj.hash   = reader.raw(SHA1_SIZE)
 
         return obj
+
+    def write(self, stream: BinaryIO) -> None:
+        """
+        Write one exception
+
+        Args:
+            stream: Current stream of the file
+        """
+        writer = BinaryWriter(stream)
+
+        writer.u16(self.offset)
+        writer.raw(self.hash)

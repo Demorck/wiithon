@@ -5,6 +5,8 @@ from io import BytesIO
 from unit.rvz._common import DATA_KEY, FIRST_SEGMENT, FLAG, PARTITION
 
 from wiithon.crypto.layout import BLOCK_SIZE
+from wiithon.rvz.structs.exception import WiaException
+from wiithon.rvz.structs.exception_list import WiaExceptionList
 from wiithon.rvz.structs.group import RvzGroup, WiaGroup
 from wiithon.rvz.structs.partition import WiaPartition
 from wiithon.rvz.structs.partition_data import WiaPartitionData
@@ -114,6 +116,51 @@ class TestGroupEntries(unittest.TestCase):
         self.assertEqual(entry.offset, 0x50000)
         self.assertEqual(entry.size, 0x20000)
 
+class TestStructuresRoundTrip(unittest.TestCase):
+    def _round_trip(self, kind, raw: bytes, *read_args) -> None:
+        """Read some bytes, write them back and get the same bytes"""
+        parsed = kind.read(BytesIO(raw), *read_args)
+        buffer = BytesIO()
+        parsed.write(buffer)
+
+        self.assertEqual(buffer.getvalue(), raw)
+
+    def test_exception(self):
+        self._round_trip(WiaException, struct.pack(">H", 0x354) + bytes(range(20)))
+
+    def test_exception_list(self):
+        raw = struct.pack(">H", 2)
+        raw += struct.pack(">H", 0x10) + b"A" * 20
+        raw += struct.pack(">H", 0x20) + b"B" * 20
+        self._round_trip(WiaExceptionList, raw)
+
+    def test_aligned_raw_data(self):
+        self._round_trip(WiaRawData, struct.pack(">QQII", 0x50000, 0x20000, 1, 1))
+
+    def test_snapped_raw_data_keeps_its_values(self):
+        raw = struct.pack(">QQII", 0x80, 0x4FF80, 0, 1)
+        once = WiaRawData.read(BytesIO(raw))
+        buffer = BytesIO()
+        once.write(buffer)
+        twice = WiaRawData.read(BytesIO(buffer.getvalue()))
+
+        self.assertEqual((twice.offset, twice.size), (once.offset, once.size))
+        self.assertEqual(twice.offset + twice.size, 0x80 + 0x4FF80)
+
+    def test_partition(self):
+        raw = bytes(range(16))
+        raw += struct.pack(">IIII", 7940, 64, 125, 1)
+        raw += struct.pack(">IIII", 8004, 53, 126, 1)
+        self._round_trip(WiaPartition, raw)
+
+    def test_wia_group(self):
+        self._round_trip(WiaGroup, struct.pack(">II", 0x2000, 0x50000))
+
+    def test_rvz_group_keeps_its_flag(self):
+        self._round_trip(RvzGroup, struct.pack(">III", 0x40, 0x80000200, 0x1F0000))
+
+    def test_rvz_group_stored_plain(self):
+        self._round_trip(RvzGroup, struct.pack(">III", 0x40, 0x200, 0))
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,7 @@
 from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
 from wiithon.crypto.layout import BLOCK_SIZE
 
 
@@ -55,3 +56,17 @@ class WiaPartitionData:
         obj.group_count = reader.u32()
 
         return obj
+
+    def write(self, stream: BinaryIO) -> None:
+        """
+        Write a segment descriptor
+
+        Args:
+            stream: Current stream of the file
+        """
+        writer = BinaryWriter(stream)
+
+        writer.u32(self.first_block)
+        writer.u32(self.block_count)
+        writer.u32(self.group_index)
+        writer.u32(self.group_count)

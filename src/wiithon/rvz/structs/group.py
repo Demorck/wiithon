@@ -1,6 +1,7 @@
 from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
 from wiithon.rvz.layout import GROUP_COMPRESSED_FLAG, GROUP_SIZE_MASK, RVZ_GROUP_SIZE, WIA_GROUP_SIZE
 
 
@@ -68,6 +69,17 @@ class WiaGroup:
 
         return obj
 
+    def write(self, stream: BinaryIO) -> None:
+        """
+        Write a group descriptor
+
+        Args:
+            stream: Current stream of the file
+        """
+        writer = BinaryWriter(stream)
+
+        writer.u32_shifted(self.offset)
+        writer.u32(self.size)
 
 class RvzGroup(WiaGroup):
     """
@@ -98,3 +110,16 @@ class RvzGroup(WiaGroup):
         obj.packed_size = reader.u32()
 
         return obj
+
+    def write(self, stream: BinaryIO) -> None:
+        """
+        Write a group descriptor
+
+        Args:
+            stream: Current stream of the file
+        """
+        writer = BinaryWriter(stream)
+
+        writer.u32_shifted(self.offset)
+        writer.u32(self.size | (GROUP_COMPRESSED_FLAG if self.compressed else 0))
+        writer.u32(self.packed_size)

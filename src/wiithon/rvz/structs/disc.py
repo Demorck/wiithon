@@ -1,6 +1,7 @@
 from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
 from wiithon.crypto.layout import BLOCK_DATA_SIZE, BLOCK_SIZE, SHA1_SIZE
 from wiithon.rvz.enums import WiaCompression, WiaDiscType
 from wiithon.rvz.layout import COMPRESSOR_DATA_SIZE, DHEAD_SIZE
@@ -111,3 +112,31 @@ class WiaDisc:
         obj.compression_data      = reader.raw(COMPRESSOR_DATA_SIZE)[:length]
 
         return obj
+
+    def write(self, stream: BinaryIO) -> None:
+        """
+        Write the disc structure
+
+        Args:
+            stream: Current stream of the file
+        """
+        writer = BinaryWriter(stream)
+
+        writer.u32(self.disc_type)
+        writer.u32(self.compression)
+        writer.s32(self.compression_level)
+        writer.u32(self.chunk_size)
+        writer.raw(self.disc_head)
+        writer.u32(self.partition_count)
+        writer.u32(self.partition_struct_size)
+        writer.u64(self.partition_offset)
+        writer.raw(self.partition_hash)
+        writer.u32(self.raw_data_count)
+        writer.u64(self.raw_data_offset)
+        writer.u32(self.raw_data_size)
+        writer.u32(self.group_count)
+        writer.u64(self.group_offset)
+        writer.u32(self.group_size)
+
+        writer.u8(len(self.compression_data))
+        writer.raw(self.compression_data.ljust(COMPRESSOR_DATA_SIZE, b'\x00'))

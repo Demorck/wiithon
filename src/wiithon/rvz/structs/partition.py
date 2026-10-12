@@ -1,6 +1,7 @@
 from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
 from wiithon.rvz.layout import PARTITION_SEGMENT, PARTITION_TITLE_KEY_SIZE
 from wiithon.rvz.structs.partition_data import WiaPartitionData
 
@@ -37,3 +38,15 @@ class WiaPartition:
         obj.segments = [WiaPartitionData.read(stream) for _ in range(PARTITION_SEGMENT)]
 
         return obj
+
+    def write(self, stream: BinaryIO) -> None:
+        """
+        Write a partition descriptor
+
+        Args:
+            stream: Current stream of the file
+        """
+        writer = BinaryWriter(stream)
+        writer.raw(self.title_key)
+        for segment in self.segments:
+            segment.write(stream)

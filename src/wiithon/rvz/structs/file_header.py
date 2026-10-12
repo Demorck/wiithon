@@ -1,7 +1,9 @@
 import hashlib
+from io import BytesIO
 from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
 from wiithon.crypto.layout import SHA1_SIZE
 from wiithon.exceptions import CorruptedDataError, InvalidFormatError
 from wiithon.rvz.layout import HEADER_HASH, HEADER_SIZE, RVZ_MAGIC_WORD, WIA_MAGIC_WORD
@@ -80,3 +82,25 @@ class WiaHeader:
             raise CorruptedDataError("File header in WIA/RVZ has a hash mismatch")
 
         return obj
+
+    def write(self, stream: BinaryIO) -> None:
+        """
+        Write the file header, hashing itself as it goes
+
+        Args:
+            stream: The current stream of the file
+        """
+        buffer = BytesIO()
+        writer = BinaryWriter(buffer)
+
+        writer.raw(self.magic)
+        writer.u32(self.version)
+        writer.u32(self.version_compatible)
+        writer.u32(self.disc_size)
+        writer.raw(self.disc_hash)
+        writer.u64(self.iso_file_size)
+        writer.u64(self.wia_file_size)
+
+        body = buffer.getvalue()
+        self.head_hash = hashlib.sha1(body).digest()
+        BinaryWriter(stream).raw(body + self.head_hash)

@@ -1,7 +1,7 @@
 import os
 
 from wiithon import WiiPartitionInfo
-from wiithon.crypto.layout import BLOCK_SIZE, GROUP_DATA_SIZE, BLOCK_PER_GROUP
+from wiithon.crypto.layout import BLOCK_PER_GROUP, BLOCK_SIZE, GROUP_DATA_SIZE
 from wiithon.disc.reader import WiiIsoReader
 from wiithon.rvz.layout import DHEAD_SIZE
 from wiithon.rvz.structs.partition import WiaPartition

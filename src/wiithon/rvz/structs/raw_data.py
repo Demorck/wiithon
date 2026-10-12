@@ -1,6 +1,7 @@
 from typing import BinaryIO
 
 from wiithon.binary.reader import BinaryReader
+from wiithon.binary.writer import BinaryWriter
 from wiithon.crypto.layout import BLOCK_SIZE
 
 
@@ -49,3 +50,17 @@ class WiaRawData:
         obj.size   = size + (offset - obj.offset)
 
         return obj
+
+    def write(self, stream: BinaryIO) -> None:
+        """
+        Write a raw data descriptor
+
+        Args:
+            stream: Current stream of the file
+        """
+        writer = BinaryWriter(stream)
+
+        writer.u64(self.offset)
+        writer.u64(self.size)
+        writer.u32(self.first_group_index)
+        writer.u32(self.group_count)

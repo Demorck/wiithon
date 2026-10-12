@@ -2,9 +2,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from wiithon.rvz.plan import DiscPlanner
-from wiithon.disc.reader import WiiIsoReader
-
 from tests.iso._common import (
     EXCEPTION_SIZE,
     GAME_ID,
@@ -21,7 +18,9 @@ from tests.iso._common import (
 
 from wiithon.binary.align import align
 from wiithon.crypto.layout import BLOCK_DATA_SIZE, BLOCK_SIZE, GROUP_SIZE
+from wiithon.disc.reader import WiiIsoReader
 from wiithon.rvz.enums import WiaDiscType
+from wiithon.rvz.plan import DiscPlanner
 from wiithon.rvz.reader import WiaReader
 from wiithon.rvz.rebuilder import IsoRebuilder
 
